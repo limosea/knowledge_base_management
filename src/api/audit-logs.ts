@@ -36,7 +36,7 @@ export const auditLogsApi = {
     
     const token = localStorage.getItem('accessToken')
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'}/admin/audit-logs/export${query ? `?${query}` : ''}`,
+      `/api/v1/admin/audit-logs/export${query ? `?${query}` : ''}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
