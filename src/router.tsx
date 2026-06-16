@@ -1,6 +1,14 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AuthLayout, MainLayout } from '@/components/layout'
-import { LoginPage, DashboardPage } from '@/pages'
+import {
+  LoginPage,
+  DashboardPage,
+  KnowledgePage,
+  ApiKeysPage,
+  UsersPage,
+  AuditLogsPage,
+  SystemPage,
+} from '@/pages'
 
 const isAuthenticated = () => {
   return !!localStorage.getItem('accessToken')
@@ -36,23 +44,23 @@ export const router = createBrowserRouter([
       },
       {
         path: '/knowledge',
-        element: <div className="text-2xl font-bold">Knowledge Page (TODO)</div>,
+        element: <KnowledgePage />,
       },
       {
         path: '/api-keys',
-        element: <div className="text-2xl font-bold">API Keys Page (TODO)</div>,
+        element: <ApiKeysPage />,
       },
       {
         path: '/users',
-        element: <div className="text-2xl font-bold">Users Page (TODO)</div>,
+        element: <UsersPage />,
       },
       {
         path: '/audit-logs',
-        element: <div className="text-2xl font-bold">Audit Logs Page (TODO)</div>,
+        element: <AuditLogsPage />,
       },
       {
         path: '/system',
-        element: <div className="text-2xl font-bold">System Page (TODO)</div>,
+        element: <SystemPage />,
       },
     ],
   },

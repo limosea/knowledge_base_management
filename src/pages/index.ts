@@ -1,2 +1,7 @@
 export { LoginPage } from './LoginPage'
 export { DashboardPage } from './DashboardPage'
+export { KnowledgePage } from './KnowledgePage'
+export { ApiKeysPage } from './ApiKeysPage'
+export { UsersPage } from './UsersPage'
+export { AuditLogsPage } from './AuditLogsPage'
+export { SystemPage } from './SystemPage'
