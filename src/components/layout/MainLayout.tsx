@@ -20,7 +20,6 @@ import {
   Users,
   FileText,
   Activity,
-  Settings,
   LogOut,
   Menu,
   Sun,

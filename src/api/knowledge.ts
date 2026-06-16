@@ -1,7 +1,6 @@
 import { apiClient } from './client'
 import type {
   KnowledgeEntry,
-  KnowledgeListResponse,
   KnowledgeVersion,
   KnowledgeStats,
   AdminKnowledgeListResponse,
