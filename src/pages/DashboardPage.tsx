@@ -1,34 +1,43 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { systemApi, knowledgeApi } from '@/api'
-import type { SystemStats, KnowledgeStats } from '@/types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { systemApi, knowledgeApi, auditLogsApi } from '@/api'
+import type { SystemStats, KnowledgeStats, AuditLog, SystemHealth } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BookOpen, Key, Activity, Calendar } from 'lucide-react'
+import { BookOpen, Activity, Key } from 'lucide-react'
+import { StatCard } from '@/components/charts/StatCard'
+import { SystemStatusCard } from '@/components/charts/SystemStatusCard'
+import { RequestTrendChart } from '@/components/charts/RequestTrendChart'
+import { RecentActivityList } from '@/components/charts/RecentActivityList'
 
 export function DashboardPage() {
   const { t } = useTranslation()
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null)
   const [knowledgeStats, setKnowledgeStats] = useState<KnowledgeStats | null>(null)
+  const [recentLogs, setRecentLogs] = useState<AuditLog[]>([])
+  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        const [sys, kn] = await Promise.all([
+        const [sys, kn, logs, health] = await Promise.all([
           systemApi.getStats(),
           knowledgeApi.getStats(),
+          auditLogsApi.list({ limit: 10 }),
+          systemApi.getHealth(),
         ])
         setSystemStats(sys)
         setKnowledgeStats(kn)
+        setRecentLogs(logs.data)
+        setSystemHealth(health)
       } catch (error) {
-        console.error('Failed to fetch stats:', error)
+        console.error('Failed to fetch data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchStats()
+    fetchData()
   }, [])
 
   if (loading) {
@@ -37,61 +46,53 @@ export function DashboardPage() {
         <Skeleton className="h-10 w-48" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="pb-2">
-                <Skeleton className="h-4 w-24" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16" />
-              </CardContent>
-            </Card>
+            <Skeleton key={i} className="h-28" />
           ))}
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-[300px]" />
+          <Skeleton className="h-[300px]" />
         </div>
       </div>
     )
   }
 
-  const stats = [
-    {
-      title: t('dashboard.knowledgeEntries'),
-      value: knowledgeStats?.total ?? 0,
-      icon: BookOpen,
-    },
-    {
-      title: t('dashboard.apiKeys'),
-      value: systemStats?.apiKeys?.active ?? 0,
-      icon: Key,
-    },
-    {
-      title: t('dashboard.today'),
-      value: systemStats?.requests?.today ?? 0,
-      icon: Activity,
-    },
-    {
-      title: t('dashboard.thisMonth'),
-      value: systemStats?.requests?.thisMonth ?? 0,
-      icon: Calendar,
-    },
-  ]
-
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">{t('dashboard.title')}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">{t('dashboard.title')}</h1>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-          )
-        })}
+        <StatCard
+          title={t('dashboard.knowledgeEntries')}
+          value={knowledgeStats?.total ?? 0}
+          icon={BookOpen}
+        />
+        <StatCard
+          title={t('dashboard.todayRequests')}
+          value={systemStats?.requests?.today ?? 0}
+          icon={Activity}
+        />
+        <StatCard
+          title={t('dashboard.activeApiKeys')}
+          value={systemStats?.apiKeys?.active ?? 0}
+          icon={Key}
+        />
+        <SystemStatusCard
+          status={systemHealth?.status ?? 'unhealthy'}
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <RequestTrendChart
+          data={{
+            today: systemStats?.requests?.today ?? 0,
+            thisWeek: systemStats?.requests?.thisWeek ?? 0,
+            thisMonth: systemStats?.requests?.thisMonth ?? 0,
+          }}
+        />
+        <RecentActivityList data={recentLogs} />
       </div>
     </div>
   )

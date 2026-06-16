@@ -8,6 +8,7 @@ import {
   UsersPage,
   AuditLogsPage,
   SystemPage,
+  AnalyticsPage,
 } from '@/pages'
 
 const isAuthenticated = () => {
@@ -61,6 +62,10 @@ export const router = createBrowserRouter([
       {
         path: '/system',
         element: <SystemPage />,
+      },
+      {
+        path: '/analytics',
+        element: <AnalyticsPage />,
       },
     ],
   },

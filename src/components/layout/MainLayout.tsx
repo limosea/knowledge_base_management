@@ -26,6 +26,7 @@ import {
   Moon,
   Eye,
   Languages,
+  BarChart3,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -37,6 +38,7 @@ const navItems = [
   { path: '/users', icon: Users, labelKey: 'nav.users' },
   { path: '/audit-logs', icon: FileText, labelKey: 'nav.auditLogs' },
   { path: '/system', icon: Activity, labelKey: 'nav.system' },
+  { path: '/analytics', icon: BarChart3, labelKey: 'nav.analytics' },
 ]
 
 export function MainLayout() {
