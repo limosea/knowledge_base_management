@@ -10,7 +10,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3001,
+    port: 3000,
     proxy: {
       '/api': {
         target: 'http://limousea.asia:3000',
