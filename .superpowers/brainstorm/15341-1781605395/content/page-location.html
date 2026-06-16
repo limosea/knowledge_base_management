@@ -1,0 +1,45 @@
+<h2>统计页面位置选择</h2>
+<p class="subtitle">新增的统计接口数据应该如何组织展示？</p>
+
+<div class="options">
+  <div class="option" data-choice="dashboard-enhance" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>增强现有Dashboard</h3>
+      <p>在现有Dashboard页面添加图表卡片，集成知识库统计、API Key统计、请求趋势</p>
+      <ul style="margin-top:8px;color:#666;font-size:14px;">
+        <li>✓ 无需新增页面，结构简洁</li>
+        <li>✓ 用户进入系统即可看到关键数据</li>
+        <li>✗ 页面可能变长，信息密度增加</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="option" data-choice="new-analytics" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>新建独立Analytics页面</h3>
+      <p>创建专门的"数据分析"或"统计报表"页面，展示详细统计和图表</p>
+      <ul style="margin-top:8px;color:#666;font-size:14px;">
+        <li>✓ Dashboard保持简洁概览</li>
+        <li>✓ 统计页面可容纳更多详细图表</li>
+        <li>✗ 需要新增导航项，增加页面数量</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="option" data-choice="both" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Dashboard + Analytics双层架构</h3>
+      <p>Dashboard展示核心KPI卡片，Analytics页面展示详细图表和趋势分析</p>
+      <ul style="margin-top:8px;color:#666;font-size:14px;">
+        <li>✓ 层次清晰，满足不同场景</li>
+        <li>✓ Dashboard快速概览，Analytics深入分析</li>
+        <li>✗ 需要设计两套布局，工作量较大</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:24px;color:#888;font-size:14px;">💡 推荐方案C，兼顾快速概览和深度分析</p>

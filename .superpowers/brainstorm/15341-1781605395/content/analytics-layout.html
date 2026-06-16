@@ -1,0 +1,79 @@
+<h2>Analytics页面布局</h2>
+<p class="subtitle">6个图表应该如何组织布局？</p>
+
+<div class="options">
+  <div class="option" data-choice="layout-grid-3x2" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>3x2网格布局</h3>
+      <div class="mockup" style="margin-top:12px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div class="placeholder" style="padding:24px;height:120px;text-align:center;font-size:12px;">知识分类分布图<br>📊 饼图</div>
+          <div class="placeholder" style="padding:24px;height:120px;text-align:center;font-size:12px;">质量分数分布<br>📈 柱状图</div>
+          <div class="placeholder" style="padding:24px;height:120px;text-align:center;font-size:12px;">API Key状态<br>🔑 饼图</div>
+          <div class="placeholder" style="padding:24px;height:120px;text-align:center;font-size:12px;">请求量趋势<br>📉 折线图</div>
+          <div class="placeholder" style="padding:24px;height:120px;text-align:center;font-size:12px;">操作类型统计<br>📊 柱状图</div>
+          <div class="placeholder" style="padding:24px;height:120px;text-align:center;font-size:12px;">操作时间线<br>🕐 时间轴</div>
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:13px;color:#666;">✓ 布局整齐，一屏展示全部图表</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="layout-sections" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>分区块布局</h3>
+      <div class="mockup" style="margin-top:12px;">
+        <div style="margin-bottom:16px;">
+          <div style="font-size:13px;color:#666;margin-bottom:8px;font-weight:600;">📚 知识库分析</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="placeholder" style="padding:24px;height:100px;font-size:12px;text-align:center;">知识分类分布图</div>
+            <div class="placeholder" style="padding:24px;height:100px;font-size:12px;text-align:center;">质量分数分布</div>
+          </div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <div style="font-size:13px;color:#666;margin-bottom:8px;font-weight:600;">🔐 API & 访问</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="placeholder" style="padding:24px;height:100px;font-size:12px;text-align:center;">API Key状态</div>
+            <div class="placeholder" style="padding:24px;height:100px;font-size:12px;text-align:center;">请求量趋势</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:13px;color:#666;margin-bottom:8px;font-weight:600;">📋 操作审计</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="placeholder" style="padding:24px;height:100px;font-size:12px;text-align:center;">操作类型统计</div>
+            <div class="placeholder" style="padding:24px;height:100px;font-size:12px;text-align:center;">操作时间线</div>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:13px;color:#666;">✓ 逻辑清晰，按业务分组</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="layout-masonry" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>瀑布流布局</h3>
+      <div class="mockup" style="margin-top:12px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div>
+            <div class="placeholder" style="padding:24px;height:180px;margin-bottom:12px;font-size:12px;text-align:center;">知识分类分布<br>📊 大饼图</div>
+            <div class="placeholder" style="padding:24px;height:140px;font-size:12px;text-align:center;">操作时间线<br>🕐</div>
+          </div>
+          <div>
+            <div class="placeholder" style="padding:24px;height:140px;margin-bottom:12px;font-size:12px;text-align:center;">请求量趋势<br>📉 折线图</div>
+            <div class="placeholder" style="padding:24px;height:180px;font-size:12px;text-align:center;">操作类型统计<br>📊 大柱状图</div>
+          </div>
+          <div>
+            <div class="placeholder" style="padding:24px;height:160px;margin-bottom:12px;font-size:12px;text-align:center;">质量分数分布<br>📈</div>
+            <div class="placeholder" style="padding:24px;height:160px;font-size:12px;text-align:center;">API Key状态<br>🔑</div>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:8px;font-size:13px;color:#666;">✓ 视觉丰富，充分利用空间</p>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:20px;color:#888;font-size:14px;">💡 推荐方案B，按业务逻辑分组，更易于理解</p>

@@ -1,0 +1,70 @@
+<h2>Dashboard核心KPI卡片</h2>
+<p class="subtitle">Dashboard页应展示哪些关键指标？请选择需要展示的项目</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="knowledge-total" onclick="toggleSelect(this)">
+    <div class="letter">📊</div>
+    <div class="content">
+      <h3>知识条目总数</h3>
+      <p>来自 /admin/system/stats: knowledgeEntries.total</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="knowledge-category" onclick="toggleSelect(this)">
+    <div class="letter">📈</div>
+    <div class="content">
+      <h3>知识分类分布</h3>
+      <p>来自 /admin/knowledge/stats: byCategory（饼图/柱状图）</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="quality-score" onclick="toggleSelect(this)">
+    <div class="letter">⭐</div>
+    <div class="content">
+      <h3>平均质量分</h3>
+      <p>来自 /admin/knowledge/stats: avgQualityScore</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="api-total" onclick="toggleSelect(this)">
+    <div class="letter">🔑</div>
+    <div class="content">
+      <h3>API Key总数</h3>
+      <p>来自 /admin/system/stats: apiKeys.total + active + expired</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="request-stats" onclick="toggleSelect(this)">
+    <div class="letter">📉</div>
+    <div class="content">
+      <h3>请求统计趋势</h3>
+      <p>来自 /admin/system/stats: requests.today/thisWeek/thisMonth</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="admin-users" onclick="toggleSelect(this)">
+    <div class="letter">👥</div>
+    <div class="content">
+      <h3>管理员用户数</h3>
+      <p>来自现有用户管理模块的数据</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="audit-recent" onclick="toggleSelect(this)">
+    <div class="letter">📝</div>
+    <div class="content">
+      <h3>最近操作记录</h3>
+      <p>展示最近10条审计日志（快速概览）</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="system-health" onclick="toggleSelect(this)">
+    <div class="letter">💚</div>
+    <div class="content">
+      <h3>系统健康状态</h3>
+      <p>来自 /admin/system/health: 数据库连接状态等</p>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:20px;color:#888;font-size:14px;">💡 推荐全选，Dashboard作为概览页面应信息完整</p>

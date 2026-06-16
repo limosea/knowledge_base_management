@@ -1,0 +1,84 @@
+<h2>图表库选择</h2>
+<p class="subtitle">项目应使用哪个图表库来渲染统计图表？</p>
+
+<div class="options">
+  <div class="option" data-choice="recharts" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Recharts</h3>
+      <p>React生态最流行的图表库，声明式API，TypeScript支持好</p>
+      <div class="pros-cons" style="margin-top:12px;">
+        <div class="pros">
+          <h4>优点</h4>
+          <ul>
+            <li>React原生设计，组件化</li>
+            <li>文档清晰，上手快</li>
+            <li>响应式支持好</li>
+            <li>Bundle size较小</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>缺点</h4>
+          <ul>
+            <li>高级图表类型较少</li>
+            <li>定制复杂样式稍难</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="echarts" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>ECharts (Apache)</h3>
+      <p>百度开源，功能最强大的图表库，支持超多图表类型</p>
+      <div class="pros-cons" style="margin-top:12px;">
+        <div class="pros">
+          <h4>优点</h4>
+          <ul>
+            <li>图表类型丰富</li>
+            <li>中文文档完善</li>
+            <li>视觉效果好</li>
+            <li>大数据量性能优</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>缺点</h4>
+          <ul>
+            <li>Bundle size较大</li>
+            <li>配置项繁多</li>
+            <li>非React原生设计</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="chartjs" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Chart.js + react-chartjs-2</h3>
+      <p>轻量级图表库，社区活跃，简单易用</p>
+      <div class="pros-cons" style="margin-top:12px;">
+        <div class="pros">
+          <h4>优点</h4>
+          <ul>
+            <li>最轻量级</li>
+            <li>社区资源丰富</li>
+            <li>学习曲线平缓</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>缺点</h4>
+          <ul>
+            <li>图表类型较少</li>
+            <li>React封装层较薄</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:20px;color:#888;font-size:14px;">💡 推荐 Recharts，与现有React技术栈最契合</p>

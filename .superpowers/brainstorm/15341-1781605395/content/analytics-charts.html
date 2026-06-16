@@ -1,0 +1,60 @@
+<h2>Analytics页面详细图表</h2>
+<p class="subtitle">Analytics页面应展示哪些深度分析图表？</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="knowledge-by-category" onclick="toggleSelect(this)">
+    <div class="letter">📊</div>
+    <div class="content">
+      <h3>知识分类分布图</h3>
+      <p>饼图或柱状图，展示各分类的知识条目数量占比</p>
+      <p style="color:#666;font-size:13px;">数据源: byCategory</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="quality-distribution" onclick="toggleSelect(this)">
+    <div class="letter">📈</div>
+    <div class="content">
+      <h3>质量分数分布</h3>
+      <p>展示知识条目的质量分数分布情况（平均分、最高分、最低分）</p>
+      <p style="color:#666;font-size:13px;">数据源: avgQualityScore</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="api-key-status" onclick="toggleSelect(this)">
+    <div class="letter">🔑</div>
+    <div class="content">
+      <h3>API Key状态统计</h3>
+      <p>饼图展示活跃/过期/禁用的API Key分布</p>
+      <p style="color:#666;font-size:13px;">数据源: apiKeys.total/active/expired</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="request-trend-chart" onclick="toggleSelect(this)">
+    <div class="letter">📉</div>
+    <div class="content">
+      <h3>请求量趋势图</h3>
+      <p>折线图展示今日/本周/本月的请求量变化趋势</p>
+      <p style="color:#666;font-size:13px;">数据源: requests.today/thisWeek/thisMonth</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="audit-action-stats" onclick="toggleSelect(this)">
+    <div class="letter">📝</div>
+    <div class="content">
+      <h3>操作类型统计</h3>
+      <p>柱状图展示各类操作（登录、创建、更新、删除）的发生频率</p>
+      <p style="color:#666;font-size:13px;">数据源: 审计日志统计</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="audit-timeline" onclick="toggleSelect(this)">
+    <div class="letter">🕐</div>
+    <div class="content">
+      <h3>操作时间线</h3>
+      <p>时间轴展示系统关键操作事件</p>
+      <p style="color:#666;font-size:13px;">数据源: 审计日志</p>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:20px;color:#888;font-size:14px;">💡 推荐全选，Analytics作为深度分析页面应提供全面视角</p>
