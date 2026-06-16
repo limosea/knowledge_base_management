@@ -11,7 +11,7 @@ import type {
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
-    const response = await apiClient.post<LoginResponse>('/auth/login', data, false)
+    const response = await apiClient.post<LoginResponse>('/admin/auth/login', data, false)
     localStorage.setItem('accessToken', response.accessToken)
     localStorage.setItem('refreshToken', response.refreshToken)
     localStorage.setItem('user', JSON.stringify(response.user))
@@ -19,7 +19,7 @@ export const authApi = {
   },
 
   loginWithMfa: async (data: MfaLoginRequest): Promise<LoginResponse> => {
-    const response = await apiClient.post<LoginResponse>('/auth/login/mfa', data, false)
+    const response = await apiClient.post<LoginResponse>('/admin/auth/login/mfa', data, false)
     localStorage.setItem('accessToken', response.accessToken)
     localStorage.setItem('refreshToken', response.refreshToken)
     localStorage.setItem('user', JSON.stringify(response.user))
@@ -28,7 +28,7 @@ export const authApi = {
 
   logout: async (): Promise<void> => {
     try {
-      await apiClient.post('/auth/logout')
+      await apiClient.post('/admin/auth/logout')
     } finally {
       apiClient.clearTokens()
     }
@@ -37,7 +37,7 @@ export const authApi = {
   refresh: async (): Promise<void> => {
     const refreshToken = localStorage.getItem('refreshToken')
     if (!refreshToken) throw new Error('No refresh token')
-    const response = await apiClient.post<LoginResponse>('/auth/refresh', { refreshToken }, false)
+    const response = await apiClient.post<LoginResponse>('/admin/auth/refresh', { refreshToken }, false)
     localStorage.setItem('accessToken', response.accessToken)
     if (response.refreshToken) {
       localStorage.setItem('refreshToken', response.refreshToken)
@@ -45,26 +45,26 @@ export const authApi = {
   },
 
   getProfile: (): Promise<AdminProfile> => {
-    return apiClient.get<AdminProfile>('/auth/profile')
+    return apiClient.get<AdminProfile>('/admin/auth/profile')
   },
 
   updateProfile: (data: UpdateProfileRequest): Promise<AdminProfile> => {
-    return apiClient.put<AdminProfile>('/auth/profile', data)
+    return apiClient.put<AdminProfile>('/admin/auth/profile', data)
   },
 
   changePassword: (data: ChangePasswordRequest): Promise<void> => {
-    return apiClient.post('/auth/change-password', data)
+    return apiClient.post('/admin/auth/change-password', data)
   },
 
   setupMfa: (): Promise<MfaSetupResponse> => {
-    return apiClient.post<MfaSetupResponse>('/auth/mfa/setup')
+    return apiClient.post<MfaSetupResponse>('/admin/auth/mfa/setup')
   },
 
   enableMfa: (code: string): Promise<void> => {
-    return apiClient.post('/auth/mfa/enable', { code })
+    return apiClient.post('/admin/auth/mfa/enable', { code })
   },
 
   disableMfa: (code: string): Promise<void> => {
-    return apiClient.post('/auth/mfa/disable', { code })
+    return apiClient.post('/admin/auth/mfa/disable', { code })
   },
 }
