@@ -26,3 +26,9 @@ dist-ssr
 # Environment
 .env.local
 .env.*.local
+
+# Playwright CLI
+.playwright-cli
+
+# TypeScript build cache
+*.tsbuildinfo
