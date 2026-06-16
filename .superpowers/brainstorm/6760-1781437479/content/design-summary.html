@@ -1,0 +1,109 @@
+<h2>设计总结</h2>
+<p class="subtitle">知识库后台管理系统完整设计方案</p>
+
+<div class="mockup">
+  <div class="mockup-header">技术栈</div>
+  <div class="mockup-body">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+      <div style="background:#f9fafb;padding:12px;border-radius:8px;">
+        <div style="font-weight:600;margin-bottom:4px;">核心框架</div>
+        <div style="font-size:14px;color:#6b7280;">Vite + React 18 + TypeScript</div>
+      </div>
+      <div style="background:#f9fafb;padding:12px;border-radius:8px;">
+        <div style="font-weight:600;margin-bottom:4px;">UI组件</div>
+        <div style="font-size:14px;color:#6b7280;">Shadcn/ui + Tailwind CSS</div>
+      </div>
+      <div style="background:#f9fafb;padding:12px;border-radius:8px;">
+        <div style="font-weight:600;margin-bottom:4px;">状态管理</div>
+        <div style="font-size:14px;color:#6b7280;">TanStack Query + Zustand</div>
+      </div>
+      <div style="background:#f9fafb;padding:12px;border-radius:8px;">
+        <div style="font-weight:600;margin-bottom:4px;">表单验证</div>
+        <div style="font-size:14px;color:#6b7280;">React Hook Form + Zod</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">核心功能模块</h3>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+  <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;">
+    <div style="font-weight:600;margin-bottom:8px;">📚 知识条目管理</div>
+    <ul style="font-size:14px;color:#6b7280;margin:0;padding-left:20px;">
+      <li>列表分页、筛选、搜索</li>
+      <li>详情查看、编辑、删除</li>
+      <li>版本历史查看与恢复</li>
+      <li>批量删除操作</li>
+    </ul>
+  </div>
+  <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;">
+    <div style="font-weight:600;margin-bottom:8px;">🔑 API Key管理</div>
+    <ul style="font-size:14px;color:#6b7280;margin:0;padding-left:20px;">
+      <li>创建、查看、编辑Key</li>
+      <li>权限设置（read/write/admin）</li>
+      <li>速率限制配置</li>
+      <li>重新生成与禁用</li>
+    </ul>
+  </div>
+  <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;">
+    <div style="font-weight:600;margin-bottom:8px;">📈 系统监控</div>
+    <ul style="font-size:14px;color:#6b7280;margin:0;padding-left:20px;">
+      <li>统计数据概览</li>
+      <li>分类分布可视化</li>
+      <li>健康状态检查</li>
+      <li>请求统计趋势</li>
+    </ul>
+  </div>
+  <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;">
+    <div style="font-weight:600;margin-bottom:8px;">🔐 认证与安全</div>
+    <ul style="font-size:14px;color:#6b7280;margin:0;padding-left:20px;">
+      <li>JWT认证 + 自动刷新</li>
+      <li>MFA两步验证</li>
+      <li>密码修改</li>
+      <li>个人设置</li>
+    </ul>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">UI/UX特性</h3>
+<div class="options" style="display:block;">
+  <div class="option" style="cursor:default;border-bottom:1px solid #e5e7eb;">
+    <div class="content">
+      <h4>三套主题方案</h4>
+      <p>浅色模式、深色模式、护眼模式（棕/茶色系），一键切换，持久化存储</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;border-bottom:1px solid #e5e7eb;">
+    <div class="content">
+      <h4>中英双语支持</h4>
+      <p>i18n国际化，语言文件独立管理，支持动态切换</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;border-bottom:1px solid #e5e7eb;">
+    <div class="content">
+      <h4>响应式布局</h4>
+      <p>适配桌面端，侧边栏可折叠，表格自适应</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;">
+    <div class="content">
+      <h4>优雅错误处理</h4>
+      <p>多层错误捕获、友好提示、自动重试、日志记录</p>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">性能优化</h3>
+<div style="background:#f0fdf4;border:1px solid #86efac;padding:16px;border-radius:8px;">
+  <ul style="font-size:14px;margin:0;padding-left:20px;line-height:1.8;">
+    <li><strong>分页加载：</strong>后端分页，前端缓存，避免一次加载大量数据</li>
+    <li><strong>请求缓存：</strong>TanStack Query自动缓存，5分钟staleTime，减少重复请求</li>
+    <li><strong>按需加载：</strong>路由懒加载，Shadcn/ui组件按需引入</li>
+    <li><strong>构建优化：</strong>Vite构建，代码分割，Tree Shaking</li>
+  </ul>
+</div>
+
+<div style="margin-top:24px;padding:16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;text-align:center;">
+  <div style="font-weight:600;color:#1e40af;margin-bottom:8px;">设计完成</div>
+  <div style="font-size:14px;color:#1e3a8a;">所有模块设计已完成，准备生成详细设计文档</div>
+</div>

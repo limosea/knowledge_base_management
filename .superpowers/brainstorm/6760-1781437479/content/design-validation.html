@@ -1,0 +1,203 @@
+<h2>表单验证规则</h2>
+<p class="subtitle">使用 Zod + React Hook Form 实现类型安全验证</p>
+
+<div class="mockup">
+  <div class="mockup-header">知识条目表单验证</div>
+  <div class="mockup-body">
+    <div style="background:white;padding:20px;border-radius:8px;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr style="background:#f9fafb;text-align:left;">
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">字段</th>
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">必填</th>
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">验证规则</th>
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">错误提示</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;">标题</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;"><span style="color:#ef4444;">*</span></td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">1-500字符，去除首尾空格</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">标题不能为空，最多500字符</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;">内容</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;"><span style="color:#ef4444;">*</span></td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">1-50000字符</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">内容不能为空，最多50000字符</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;">摘要</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">-</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">最多1000字符</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">摘要最多1000字符</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;">分类</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">-</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">最多100字符</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">分类名最多100字符</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;">标签</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">-</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">数组，每个标签最多50字符，最多10个标签</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">每个标签最多50字符，最多10个</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;">难度等级</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">-</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">整数 1-5</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">难度等级必须为1-5</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:16px;">
+  <div class="mockup-header">API Key 表单验证</div>
+  <div class="mockup-body">
+    <div style="background:white;padding:20px;border-radius:8px;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr style="background:#f9fafb;text-align:left;">
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">字段</th>
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">必填</th>
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">验证规则</th>
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">错误提示</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;">名称</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;"><span style="color:#ef4444;">*</span></td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">至少1字符，去除首尾空格</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">名称不能为空</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;">权限</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">-</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">至少选择一项，数组 ["read"|"write"|"admin"]</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">至少选择一项权限</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;">速率限制</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">-</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">整数 1-1000，默认100</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">速率限制必须在1-1000之间</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;">过期时间</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">-</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">ISO 8601日期，必须晚于当前时间</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">过期时间必须晚于当前时间</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:16px;">
+  <div class="mockup-header">登录与密码验证</div>
+  <div class="mockup-body">
+    <div style="background:white;padding:20px;border-radius:8px;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr style="background:#f9fafb;text-align:left;">
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">表单</th>
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">字段</th>
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">验证规则</th>
+            <th style="padding:12px;border-bottom:1px solid #e5e7eb;">错误提示</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;" rowspan="2">登录</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">用户名</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">至少1字符</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">请输入用户名</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">密码</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">至少1字符</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">请输入密码</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;" rowspan="3">修改密码</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">当前密码</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">至少1字符</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">请输入当前密码</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">新密码</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">至少8字符，包含大小写字母、数字和特殊字符</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">密码至少8位，需包含大小写字母、数字和特殊字符</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">确认密码</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">与新密码一致</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">两次密码输入不一致</td>
+          </tr>
+          <tr>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;font-weight:500;">MFA</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">验证码</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;">6-8位数字</td>
+            <td style="padding:12px;border-bottom:1px solid #e5e7eb;color:#ef4444;">请输入6-8位验证码</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">Zod Schema 示例</h3>
+<div style="background:#1e293b;color:#e2e8f0;padding:20px;border-radius:8px;font-family:monospace;font-size:13px;line-height:1.6;overflow-x:auto;">
+<pre style="margin:0;">
+// 知识条目表单验证
+const knowledgeSchema = z.object({
+  title: z.string()
+    .min(1, "标题不能为空")
+    .max(500, "标题最多500字符")
+    .transform(val => val.trim()),
+  content: z.string()
+    .min(1, "内容不能为空")
+    .max(50000, "内容最多50000字符"),
+  summary: z.string().max(1000, "摘要最多1000字符").optional(),
+  category: z.string().max(100, "分类最多100字符").optional(),
+  tags: z.array(z.string().max(50)).max(10, "最多10个标签").optional(),
+  difficulty_level: z.number().int().min(1).max(5).optional(),
+});
+
+// API Key 表单验证
+const apiKeySchema = z.object({
+  name: z.string().min(1, "名称不能为空").transform(val => val.trim()),
+  permissions: z.array(z.enum(['read', 'write', 'admin']))
+    .min(1, "至少选择一项权限")
+    .default(['read']),
+  rateLimit: z.number().int().min(1).max(1000).default(100),
+  expiresAt: z.string().datetime().refine(
+    (val) => new Date(val) > new Date(),
+    "过期时间必须晚于当前时间"
+  ).optional(),
+});
+
+// 修改密码验证
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, "请输入当前密码"),
+  newPassword: z.string()
+    .min(8, "密码至少8位")
+    .regex(/[a-z]/, "需包含小写字母")
+    .regex(/[A-Z]/, "需包含大写字母")
+    .regex(/[0-9]/, "需包含数字")
+    .regex(/[!@#$%^&*]/, "需包含特殊字符"),
+  confirmPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "两次密码输入不一致",
+  path: ["confirmPassword"],
+});
+</pre>
+</div>

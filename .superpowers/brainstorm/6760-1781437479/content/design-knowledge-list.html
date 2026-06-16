@@ -1,0 +1,90 @@
+<h2>核心功能：知识条目管理</h2>
+<p class="subtitle">列表页与详情页设计</p>
+
+<div class="mockup">
+  <div class="mockup-header">知识条目列表页</div>
+  <div class="mockup-body">
+    <div style="background:white;border-radius:8px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:18px;font-weight:600;">知识条目管理</div>
+        <div style="display:flex;gap:8px;">
+          <div style="padding:6px 12px;background:#f3f4f6;border-radius:6px;font-size:14px;">🔍 搜索</div>
+          <div style="padding:6px 12px;background:#f3f4f6;border-radius:6px;font-size:14px;">📁 分类筛选</div>
+          <div style="padding:6px 12px;background:#f3f4f6;border-radius:6px;font-size:14px;">🏷️ 标签筛选</div>
+          <div style="padding:6px 12px;background:#3b82f6;color:white;border-radius:6px;font-size:14px;">+ 新建</div>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr style="background:#f9fafb;text-align:left;">
+            <th style="padding:10px;border-bottom:1px solid #e5e7eb;width:40px;"><input type="checkbox" disabled></th>
+            <th style="padding:10px;border-bottom:1px solid #e5e7eb;">标题</th>
+            <th style="padding:10px;border-bottom:1px solid #e5e7eb;">分类</th>
+            <th style="padding:10px;border-bottom:1px solid #e5e7eb;">标签</th>
+            <th style="padding:10px;border-bottom:1px solid #e5e7eb;">质量分</th>
+            <th style="padding:10px;border-bottom:1px solid #e5e7eb;">创建时间</th>
+            <th style="padding:10px;border-bottom:1px solid #e5e7eb;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #f3f4f6;">
+            <td style="padding:10px;"><input type="checkbox" disabled></td>
+            <td style="padding:10px;font-weight:500;">React Hooks 最佳实践</td>
+            <td style="padding:10px;"><span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;">前端</span></td>
+            <td style="padding:10px;"><span style="background:#f3f4f6;padding:2px 6px;border-radius:4px;margin-right:4px;">React</span><span style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">Hooks</span></td>
+            <td style="padding:10px;">⭐ 4.8</td>
+            <td style="padding:10px;color:#6b7280;">2024-01-15</td>
+            <td style="padding:10px;"><span style="color:#3b82f6;margin-right:8px;">编辑</span><span style="color:#ef4444;">删除</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid #f3f4f6;">
+            <td style="padding:10px;"><input type="checkbox" disabled></td>
+            <td style="padding:10px;font-weight:500;">TypeScript 类型体操</td>
+            <td style="padding:10px;"><span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;">前端</span></td>
+            <td style="padding:10px;"><span style="background:#f3f4f6;padding:2px 6px;border-radius:4px;margin-right:4px;">TS</span></td>
+            <td style="padding:10px;">⭐ 4.5</td>
+            <td style="padding:10px;color:#6b7280;">2024-01-14</td>
+            <td style="padding:10px;"><span style="color:#3b82f6;margin-right:8px;">编辑</span><span style="color:#ef4444;">删除</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:14px;color:#6b7280;">
+        <div>共 156 条记录</div>
+        <div style="display:flex;gap:4px;">
+          <div style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;">上一页</div>
+          <div style="padding:6px 12px;background:#3b82f6;color:white;border-radius:6px;">1</div>
+          <div style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;">2</div>
+          <div style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;">3</div>
+          <div style="padding:6px 12px;border:1px solid #e5e7eb;border-radius:6px;">下一页</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">列表页功能点</h3>
+<div class="options" data-multiselect>
+  <div class="option" style="cursor:default;">
+    <div class="content">
+      <h4>筛选与搜索</h4>
+      <p>支持标题/内容搜索、分类筛选、标签多选、语言筛选</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;">
+    <div class="content">
+      <h4>分页</h4>
+      <p>后端分页，支持调整每页条数（20/50/100）</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;">
+    <div class="content">
+      <h4>批量操作</h4>
+      <p>多选后支持批量删除（调用 batch-delete 接口）</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;">
+    <div class="content">
+      <h4>表格排序</h4>
+      <p>按质量分、创建时间、更新时间排序</p>
+    </div>
+  </div>
+</div>

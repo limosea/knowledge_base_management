@@ -1,0 +1,54 @@
+<h2>系统架构设计</h2>
+<p class="subtitle">分层架构，职责清晰</p>
+
+<div class="mockup">
+  <div class="mockup-header">架构层次</div>
+  <div class="mockup-body">
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="background:#3b82f6;color:white;padding:16px;border-radius:8px;text-align:center;">
+        <strong>表现层 (Presentation)</strong><br>
+        <small>React Components | Shadcn/ui | Tailwind CSS</small>
+      </div>
+      <div style="display:#10b981;background:#10b981;color:white;padding:16px;border-radius:8px;text-align:center;">
+        <strong>状态层 (State)</strong><br>
+        <small>TanStack Query (服务端状态) | Zustand (客户端状态)</small>
+      </div>
+      <div style="background:#f59e0b;color:white;padding:16px;border-radius:8px;text-align:center;">
+        <strong>服务层 (Service)</strong><br>
+        <small>API Client | Auth Service | Theme Service | i18n Service</small>
+      </div>
+      <div style="background:#6b7280;color:white;padding:16px;border-radius:8px;text-align:center;">
+        <strong>后端 API</strong><br>
+        <small>http://limousea.asia:3000/api/v1</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">技术栈详情</h3>
+<div class="options">
+  <div class="option" style="cursor:default;">
+    <div class="content">
+      <h4>核心框架</h4>
+      <p>Vite + React 18 + TypeScript</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;">
+    <div class="content">
+      <h4>UI组件</h4>
+      <p>Shadcn/ui (基于Radix UI) + Tailwind CSS</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;">
+    <div class="content">
+      <h4>状态管理</h4>
+      <p>TanStack Query v5 + Zustand</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;">
+    <div class="content">
+      <h4>路由 & 工具</h4>
+      <p>React Router v6 | React Hook Form | Zod | Day.js</p>
+    </div>
+  </div>
+</div>

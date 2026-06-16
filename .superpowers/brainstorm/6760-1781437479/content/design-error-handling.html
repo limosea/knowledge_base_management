@@ -1,0 +1,237 @@
+<h2>错误处理策略</h2>
+<p class="subtitle">多层错误处理，优雅降级</p>
+
+<div class="mockup">
+  <div class="mockup-header">错误处理架构</div>
+  <div class="mockup-body">
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="background:#fef2f2;border:1px solid #fecaca;padding:16px;border-radius:8px;">
+        <div style="font-weight:600;color:#991b1b;margin-bottom:8px;">🔴 全局错误边界</div>
+        <div style="font-size:14px;color:#7f1d1d;">捕获React组件渲染错误，显示友好错误页面，提供重试按钮</div>
+      </div>
+      <div style="background:#fef3c7;border:1px solid #fde68a;padding:16px;border-radius:8px;">
+        <div style="font-weight:600;color:#92400e;margin-bottom:8px;">🟡 API错误拦截器</div>
+        <div style="font-size:14px;color:#78350f;">Axios响应拦截器统一处理HTTP错误，自动刷新Token，重定向登录</div>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:16px;border-radius:8px;">
+        <div style="font-weight:600;color:#1e40af;margin-bottom:8px;">🔵 查询错误处理</div>
+        <div style="font-size:14px;color:#1e3a8a;">TanStack Query onError回调，显示Toast提示，记录错误日志</div>
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #86efac;padding:16px;border-radius:8px;">
+        <div style="font-weight:600;color:#166534;margin-bottom:8px;">🟢 表单验证错误</div>
+        <div style="font-size:14px;color:#14532d;">React Hook Form + Zod实时验证，字段下方显示错误提示</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">HTTP错误码处理</h3>
+<div style="background:white;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <thead>
+      <tr style="background:#f9fafb;text-align:left;">
+        <th style="padding:12px;border-bottom:1px solid #e5e7eb;">状态码</th>
+        <th style="padding:12px;border-bottom:1px solid #e5e7eb;">含义</th>
+        <th style="padding:12px;border-bottom:1px solid #e5e7eb;">处理策略</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;"><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">400</code></td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">请求参数错误</td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">显示后端返回的具体错误信息，高亮表单错误字段</td>
+      </tr>
+      <tr>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;"><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">401</code></td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">未授权/Token过期</td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">尝试刷新Token，失败则跳转登录页，清除本地认证信息</td>
+      </tr>
+      <tr>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;"><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">403</code></td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">权限不足</td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">显示"无权限访问"提示，提供返回首页按钮</td>
+      </tr>
+      <tr>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;"><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">404</code></td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">资源不存在</td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">显示"资源不存在"提示，提供返回列表按钮</td>
+      </tr>
+      <tr>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;"><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">500</code></td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">服务器内部错误</td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">显示"服务器繁忙，请稍后重试"，记录错误日志</td>
+      </tr>
+      <tr>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;"><code style="background:#f3f4f6;padding:2px 6px;border-radius:4px;">网络错误</code></td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">无网络/超时</td>
+        <td style="padding:12px;border-bottom:1px solid #e5e7eb;">显示"网络连接失败"，提供重试按钮，TanStack Query自动重试3次</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h3 style="margin-top:24px;">用户反馈方式</h3>
+<div class="options" style="display:block;">
+  <div class="option" style="cursor:default;border-bottom:1px solid #e5e7eb;">
+    <div class="content">
+      <h4>Toast通知</h4>
+      <p>使用sonner库，轻量级Toast。成功操作显示绿色，错误显示红色，警告显示黄色</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;border-bottom:1px solid #e5e7eb;">
+    <div class="content">
+      <h4>表单内联错误</h4>
+      <p>字段下方显示红色错误文字，实时验证，失焦时触发，提交时高亮所有错误字段</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;border-bottom:1px solid #e5e7eb;">
+    <div class="content">
+      <h4>全屏错误页面</h4>
+      <p>404、500等严重错误显示友好错误页面，包含错误图标、提示文字、操作按钮</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;">
+    <div class="content">
+      <h4>确认对话框</h4>
+      <p>删除、重新生成Key等危险操作，弹出确认对话框，说明操作后果</p>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">Axios拦截器实现</h3>
+<div style="background:#1e293b;color:#e2e8f0;padding:20px;border-radius:8px;font-family:monospace;font-size:13px;line-height:1.6;overflow-x:auto;">
+<pre style="margin:0;">
+// api/client.ts
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  timeout: 30000,
+});
+
+// 请求拦截器：自动添加Token
+apiClient.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// 响应拦截器：统一错误处理
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // 401: Token过期，尝试刷新
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const { accessToken } = await refreshTokens();
+        useAuthStore.getState().setAccessToken(accessToken);
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return apiClient(originalRequest);
+      } catch {
+        // 刷新失败，跳转登录
+        useAuthStore.getState().logout();
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+    }
+    
+    // 其他错误，显示Toast
+    const message = error.response?.data?.error?.message 
+      || getHttpErrorMessage(error.response?.status)
+      || '网络连接失败，请稍后重试';
+    toast.error(message);
+    
+    return Promise.reject(error);
+  }
+);
+
+function getHttpErrorMessage(status: number): string {
+  const messages: Record&lt;number, string&gt; = {
+    400: '请求参数错误',
+    403: '无权限访问',
+    404: '资源不存在',
+    500: '服务器内部错误',
+  };
+  return messages[status] || '请求失败';
+}
+</pre>
+</div>
+
+<h3 style="margin-top:24px;">TanStack Query错误配置</h3>
+<div style="background:#1e293b;color:#e2e8f0;padding:20px;border-radius:8px;font-family:monospace;font-size:13px;line-height:1.6;overflow-x:auto;">
+<pre style="margin:0;">
+// 全局默认配置
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,                    // 失败重试3次
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
+      staleTime: 5 * 60 * 1000,   // 5分钟内数据视为新鲜
+      gcTime: 10 * 60 * 1000,     // 10分钟后清理缓存
+      refetchOnWindowFocus: false, // 窗口聚焦不自动刷新
+    },
+    mutations: {
+      retry: 1,                    // 变更操作只重试1次
+      onError: (error) => {
+        // 全局mutation错误处理
+        console.error('Mutation error:', error);
+      },
+    },
+  },
+});
+
+// 使用示例
+const { data, error, isLoading } = useQuery({
+  queryKey: ['knowledge', id],
+  queryFn: () => apiClient.get(`/admin/knowledge/${id}`),
+  onError: (error) => {
+    // 可选：针对此查询的特殊错误处理
+    if (error.response?.status === 404) {
+      navigate('/knowledge');
+    }
+  },
+});
+</pre>
+</div>
+
+<h3 style="margin-top:24px;">全局错误边界组件</h3>
+<div style="background:#1e293b;color:#e2e8f0;padding:20px;border-radius:8px;font-family:monospace;font-size:13px;line-height:1.6;overflow-x:auto;">
+<pre style="margin:0;">
+// components/ErrorBoundary.tsx
+class ErrorBoundary extends Component&lt;Props, State&gt; {
+  state = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // 上报错误到监控服务
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        &lt;div className="min-h-screen flex items-center justify-center"&gt;
+          &lt;div className="text-center"&gt;
+            &lt;h1 className="text-4xl font-bold mb-4"&gt;出错了&lt;/h1&gt;
+            &lt;p className="text-muted-foreground mb-6"&gt;
+              页面遇到问题，请刷新重试
+            &lt;/p&gt;
+            &lt;Button onClick={() =&gt; window.location.reload()}&gt;
+              刷新页面
+            &lt;/Button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      );
+    }
+
+    return this.props.children;
+  }
+}
+</pre>
+</div>

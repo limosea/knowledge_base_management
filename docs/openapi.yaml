@@ -1,0 +1,1926 @@
+openapi: 3.0.3
+info:
+  title: Knowledge Base API
+  description: |
+    知识库管理系统API文档
+    
+    ## 认证方式
+    
+    ### 业务API认证
+    使用API Key进行认证，在请求头中添加：
+    ```
+    Authorization: Bearer kb_live_xxxx
+    ```
+    
+    ### 管理后台认证
+    使用JWT Token进行认证，先通过登录接口获取token，然后在请求头中添加：
+    ```
+    Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+    ```
+    
+    ## 权限说明
+    - `read`: 读取权限
+    - `write`: 写入权限
+    - `admin`: 管理权限
+    - `super_admin`: 超级管理员权限
+    
+  version: 1.0.0
+  contact:
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: 本地开发环境
+  - url: http://limousea.asia:3000/api/v1
+    description: 生产环境
+
+tags:
+  - name: Health
+    description: 健康检查接口
+  - name: Knowledge
+    description: 知识条目业务接口
+  - name: Admin Auth
+    description: 管理员认证接口
+  - name: Admin API Keys
+    description: API Key管理接口
+  - name: Admin Knowledge
+    description: 知识条目管理接口
+  - name: Admin Users
+    description: 管理员用户管理接口
+  - name: Admin Audit Logs
+    description: 审计日志接口
+  - name: Admin System
+    description: 系统监控接口
+
+paths:
+  # ==================== 健康检查 ====================
+  /health:
+    get:
+      tags:
+        - Health
+      summary: 存活探针（Liveness）
+      description: |
+        轻量级存活探针，**无需认证**。仅供容器编排（Dockerfile HEALTHCHECK、
+        compose healthcheck、nginx）和负载均衡轮询使用。
+
+        该端点不做任何数据库或依赖探测，也不泄露内部状态（无延迟、无版本、
+        无后端类型），仅返回固定的 `{status: "ok"}` 表示进程存活并可接受请求。
+
+        深度就绪检查（DB 连通性等）请使用受保护的管理端接口
+        `/admin/system/health`。
+
+        路径同时挂载在 `/health`（无前缀，供探针调用）和 `/api/v1/health`
+        （Nest 管理路由），两者行为一致。
+      security: []
+      responses:
+        '200':
+          description: 进程存活
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+
+  # ==================== 知识条目业务API ====================
+  /knowledge:
+    get:
+      tags:
+        - Knowledge
+      summary: 查询知识条目列表
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: language
+          in: query
+          schema:
+            type: string
+        - name: tags
+          in: query
+          description: 逗号分隔的标签列表
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    post:
+      tags:
+        - Knowledge
+      summary: 创建知识条目
+      description: 需要 write 权限
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEntryRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateEntryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /knowledge/stats:
+    get:
+      tags:
+        - Knowledge
+      summary: 获取知识库统计信息
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /knowledge/{id}:
+    get:
+      tags:
+        - Knowledge
+      summary: 获取知识条目详情
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      tags:
+        - Knowledge
+      summary: 更新知识条目
+      description: |
+        需要 write 权限，且调用方必须是该条目的所有者（`created_by` 与
+        当前 API Key 一致）。只有创建者可修改自己创建的条目。
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEntryRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    delete:
+      tags:
+        - Knowledge
+      summary: 删除知识条目
+      description: |
+        需要 write 权限，且调用方必须是该条目的所有者（`created_by` 与
+        当前 API Key 一致）。执行软删除。
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      responses:
+        '204':
+          description: 删除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /knowledge/{id}/versions:
+    get:
+      tags:
+        - Knowledge
+      summary: 获取知识条目版本历史
+      description: 调用方必须是该条目的所有者。
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KnowledgeVersion'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /knowledge/{id}/versions/{version}/restore:
+    post:
+      tags:
+        - Knowledge
+      summary: 恢复到指定版本
+      description: 需要 write 权限，且调用方必须是该条目的所有者。
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 恢复成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== 管理员认证 ====================
+  /admin/auth/login:
+    post:
+      tags:
+        - Admin Auth
+      summary: 管理员登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '201':
+          description: 登录成功（MFA启用）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaRequiredResponse'
+        '401':
+          description: 凭证无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/auth/login/mfa:
+    post:
+      tags:
+        - Admin Auth
+      summary: MFA验证登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MfaLoginRequest'
+      responses:
+        '200':
+          description: 验证成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: MFA验证失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/auth/logout:
+    post:
+      tags:
+        - Admin Auth
+      summary: 管理员登出
+      security:
+        - AdminAuth: []
+      responses:
+        '200':
+          description: 登出成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/auth/refresh:
+    post:
+      tags:
+        - Admin Auth
+      summary: 刷新Token
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: 刷新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/auth/profile:
+    get:
+      tags:
+        - Admin Auth
+      summary: 获取个人信息
+      security:
+        - AdminAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    put:
+      tags:
+        - Admin Auth
+      summary: 更新个人信息
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/auth/password:
+    put:
+      tags:
+        - Admin Auth
+      summary: 修改密码
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: 修改成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password changed successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/auth/mfa/setup:
+    post:
+      tags:
+        - Admin Auth
+      summary: 设置MFA
+      description: 生成MFA密钥和二维码URL
+      security:
+        - AdminAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MfaSetupResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/auth/mfa/enable:
+    post:
+      tags:
+        - Admin Auth
+      summary: 启用MFA
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  description: MFA验证码
+      responses:
+        '200':
+          description: 启用成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: MFA enabled successfully
+        '400':
+          description: 验证码无效
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Invalid MFA code
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/auth/mfa/disable:
+    post:
+      tags:
+        - Admin Auth
+      summary: 禁用MFA
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  description: MFA验证码
+      responses:
+        '200':
+          description: 禁用成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: MFA disabled successfully
+        '400':
+          description: MFA未启用
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: MFA is not enabled
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ==================== API Key管理 ====================
+  /admin/api-keys:
+    get:
+      tags:
+        - Admin API Keys
+      summary: 获取API Key列表
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    post:
+      tags:
+        - Admin API Keys
+      summary: 创建API Key
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApiKeyRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/api-keys/{id}:
+    get:
+      tags:
+        - Admin API Keys
+      summary: 获取API Key详情
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApiKeyId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      tags:
+        - Admin API Keys
+      summary: 更新API Key
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApiKeyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateApiKeyRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    delete:
+      tags:
+        - Admin API Keys
+      summary: 删除API Key
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApiKeyId'
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: API Key deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/api-keys/{id}/regenerate:
+    post:
+      tags:
+        - Admin API Keys
+      summary: 重新生成API Key
+      description: 废弃旧Key并生成新Key
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApiKeyId'
+      responses:
+        '200':
+          description: 重新生成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== 知识条目管理 ====================
+  /admin/knowledge:
+    get:
+      tags:
+        - Admin Knowledge
+      summary: 管理端查询知识条目列表
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: language
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: 搜索标题或内容
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminKnowledgeListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/knowledge/stats:
+    get:
+      tags:
+        - Admin Knowledge
+      summary: 知识库统计信息
+      security:
+        - AdminAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminKnowledgeStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/knowledge/batch-delete:
+    post:
+      tags:
+        - Admin Knowledge
+      summary: 批量删除知识条目
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ids
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Knowledge entries deleted
+                  deleted:
+                    type: integer
+                    description: 实际删除的条目数（不含已删除的）
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/knowledge/{id}:
+    get:
+      tags:
+        - Admin Knowledge
+      summary: 获取知识条目详情
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      tags:
+        - Admin Knowledge
+      summary: 更新知识条目
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEntryRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    delete:
+      tags:
+        - Admin Knowledge
+      summary: 删除知识条目
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Knowledge entry deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== 管理员用户管理 ====================
+  /admin/users:
+    get:
+      tags:
+        - Admin Users
+      summary: 获取管理员用户列表
+      description: 需要 super_admin 权限
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags:
+        - Admin Users
+      summary: 创建管理员用户
+      description: 需要 super_admin 权限。新用户首次登录需修改密码。
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAdminUserRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: 用户名已存在
+
+  /admin/users/{id}:
+    get:
+      tags:
+        - Admin Users
+      summary: 获取管理员用户详情
+      description: 需要 super_admin 权限
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AdminUserId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Admin Users
+      summary: 更新管理员用户
+      description: |
+        需要 super_admin 权限。系统会保护最后一个活跃的 super_admin：尝试
+        降级或停用最后一个活跃 super_admin 将返回 400。
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AdminUserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAdminUserRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Admin Users
+      summary: 删除管理员用户
+      description: |
+        需要 super_admin 权限。不允许删除自己，也不允许删除最后一个
+        super_admin。
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AdminUserId'
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Admin user deleted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/users/{id}/reset-password:
+    post:
+      tags:
+        - Admin Users
+      summary: 重置管理员密码
+      description: |
+        需要 super_admin 权限。生成一个新的临时密码并强制该用户下次登录时
+        修改。临时密码**仅在此响应中返回一次**，请通过安全渠道交给目标用户，
+        且不在任何地方持久化明文。
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AdminUserId'
+      responses:
+        '200':
+          description: 重置成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  username:
+                    type: string
+                  temporaryPassword:
+                    type: string
+                    description: 一次性临时密码，请立即安全转交
+                  requirePasswordChange:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== 审计日志 ====================
+  /admin/audit-logs:
+    get:
+      tags:
+        - Admin Audit Logs
+      summary: 查询审计日志
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/audit-logs/export:
+    get:
+      tags:
+        - Admin Audit Logs
+      summary: 导出审计日志
+      description: |
+        以 NDJSON（每行一个 JSON 对象）流式下载匹配的审计日志。响应通过
+        `Transfer-Encoding: chunked` 逐批写出，内存占用恒定，不会因日志量过大
+        导致 OOM，也没有条目上限截断。
+
+        建议客户端按行解析。`Content-Disposition` 头会提示文件名
+        `audit-logs.ndjson`。
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: NDJSON 流（每行一个 AuditLog 对象）
+          content:
+            application/x-ndjson:
+              schema:
+                type: string
+                description: |
+                  多行 NDJSON，每行为一个完整的 AuditLog JSON 对象。
+                  示例首行：
+                  ```
+                  {"id":"...","action":"LOGIN","createdAt":"..."}
+                  ```
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/audit-logs/{id}:
+    get:
+      tags:
+        - Admin Audit Logs
+      summary: 获取审计日志详情
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLog'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== 系统监控 ====================
+  /admin/system/stats:
+    get:
+      tags:
+        - Admin System
+      summary: 系统统计概览
+      security:
+        - AdminAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/system/health:
+    get:
+      tags:
+        - Admin System
+      summary: 系统健康检查
+      security:
+        - AdminAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok, degraded]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                            enum: [ok, error]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: API Key认证，格式为 kb_live_xxxx
+    
+    AdminAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 管理员JWT Token认证
+
+  parameters:
+    EntryId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: 知识条目ID
+    
+    ApiKeyId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: API Key ID
+
+    AdminUserId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: 管理员用户ID
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Unauthorized:
+      description: 未授权
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    Forbidden:
+      description: 权限不足
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # ========== 通用响应 ==========
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+    
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+
+    # ========== 认证相关 ==========
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+    
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: 过期时间（秒）
+        requirePasswordChange:
+          type: boolean
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            username:
+              type: string
+            role:
+              type: string
+              enum: [admin, super_admin]
+            email:
+              type: string
+    
+    MfaRequiredResponse:
+      type: object
+      properties:
+        mfaRequired:
+          type: boolean
+          example: true
+        tempToken:
+          type: string
+    
+    MfaLoginRequest:
+      type: object
+      required:
+        - tempToken
+        - mfaCode
+      properties:
+        tempToken:
+          type: string
+        mfaCode:
+          type: string
+          minLength: 6
+          maxLength: 8
+    
+    AdminProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, super_admin]
+        mfaEnabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    
+    UpdateProfileRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+    
+    ChangePasswordRequest:
+      type: object
+      required:
+        - currentPassword
+        - newPassword
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 8
+          description: 必须包含大小写字母、数字和特殊字符
+    
+    MfaSetupResponse:
+      type: object
+      properties:
+        secret:
+          type: string
+        qrCodeUrl:
+          type: string
+        backupCodes:
+          type: array
+          items:
+            type: string
+
+    # ========== API Key相关 ==========
+    CreateApiKeyRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [read, write, admin]
+          default: [read]
+        rateLimit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+        expiresAt:
+          type: string
+          format: date-time
+    
+    UpdateApiKeyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [read, write, admin]
+        rateLimit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        isActive:
+          type: boolean
+    
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+          description: 完整API Key（仅创建时返回）
+        keyPrefix:
+          type: string
+          description: Key前缀，用于识别
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        rateLimit:
+          type: integer
+        isActive:
+          type: boolean
+        lastUsedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    
+    ApiKeyListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginationMeta'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ApiKey'
+
+    # ========== 知识条目相关 ==========
+    CreateEntryRequest:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+          maxLength: 500
+        content:
+          type: string
+          maxLength: 50000
+        summary:
+          type: string
+          maxLength: 1000
+        category:
+          type: string
+          maxLength: 100
+        tags:
+          type: array
+          items:
+            type: string
+        language:
+          type: string
+          maxLength: 50
+        framework:
+          type: string
+          maxLength: 100
+        difficulty_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        structured_data:
+          type: object
+
+    UpdateEntryRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 500
+        content:
+          type: string
+          maxLength: 50000
+        summary:
+          type: string
+          maxLength: 1000
+        category:
+          type: string
+          maxLength: 100
+        tags:
+          type: array
+          items:
+            type: string
+        language:
+          type: string
+          maxLength: 50
+        framework:
+          type: string
+          maxLength: 100
+        difficulty_level:
+          type: integer
+          minimum: 1
+          maximum: 5
+        structured_data:
+          type: object
+        change_summary:
+          type: string
+          description: 本次修改的摘要说明
+    
+    CreateEntryResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        entry_version:
+          type: integer
+        embedding_status:
+          type: string
+          enum: [processing, completed, failed]
+        created_at:
+          type: string
+          format: date-time
+    
+    KnowledgeEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        content:
+          type: string
+        summary:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        language:
+          type: string
+        framework:
+          type: string
+        difficultyLevel:
+          type: integer
+        qualityScore:
+          type: number
+        structuredData:
+          type: object
+        createdBy:
+          type: string
+        entryVersion:
+          type: integer
+        isLatest:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    
+    KnowledgeListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginationMeta'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/KnowledgeEntry'
+    
+    KnowledgeVersion:
+      type: object
+      properties:
+        version:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        changeSummary:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+    
+    KnowledgeStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        byCategory:
+          type: object
+          additionalProperties:
+            type: integer
+        avgQualityScore:
+          type: number
+    
+    AdminKnowledgeListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginationMeta'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                  category:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  qualityScore:
+                    type: number
+                  createdAt:
+                    type: string
+                    format: date-time
+                  createdBy:
+                    type: string
+    
+    AdminKnowledgeStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        byCategory:
+          type: object
+          additionalProperties:
+            type: integer
+        avgQualityScore:
+          type: number
+
+    # ========== 管理员用户相关 ==========
+    AdminUserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, super_admin]
+        isActive:
+          type: boolean
+        mfaEnabled:
+          type: boolean
+        lastLoginAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    AdminUserListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginationMeta'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminUserSummary'
+
+    CreateAdminUserRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 8
+          description: 必须包含大小写字母、数字和特殊字符
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, super_admin]
+          default: admin
+
+    UpdateAdminUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, super_admin]
+        isActive:
+          type: boolean
+
+    # ========== 审计日志相关 ==========
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        resourceType:
+          type: string
+        resourceId:
+          type: string
+        details:
+          type: object
+        ipAddress:
+          type: string
+        userAgent:
+          type: string
+        apiKeyId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+    
+    AuditLogListResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginationMeta'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuditLog'
+
+    # ========== 系统统计相关 ==========
+    SystemStats:
+      type: object
+      properties:
+        knowledgeEntries:
+          type: object
+          properties:
+            total:
+              type: integer
+            byCategory:
+              type: object
+              additionalProperties:
+                type: integer
+            avgQualityScore:
+              type: number
+        apiKeys:
+          type: object
+          properties:
+            total:
+              type: integer
+            active:
+              type: integer
+            expired:
+              type: integer
+        requests:
+          type: object
+          properties:
+            today:
+              type: integer
+            thisWeek:
+              type: integer
+            thisMonth:
+              type: integer

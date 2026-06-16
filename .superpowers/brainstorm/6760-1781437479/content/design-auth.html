@@ -1,0 +1,82 @@
+<h2>登录与认证流程</h2>
+<p class="subtitle">JWT认证 + MFA支持</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">登录页面</div>
+    <div class="mockup-body" style="background:#f3f4f6;">
+      <div style="display:flex;align-items:center;justify-content:center;min-height:300px;">
+        <div style="background:white;padding:32px;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.1);width:320px;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <div style="font-size:24px;font-weight:600;margin-bottom:4px;">知识库管理</div>
+            <div style="font-size:14px;color:#6b7280;">Knowledge Base Admin</div>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="font-size:13px;color:#6b7280;display:block;margin-bottom:4px;">用户名</label>
+            <input type="text" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;">
+          </div>
+          <div style="margin-bottom:20px;">
+            <label style="font-size:13px;color:#6b7280;display:block;margin-bottom:4px;">密码</label>
+            <input type="password" style="width:100%;padding:10px;border:1px solid #e5e7eb;border-radius:6px;">
+          </div>
+          <div style="padding:10px;background:#3b82f6;color:white;border-radius:6px;text-align:center;cursor:pointer;margin-bottom:12px;">
+            登录
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b7280;">
+            <label><input type="checkbox"> 记住我</label>
+            <span style="color:#3b82f6;cursor:pointer;">忘记密码？</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">MFA验证页</div>
+    <div class="mockup-body" style="background:#f3f4f6;">
+      <div style="display:flex;align-items:center;justify-content:center;min-height:300px;">
+        <div style="background:white;padding:32px;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.1);width:320px;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <div style="font-size:48px;margin-bottom:8px;">🔐</div>
+            <div style="font-size:18px;font-weight:600;margin-bottom:4px;">两步验证</div>
+            <div style="font-size:14px;color:#6b7280;">请输入验证器应用中的6位数字</div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px;">
+            <input type="text" maxlength="1" style="width:40px;height:48px;text-align:center;font-size:24px;border:1px solid #e5e7eb;border-radius:6px;">
+            <input type="text" maxlength="1" style="width:40px;height:48px;text-align:center;font-size:24px;border:1px solid #e5e7eb;border-radius:6px;">
+            <input type="text" maxlength="1" style="width:40px;height:48px;text-align:center;font-size:24px;border:1px solid #e5e7eb;border-radius:6px;">
+            <input type="text" maxlength="1" style="width:40px;height:48px;text-align:center;font-size:24px;border:1px solid #e5e7eb;border-radius:6px;">
+            <input type="text" maxlength="1" style="width:40px;height:48px;text-align:center;font-size:24px;border:1px solid #e5e7eb;border-radius:6px;">
+            <input type="text" maxlength="1" style="width:40px;height:48px;text-align:center;font-size:24px;border:1px solid #e5e7eb;border-radius:6px;">
+          </div>
+          <div style="padding:10px;background:#3b82f6;color:white;border-radius:6px;text-align:center;cursor:pointer;margin-bottom:12px;">
+            验证
+          </div>
+          <div style="text-align:center;font-size:13px;color:#6b7280;">
+            <span style="color:#3b82f6;cursor:pointer;">返回登录</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:24px;">认证流程</h3>
+<div style="background:#f9fafb;padding:20px;border-radius:8px;">
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <div style="padding:8px 16px;background:#3b82f6;color:white;border-radius:20px;font-size:13px;">1. 输入用户名密码</div>
+    <div style="color:#9ca3af;">→</div>
+    <div style="padding:8px 16px;background:#f3f4f6;border-radius:20px;font-size:13px;">2. 后端验证</div>
+    <div style="color:#9ca3af;">→</div>
+    <div style="padding:8px 16px;background:#f3f4f6;border-radius:20px;font-size:13px;">3a. 返回JWT（未启用MFA）</div>
+    <div style="color:#9ca3af;">或</div>
+    <div style="padding:8px 16px;background:#f3f4f6;border-radius:20px;font-size:13px;">3b. 返回tempToken（启用MFA）</div>
+    <div style="color:#9ca3af;">→</div>
+    <div style="padding:8px 16px;background:#f3f4f6;border-radius:20px;font-size:13px;">4. MFA验证</div>
+    <div style="color:#9ca3af;">→</div>
+    <div style="padding:8px 16px;background:#10b981;color:white;border-radius:20px;font-size:13px;">5. 获取JWT</div>
+  </div>
+  <div style="margin-top:16px;font-size:14px;color:#6b7280;">
+    <strong>Token存储：</strong>accessToken存于内存/Zustand，refreshToken存于localStorage<br>
+    <strong>自动刷新：</strong>TanStack Query拦截401，自动调用refresh接口刷新token
+  </div>
+</div>

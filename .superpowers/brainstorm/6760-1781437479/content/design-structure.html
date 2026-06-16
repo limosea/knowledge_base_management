@@ -1,0 +1,97 @@
+<h2>项目目录结构</h2>
+<p class="subtitle">清晰的模块划分</p>
+
+<div style="background:#1e293b;color:#e2e8f0;padding:20px;border-radius:8px;font-family:monospace;font-size:13px;line-height:1.6;">
+<pre style="margin:0;">
+knowledge-base-admin/
+├── public/                  # 静态资源
+│   └── locales/            # 国际化翻译文件
+│       ├── zh-CN.json
+│       └── en-US.json
+├── src/
+│   ├── api/                # API请求层
+│   │   ├── client.ts       # Axios实例配置
+│   │   ├── auth.ts         # 认证相关API
+│   │   ├── knowledge.ts    # 知识条目API
+│   │   ├── api-keys.ts     # API Key管理
+│   │   └── system.ts       # 系统监控API
+│   ├── components/         # 可复用组件
+│   │   ├── ui/             # Shadcn/ui组件
+│   │   ├── layout/         # 布局组件
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── Header.tsx
+│   │   │   └── MainLayout.tsx
+│   │   └── common/         # 通用业务组件
+│   │       ├── DataTable.tsx
+│   │       ├── Pagination.tsx
+│   │       └── SearchBar.tsx
+│   ├── features/           # 功能模块（按领域划分）
+│   │   ├── auth/
+│   │   │   ├── LoginPage.tsx
+│   │   │   ├── MfaPage.tsx
+│   │   │   └── hooks/
+│   │   ├── knowledge/
+│   │   │   ├── KnowledgeListPage.tsx
+│   │   │   ├── KnowledgeDetailPage.tsx
+│   │   │   ├── components/
+│   │   │   │   ├── KnowledgeForm.tsx
+│   │   │   │   └── VersionHistory.tsx
+│   │   │   └── hooks/
+│   │   ├── api-keys/
+│   │   │   ├── ApiKeysPage.tsx
+│   │   │   └── components/
+│   │   └── monitor/
+│   │       └── DashboardPage.tsx
+│   ├── hooks/              # 全局hooks
+│   │   ├── useAuth.ts
+│   │   └── useTheme.ts
+│   ├── stores/             # Zustand状态
+│   │   ├── authStore.ts
+│   │   └── themeStore.ts
+│   ├── lib/                # 工具库
+│   │   ├── utils.ts
+│   │   └── constants.ts
+│   ├── types/              # TypeScript类型定义
+│   │   ├── api.ts
+│   │   └── models.ts
+│   ├── themes/             # 主题配置
+│   │   ├── light.ts
+│   │   ├── dark.ts
+│   │   ├── eye-comfort.ts
+│   │   └── index.ts
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── router.tsx          # 路由配置
+├── tailwind.config.js
+├── components.json         # Shadcn/ui配置
+└── package.json
+</pre>
+</div>
+
+<h3 style="margin-top:24px;">关键设计原则</h3>
+<div class="options" style="display:block;">
+  <div class="option" style="cursor:default;border-bottom:1px solid #e5e7eb;">
+    <div class="content">
+      <h4>按功能模块组织</h4>
+      <p>features/下每个功能独立，包含页面、组件、hooks，便于维护和团队协作</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;border-bottom:1px solid #e5e7eb;">
+    <div class="content">
+      <h4>API层独立</h4>
+      <p>所有API调用集中在api/，使用TanStack Query封装，组件不直接调用axios</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;border-bottom:1px solid #e5e7eb;">
+    <div class="content">
+      <h4>类型优先</h4>
+      <p>从OpenAPI生成TypeScript类型，确保前后端类型一致</p>
+    </div>
+  </div>
+  <div class="option" style="cursor:default;">
+    <div class="content">
+      <h4>可复用组件库</h4>
+      <p>components/存放跨模块组件，Shadcn/ui按需引入，避免冗余</p>
+    </div>
+  </div>
+</div>
