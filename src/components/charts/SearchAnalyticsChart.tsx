@@ -1,52 +1,24 @@
 import { useTranslation } from 'react-i18next'
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import type { SearchAnalytics } from '@/types'
 
 interface SearchAnalyticsChartProps {
   data: SearchAnalytics | null
-  loading?: boolean
 }
 
-export function SearchAnalyticsChart({ data, loading }: SearchAnalyticsChartProps) {
+export function SearchAnalyticsChart({ data }: SearchAnalyticsChartProps) {
   const { t } = useTranslation()
 
-  if (loading) {
+  if (!data) {
     return (
       <Card>
         <CardHeader>
-          <Skeleton className="h-6 w-40" />
+          <CardTitle>{t('charts.searchAnalytics')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[250px] w-full" />
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const chartData = data?.searchesOverTime?.map(item => ({
-    name: item.date,
-    count: item.count,
-  })) ?? []
-
-  if (chartData.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t('analytics.searchTrend')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-            {t('analytics.noData')}
+          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+            {t('charts.noData')}
           </div>
         </CardContent>
       </Card>
@@ -56,56 +28,35 @@ export function SearchAnalyticsChart({ data, loading }: SearchAnalyticsChartProp
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{t('analytics.searchTrend')}</CardTitle>
+        <CardTitle>{t('charts.searchAnalytics')}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-[250px]">
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <div className="text-muted-foreground">{t('charts.totalSearches')}</div>
+            <div className="font-medium">{data.totalSearches}</div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">{t('charts.hitRate')}</div>
+            <div className="font-medium">
+              {data.hitRate.total > 0 
+                ? ((data.hitRate.with_results / data.hitRate.total) * 100).toFixed(1)
+                : 0}%
+            </div>
+          </div>
+        </div>
+        
+        <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorSearches" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis
-                dataKey="name"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-              />
-              <YAxis
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickFormatter={(value) => value.toLocaleString()}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-                labelStyle={{ color: 'hsl(var(--foreground))' }}
-                formatter={(value) => [(value as number).toLocaleString(), t('analytics.searches')]}
-              />
-              <Area
-                type="monotone"
-                dataKey="count"
-                stroke="hsl(var(--primary))"
-                fillOpacity={1}
-                fill="url(#colorSearches)"
-              />
-            </AreaChart>
+            <BarChart data={data.topQueries.slice(0, 5)}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="query" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="count" fill="#8884d8" />
+            </BarChart>
           </ResponsiveContainer>
         </div>
-        {data && (
-          <div className="mt-4 text-center">
-            <span className="text-3xl font-bold" style={{ color: 'hsl(var(--primary))' }}>
-              {data.totalSearches.toLocaleString()}
-            </span>
-            <span className="text-muted-foreground ml-1">{t('analytics.totalSearches')}</span>
-          </div>
-        )}
       </CardContent>
     </Card>
   )
