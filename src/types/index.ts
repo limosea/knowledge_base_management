@@ -271,3 +271,114 @@ export interface SystemHealth {
     }
   }
 }
+
+// ==================== Stats API Types ====================
+
+export interface DashboardStats {
+  knowledgeEntries: {
+    total: number
+    avgQualityScore: number
+    createdThisWeek: number
+  }
+  apiKeys: {
+    total: number
+    active: number
+  }
+  requests: {
+    today: number
+  }
+  topApiKeysToday?: Array<{
+    name: string
+    count: number
+  }>
+  errorRate?: {
+    total: number
+    errors: number
+  }
+}
+
+export interface KnowledgeTrends {
+  period: string
+  from: string
+  to: string
+  created: Array<{ date: string; count: number }>
+  updated: Array<{ date: string; count: number }>
+  deleted: Array<{ date: string; count: number }>
+}
+
+export interface ContentDistribution {
+  topTags: Array<{ tag: string; count: number }>
+  byFramework: Array<{ framework: string; count: number }>
+  byDifficulty: Array<{ level: number; count: number }>
+  byLanguage: Array<{ language: string; count: number }>
+  qualityScoreDistribution: Array<{ bucket: string; count: number }>
+}
+
+export interface EmbeddingCoverage {
+  totalEntries: number
+  withEmbedding: number
+  withoutEmbedding: number
+  coveragePercent: number
+  batchStatusSummary: Array<Record<string, unknown>>
+  latestBatch: Record<string, unknown> | null
+}
+
+export interface SearchAnalytics {
+  totalSearches: number
+  searchesOverTime: Array<{ date: string; count: number }>
+  topQueries: Array<{ query: string; count: number }>
+  topIps: Array<{ ip: string; count: number }>
+  hitRate: {
+    total: number
+    with_results: number
+    no_results: number
+  }
+}
+
+export interface ApiKeyUsage {
+  keys: Array<{
+    apiKeyId: string
+    apiKeyName: string
+    totalRequests: number
+    lastActiveAt: string
+  }>
+}
+
+export interface ApiKeyUsageDetail {
+  keyId: string
+  totalRequests: number
+  byAction: Array<{ action: string; count: number }>
+  trend: Array<{ date: string; count: number }>
+}
+
+export interface AuditAnalytics {
+  byAction: Array<{ action: string; count: number }>
+  byStatus: Array<{ status: string; count: number }>
+  topErrors: Array<{ errorMessage: string; action: string; count: number }>
+  trend: Array<{ date: string; count: number }>
+}
+
+export interface RequestAnalytics {
+  period: string
+  from: string
+  to: string
+  statusCodeDistribution: Array<{ code: number; count: number }>
+  successRate: {
+    total: number
+    success2xx: number
+    clientError4xx: number
+    serverError5xx: number
+  }
+  requestVolumeTrend: Array<{ date: string; total: number; errors: number }>
+  latencyStats: {
+    avgMs: number
+    p50Ms: number
+    p95Ms: number
+  }
+  topEndpoints: Array<{
+    method: string
+    path: string
+    count: number
+    avgResponseTime: number
+  }>
+}
