@@ -39,15 +39,15 @@ export function LatencyStatsCard({ data }: LatencyStatsCardProps) {
       <CardContent className="space-y-4">
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold">{data.avgMs}</div>
+            <div className="text-2xl font-bold">{data.avgMs.toFixed(1)} ms</div>
             <div className="text-sm text-muted-foreground">{t('charts.avgMs')}</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold">{data.p50Ms}</div>
+            <div className="text-2xl font-bold">{data.p50Ms.toFixed(1)} ms</div>
             <div className="text-sm text-muted-foreground">{t('charts.p50Ms')}</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold">{data.p95Ms}</div>
+            <div className="text-2xl font-bold">{data.p95Ms.toFixed(1)} ms</div>
             <div className="text-sm text-muted-foreground">{t('charts.p95Ms')}</div>
           </div>
         </div>
