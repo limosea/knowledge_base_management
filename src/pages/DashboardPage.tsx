@@ -1,34 +1,34 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { systemApi, knowledgeApi, auditLogsApi } from '@/api'
-import type { SystemStats, KnowledgeStats, AuditLog, SystemHealth } from '@/types'
+import { systemApi, statsApi } from '@/api'
+import type { DashboardStats, KnowledgeTrends, RequestAnalytics, SystemHealth } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BookOpen, Activity, Key } from 'lucide-react'
 import { StatCard } from '@/components/charts/StatCard'
 import { SystemStatusCard } from '@/components/charts/SystemStatusCard'
 import { RequestTrendChart } from '@/components/charts/RequestTrendChart'
-import { RecentActivityList } from '@/components/charts/RecentActivityList'
+import { KnowledgeTrendsChart } from '@/components/charts/KnowledgeTrendsChart'
 
 export function DashboardPage() {
   const { t } = useTranslation()
-  const [systemStats, setSystemStats] = useState<SystemStats | null>(null)
-  const [knowledgeStats, setKnowledgeStats] = useState<KnowledgeStats | null>(null)
-  const [recentLogs, setRecentLogs] = useState<AuditLog[]>([])
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null)
+  const [knowledgeTrends, setKnowledgeTrends] = useState<KnowledgeTrends | null>(null)
+  const [requestAnalytics, setRequestAnalytics] = useState<RequestAnalytics | null>(null)
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [sys, kn, logs, health] = await Promise.all([
-          systemApi.getStats(),
-          knowledgeApi.getStats(),
-          auditLogsApi.list({ limit: 10 }),
+        const [dashboard, trends, requests, health] = await Promise.all([
+          statsApi.getDashboard(),
+          statsApi.getKnowledgeTrends({ period: 'week' }),
+          statsApi.getRequestAnalytics({ period: 'day' }),
           systemApi.getHealth(),
         ])
-        setSystemStats(sys)
-        setKnowledgeStats(kn)
-        setRecentLogs(logs.data)
+        setDashboardStats(dashboard)
+        setKnowledgeTrends(trends)
+        setRequestAnalytics(requests)
         setSystemHealth(health)
       } catch (error) {
         console.error('Failed to fetch data:', error)
@@ -66,17 +66,17 @@ export function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title={t('dashboard.knowledgeEntries')}
-          value={knowledgeStats?.total ?? 0}
+          value={dashboardStats?.knowledgeEntries?.total ?? 0}
           icon={BookOpen}
         />
         <StatCard
           title={t('dashboard.todayRequests')}
-          value={systemStats?.requests?.today ?? 0}
+          value={dashboardStats?.requests?.today ?? 0}
           icon={Activity}
         />
         <StatCard
           title={t('dashboard.activeApiKeys')}
-          value={systemStats?.apiKeys?.active ?? 0}
+          value={dashboardStats?.apiKeys?.active ?? 0}
           icon={Key}
         />
         <SystemStatusCard
@@ -85,14 +85,10 @@ export function DashboardPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <RequestTrendChart
-          data={{
-            today: systemStats?.requests?.today ?? 0,
-            thisWeek: systemStats?.requests?.thisWeek ?? 0,
-            thisMonth: systemStats?.requests?.thisMonth ?? 0,
-          }}
+        <KnowledgeTrendsChart data={knowledgeTrends} />
+        <RequestTrendChart 
+          data={requestAnalytics?.requestVolumeTrend ?? []} 
         />
-        <RecentActivityList data={recentLogs} />
       </div>
     </div>
   )
