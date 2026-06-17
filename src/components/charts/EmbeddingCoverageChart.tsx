@@ -17,7 +17,7 @@ export function EmbeddingCoverageChart({ data }: EmbeddingCoverageChartProps) {
           <CardTitle>{t('charts.embeddingCoverage')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+          <div className="h-[350px] flex items-center justify-center text-muted-foreground">
             {t('charts.noData')}
           </div>
         </CardContent>
@@ -52,7 +52,26 @@ export function EmbeddingCoverageChart({ data }: EmbeddingCoverageChartProps) {
             <div className="text-muted-foreground">{t('charts.withoutEmbedding')}</div>
             <div className="font-medium">{data.withoutEmbedding}</div>
           </div>
+          <div>
+            <div className="text-muted-foreground">{t('charts.latestBatch')}</div>
+            <div className="font-medium">
+              {data.latestBatch ? t('charts.available') : t('charts.notAvailable')}
+            </div>
+          </div>
         </div>
+        
+        {data.batchStatusSummary && data.batchStatusSummary.length > 0 && (
+          <div className="text-sm">
+            <div className="text-muted-foreground mb-2">{t('charts.batchStatusSummary')}</div>
+            <div className="grid grid-cols-2 gap-2">
+              {data.batchStatusSummary.map((batch, index) => (
+                <div key={index} className="text-xs">
+                  {JSON.stringify(batch)}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

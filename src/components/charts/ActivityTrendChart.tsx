@@ -2,18 +2,18 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
-interface ActivityTimelineProps {
+interface ActivityTrendChartProps {
   data: Array<{ date: string; count: number }>
 }
 
-export function ActivityTimeline({ data }: ActivityTimelineProps) {
+export function ActivityTrendChart({ data }: ActivityTrendChartProps) {
   const { t } = useTranslation()
 
   if (!data || data.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t('charts.activityTimeline')}</CardTitle>
+          <CardTitle>{t('charts.activityTrend')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[350px] flex items-center justify-center text-muted-foreground">
@@ -27,7 +27,7 @@ export function ActivityTimeline({ data }: ActivityTimelineProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('charts.activityTimeline')}</CardTitle>
+        <CardTitle>{t('charts.activityTrend')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[350px]">

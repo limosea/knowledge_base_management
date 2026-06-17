@@ -17,7 +17,7 @@ export function SearchAnalyticsChart({ data }: SearchAnalyticsChartProps) {
           <CardTitle>{t('charts.searchAnalytics')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+          <div className="h-[350px] flex items-center justify-center text-muted-foreground">
             {t('charts.noData')}
           </div>
         </CardContent>
@@ -41,7 +41,7 @@ export function SearchAnalyticsChart({ data }: SearchAnalyticsChartProps) {
             <div className="font-medium">
               {data.hitRate.total > 0 
                 ? ((data.hitRate.with_results / data.hitRate.total) * 100).toFixed(1)
-                : 0}%
+                : '0.0'}%
             </div>
           </div>
         </div>

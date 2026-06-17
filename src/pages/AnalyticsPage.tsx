@@ -15,7 +15,7 @@ import { QualityBarChart } from '@/components/charts/QualityBarChart'
 import { ApiKeyStatusChart } from '@/components/charts/ApiKeyStatusChart'
 import { RequestTrendChart } from '@/components/charts/RequestTrendChart'
 import { ActionStatsChart } from '@/components/charts/ActionStatsChart'
-import { ActivityTimeline } from '@/components/charts/ActivityTimeline'
+import { ActivityTrendChart } from '@/components/charts/ActivityTrendChart'
 import { EmbeddingCoverageChart } from '@/components/charts/EmbeddingCoverageChart'
 import { SearchAnalyticsChart } from '@/components/charts/SearchAnalyticsChart'
 import { LatencyStatsCard } from '@/components/charts/LatencyStatsCard'
@@ -153,7 +153,7 @@ export function AnalyticsPage() {
             📋 {t('analytics.auditAnalysis')}
           </h2>
           <div className="grid gap-4 lg:grid-cols-2">
-            <ActivityTimeline data={auditAnalytics?.trend ?? []} />
+            <ActivityTrendChart data={auditAnalytics?.trend ?? []} />
           </div>
         </div>
       </div>
