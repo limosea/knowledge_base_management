@@ -1,45 +1,23 @@
 import { useTranslation } from 'react-i18next'
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import type { SearchAnalytics } from '@/types'
 
-interface ActionStatsChartProps {
-  data: Array<{ action: string; count: number }> | Record<string, number>
+interface SearchAnalyticsChartProps {
+  data: SearchAnalytics | null
   loading?: boolean
 }
 
-const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-]
-
-const ACTION_LABELS: Record<string, string> = {
-  LOGIN: 'Login',
-  LOGOUT: 'Logout',
-  CREATE: 'Create',
-  UPDATE: 'Update',
-  DELETE: 'Delete',
-}
-
-function isArrayData(
-  data: ActionStatsChartProps['data']
-): data is Array<{ action: string; count: number }> {
-  return Array.isArray(data)
-}
-
-export function ActionStatsChart({ data, loading }: ActionStatsChartProps) {
+export function SearchAnalyticsChart({ data, loading }: SearchAnalyticsChartProps) {
   const { t } = useTranslation()
 
   if (loading) {
@@ -55,23 +33,16 @@ export function ActionStatsChart({ data, loading }: ActionStatsChartProps) {
     )
   }
 
-  const chartData = isArrayData(data)
-    ? data.map(item => ({
-        name: ACTION_LABELS[item.action] || item.action,
-        value: item.count,
-      }))
-    : Object.entries(data || {})
-        .map(([action, count]) => ({
-          name: ACTION_LABELS[action] || action,
-          value: count,
-        }))
-        .sort((a, b) => b.value - a.value)
+  const chartData = data?.searchesOverTime?.map(item => ({
+    name: item.date,
+    count: item.count,
+  })) ?? []
 
   if (chartData.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{t('analytics.actionStats')}</CardTitle>
+          <CardTitle className="text-lg">{t('analytics.searchTrend')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[250px] flex items-center justify-center text-muted-foreground">
@@ -85,12 +56,18 @@ export function ActionStatsChart({ data, loading }: ActionStatsChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{t('analytics.actionStats')}</CardTitle>
+        <CardTitle className="text-lg">{t('analytics.searchTrend')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
+            <AreaChart data={chartData}>
+              <defs>
+                <linearGradient id="colorSearches" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="name"
@@ -100,6 +77,7 @@ export function ActionStatsChart({ data, loading }: ActionStatsChartProps) {
               <YAxis
                 stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
+                tickFormatter={(value) => value.toLocaleString()}
               />
               <Tooltip
                 contentStyle={{
@@ -107,16 +85,27 @@ export function ActionStatsChart({ data, loading }: ActionStatsChartProps) {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
-                formatter={(value) => [value, '']}
+                labelStyle={{ color: 'hsl(var(--foreground))' }}
+                formatter={(value) => [(value as number).toLocaleString(), t('analytics.searches')]}
               />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {chartData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
+              <Area
+                type="monotone"
+                dataKey="count"
+                stroke="hsl(var(--primary))"
+                fillOpacity={1}
+                fill="url(#colorSearches)"
+              />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
+        {data && (
+          <div className="mt-4 text-center">
+            <span className="text-3xl font-bold" style={{ color: 'hsl(var(--primary))' }}>
+              {data.totalSearches.toLocaleString()}
+            </span>
+            <span className="text-muted-foreground ml-1">{t('analytics.totalSearches')}</span>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

@@ -1,7 +1,14 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { systemApi, knowledgeApi, auditLogsApi } from '@/api'
-import type { SystemStats, KnowledgeStats, AuditLog } from '@/types'
+import { statsApi } from '@/api'
+import type { 
+  ContentDistribution, 
+  EmbeddingCoverage, 
+  SearchAnalytics, 
+  ApiKeyUsage, 
+  AuditAnalytics, 
+  RequestAnalytics 
+} from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CategoryPieChart } from '@/components/charts/CategoryPieChart'
 import { QualityBarChart } from '@/components/charts/QualityBarChart'
@@ -9,25 +16,44 @@ import { ApiKeyStatusChart } from '@/components/charts/ApiKeyStatusChart'
 import { RequestTrendChart } from '@/components/charts/RequestTrendChart'
 import { ActionStatsChart } from '@/components/charts/ActionStatsChart'
 import { ActivityTimeline } from '@/components/charts/ActivityTimeline'
+import { EmbeddingCoverageChart } from '@/components/charts/EmbeddingCoverageChart'
+import { SearchAnalyticsChart } from '@/components/charts/SearchAnalyticsChart'
+import { LatencyStatsCard } from '@/components/charts/LatencyStatsCard'
 
 export function AnalyticsPage() {
   const { t } = useTranslation()
-  const [systemStats, setSystemStats] = useState<SystemStats | null>(null)
-  const [knowledgeStats, setKnowledgeStats] = useState<KnowledgeStats | null>(null)
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
+  const [contentDistribution, setContentDistribution] = useState<ContentDistribution | null>(null)
+  const [embeddingCoverage, setEmbeddingCoverage] = useState<EmbeddingCoverage | null>(null)
+  const [searchAnalytics, setSearchAnalytics] = useState<SearchAnalytics | null>(null)
+  const [apiKeyUsage, setApiKeyUsage] = useState<ApiKeyUsage | null>(null)
+  const [auditAnalytics, setAuditAnalytics] = useState<AuditAnalytics | null>(null)
+  const [requestAnalytics, setRequestAnalytics] = useState<RequestAnalytics | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [sys, kn, logs] = await Promise.all([
-          systemApi.getStats(),
-          knowledgeApi.getStats(),
-          auditLogsApi.list({ limit: 500 }),
+        const [
+          content,
+          embedding,
+          search,
+          apiKeys,
+          audit,
+          requests
+        ] = await Promise.all([
+          statsApi.getContentDistribution(),
+          statsApi.getEmbeddingCoverage(),
+          statsApi.getSearchAnalytics({ period: 'day' }),
+          statsApi.getApiKeyUsage(),
+          statsApi.getAuditAnalytics({ period: 'day' }),
+          statsApi.getRequestAnalytics({ period: 'day' }),
         ])
-        setSystemStats(sys)
-        setKnowledgeStats(kn)
-        setAuditLogs(logs.data)
+        setContentDistribution(content)
+        setEmbeddingCoverage(embedding)
+        setSearchAnalytics(search)
+        setApiKeyUsage(apiKeys)
+        setAuditAnalytics(audit)
+        setRequestAnalytics(requests)
       } catch (error) {
         console.error('Failed to fetch data:', error)
       } finally {
@@ -37,14 +63,6 @@ export function AnalyticsPage() {
 
     fetchData()
   }, [])
-
-  const actionStats = useMemo(() => {
-    const stats: Record<string, number> = {}
-    auditLogs.forEach((log) => {
-      stats[log.action] = (stats[log.action] || 0) + 1
-    })
-    return stats
-  }, [auditLogs])
 
   if (loading) {
     return (
@@ -88,11 +106,21 @@ export function AnalyticsPage() {
           </h2>
           <div className="grid gap-4 lg:grid-cols-2">
             <CategoryPieChart
-              data={knowledgeStats?.byCategory ?? {}}
+              data={contentDistribution?.byFramework ?? []}
             />
             <QualityBarChart
-              avgScore={knowledgeStats?.avgQualityScore}
+              data={contentDistribution?.qualityScoreDistribution ?? []}
             />
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            🔍 {t('analytics.searchAnalysis')}
+          </h2>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <SearchAnalyticsChart data={searchAnalytics} />
+            <EmbeddingCoverageChart data={embeddingCoverage} />
           </div>
         </div>
 
@@ -102,15 +130,21 @@ export function AnalyticsPage() {
           </h2>
           <div className="grid gap-4 lg:grid-cols-2">
             <ApiKeyStatusChart
-              data={systemStats?.apiKeys ?? { total: 0, active: 0, expired: 0 }}
+              data={apiKeyUsage?.keys ?? []}
             />
             <RequestTrendChart
-              data={{
-                today: systemStats?.requests?.today ?? 0,
-                thisWeek: systemStats?.requests?.thisWeek ?? 0,
-                thisMonth: systemStats?.requests?.thisMonth ?? 0,
-              }}
+              data={requestAnalytics?.requestVolumeTrend ?? []}
             />
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            📊 {t('analytics.performanceAnalysis')}
+          </h2>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <LatencyStatsCard data={requestAnalytics?.latencyStats} />
+            <ActionStatsChart data={auditAnalytics?.byAction ?? []} />
           </div>
         </div>
 
@@ -119,8 +153,7 @@ export function AnalyticsPage() {
             📋 {t('analytics.auditAnalysis')}
           </h2>
           <div className="grid gap-4 lg:grid-cols-2">
-            <ActionStatsChart data={actionStats} />
-            <ActivityTimeline data={auditLogs} />
+            <ActivityTimeline data={auditAnalytics?.trend ?? []} />
           </div>
         </div>
       </div>
