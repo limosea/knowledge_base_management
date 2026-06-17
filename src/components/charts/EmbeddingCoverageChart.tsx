@@ -34,7 +34,7 @@ export function EmbeddingCoverageChart({ data }: EmbeddingCoverageChartProps) {
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span>{t('charts.coverage')}</span>
-            <span>{data.coveragePercent.toFixed(1)}%</span>
+            <span>{data.coveragePercent?.toFixed(1) ?? '0.0'}%</span>
           </div>
           <Progress value={data.coveragePercent} className="h-2" />
         </div>
