@@ -1,50 +1,25 @@
 import { useTranslation } from 'react-i18next'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
 
 interface CategoryPieChartProps {
-  data: Record<string, number> | Array<{ framework: string; count: number }>
-  loading?: boolean
+  data: Array<{ framework: string; count: number }>
 }
 
-const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-]
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
 
-export function CategoryPieChart({ data, loading }: CategoryPieChartProps) {
+export function CategoryPieChart({ data }: CategoryPieChartProps) {
   const { t } = useTranslation()
 
-  if (loading) {
+  if (!data || data.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <Skeleton className="h-6 w-40" />
+          <CardTitle>{t('charts.frameworkDistribution')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[250px] w-full" />
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const chartData = Array.isArray(data) 
-    ? data.map(item => ({ name: item.framework, value: item.count }))
-    : Object.entries(data || {}).map(([name, value]) => ({ name, value }))
-
-  if (chartData.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t('analytics.categoryDistribution')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-            {t('analytics.noData')}
+          <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+            {t('charts.noData')}
           </div>
         </CardContent>
       </Card>
@@ -54,34 +29,27 @@ export function CategoryPieChart({ data, loading }: CategoryPieChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{t('analytics.categoryDistribution')}</CardTitle>
+        <CardTitle>{t('charts.frameworkDistribution')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[250px]">
+        <div className="h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={chartData}
+                data={data}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
                 label={({ name, percent }) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
                 outerRadius={80}
-                fill="hsl(var(--primary))"
-                dataKey="value"
+                fill="#8884d8"
+                dataKey="count"
               >
-                {chartData.map((_, index) => (
+                {data.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-                formatter={(value) => [`${value} ${t('analytics.entries')}`, '']}
-              />
+              <Tooltip />
               <Legend />
             </PieChart>
           </ResponsiveContainer>

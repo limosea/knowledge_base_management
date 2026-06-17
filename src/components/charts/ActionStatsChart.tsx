@@ -1,81 +1,23 @@
 import { useTranslation } from 'react-i18next'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 interface ActionStatsChartProps {
-  data: Array<{ action: string; count: number }> | Record<string, number>
-  loading?: boolean
+  data: Array<{ action: string; count: number }>
 }
 
-const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-]
-
-const ACTION_LABELS: Record<string, string> = {
-  LOGIN: 'Login',
-  LOGOUT: 'Logout',
-  CREATE: 'Create',
-  UPDATE: 'Update',
-  DELETE: 'Delete',
-}
-
-function isArrayData(
-  data: ActionStatsChartProps['data']
-): data is Array<{ action: string; count: number }> {
-  return Array.isArray(data)
-}
-
-export function ActionStatsChart({ data, loading }: ActionStatsChartProps) {
+export function ActionStatsChart({ data }: ActionStatsChartProps) {
   const { t } = useTranslation()
 
-  if (loading) {
+  if (!data || data.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <Skeleton className="h-6 w-40" />
+          <CardTitle>{t('charts.actionDistribution')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[250px] w-full" />
-        </CardContent>
-      </Card>
-    )
-  }
-
-  const chartData = isArrayData(data)
-    ? data.map(item => ({
-        name: ACTION_LABELS[item.action] || item.action,
-        value: item.count,
-      }))
-    : Object.entries(data || {})
-        .map(([action, count]) => ({
-          name: ACTION_LABELS[action] || action,
-          value: count,
-        }))
-        .sort((a, b) => b.value - a.value)
-
-  if (chartData.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t('analytics.actionStats')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-            {t('analytics.noData')}
+          <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+            {t('charts.noData')}
           </div>
         </CardContent>
       </Card>
@@ -85,35 +27,17 @@ export function ActionStatsChart({ data, loading }: ActionStatsChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{t('analytics.actionStats')}</CardTitle>
+        <CardTitle>{t('charts.actionDistribution')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[250px]">
+        <div className="h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis
-                dataKey="name"
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-              />
-              <YAxis
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-                formatter={(value) => [value, '']}
-              />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {chartData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Bar>
+            <BarChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="action" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="count" fill="#8884d8" />
             </BarChart>
           </ResponsiveContainer>
         </div>
