@@ -185,6 +185,15 @@ const resources = {
         itemsPerPage: 'items per page',
         showing: 'Showing {{from}} to {{to}} of {{total}} items',
       },
+      analytics: {
+        title: 'Analytics',
+        knowledgeAnalysis: 'Knowledge Analysis',
+        searchAnalysis: 'Search Analysis',
+        apiAnalysis: 'API & Access',
+        performanceAnalysis: 'Performance Analysis',
+        auditAnalysis: 'Audit Analysis',
+        noData: 'No data available',
+      },
       charts: {
         knowledgeTrends: 'Knowledge Trends',
         embeddingCoverage: 'Embedding Coverage',
@@ -407,6 +416,15 @@ const resources = {
         of: '共',
         itemsPerPage: '条/页',
         showing: '显示第 {{from}} 到 {{to}} 条，共 {{total}} 条',
+      },
+      analytics: {
+        title: '数据分析',
+        knowledgeAnalysis: '知识库分析',
+        searchAnalysis: '搜索分析',
+        apiAnalysis: 'API与访问',
+        performanceAnalysis: '性能分析',
+        auditAnalysis: '操作审计',
+        noData: '暂无数据',
       },
       charts: {
         knowledgeTrends: '知识趋势',
