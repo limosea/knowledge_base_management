@@ -47,9 +47,9 @@ export function KnowledgeTrendsChart({ data }: KnowledgeTrendsChartProps) {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="created" stroke="#8884d8" name={t('charts.created')} />
-              <Line type="monotone" dataKey="updated" stroke="#82ca9d" name={t('charts.updated')} />
-              <Line type="monotone" dataKey="deleted" stroke="#ffc658" name={t('charts.deleted')} />
+              <Line type="monotone" dataKey="created" stroke="hsl(var(--chart-1))" name={t('charts.created')} />
+              <Line type="monotone" dataKey="updated" stroke="hsl(var(--chart-2))" name={t('charts.updated')} />
+              <Line type="monotone" dataKey="deleted" stroke="hsl(var(--chart-3))" name={t('charts.deleted')} />
             </LineChart>
           </ResponsiveContainer>
         </div>

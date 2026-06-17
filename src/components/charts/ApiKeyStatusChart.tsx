@@ -47,7 +47,7 @@ export function ApiKeyStatusChart({ data }: ApiKeyStatusChartProps) {
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="requests" fill="#8884d8" />
+              <Bar dataKey="requests" fill="hsl(var(--chart-1))" />
             </BarChart>
           </ResponsiveContainer>
         </div>

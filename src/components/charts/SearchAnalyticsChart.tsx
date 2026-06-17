@@ -53,7 +53,7 @@ export function SearchAnalyticsChart({ data }: SearchAnalyticsChartProps) {
               <XAxis dataKey="query" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="count" fill="#8884d8" />
+              <Bar dataKey="count" fill="hsl(var(--chart-1))" />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -37,8 +37,8 @@ export function RequestTrendChart({ data }: RequestTrendChartProps) {
               <XAxis dataKey="date" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="total" stroke="#8884d8" name={t('charts.total')} />
-              <Line type="monotone" dataKey="errors" stroke="#ffc658" name={t('charts.errors')} />
+              <Line type="monotone" dataKey="total" stroke="hsl(var(--chart-1))" name={t('charts.total')} />
+              <Line type="monotone" dataKey="errors" stroke="hsl(var(--chart-3))" name={t('charts.errors')} />
             </LineChart>
           </ResponsiveContainer>
         </div>

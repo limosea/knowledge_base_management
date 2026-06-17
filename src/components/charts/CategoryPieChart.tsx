@@ -6,7 +6,13 @@ interface CategoryPieChartProps {
   data: Array<{ framework: string; count: number }>
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D']
+const COLORS = [
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+]
 
 export function CategoryPieChart({ data }: CategoryPieChartProps) {
   const { t } = useTranslation()
@@ -40,9 +46,9 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
+                label={({ payload, percent }) => `${payload.framework} (${((percent ?? 0) * 100).toFixed(0)}%)`}
                 outerRadius={80}
-                fill="#8884d8"
+                fill="hsl(var(--chart-1))"
                 dataKey="count"
               >
                 {data.map((_, index) => (

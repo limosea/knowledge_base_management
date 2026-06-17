@@ -37,7 +37,7 @@ export function ActivityTimeline({ data }: ActivityTimelineProps) {
               <XAxis dataKey="date" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="count" stroke="#8884d8" />
+              <Line type="monotone" dataKey="count" stroke="hsl(var(--chart-1))" />
             </LineChart>
           </ResponsiveContainer>
         </div>
