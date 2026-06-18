@@ -1,6 +1,8 @@
 export { LoginPage } from './LoginPage'
 export { DashboardPage } from './DashboardPage'
 export { KnowledgePage } from './KnowledgePage'
+export { KnowledgeDetailPage } from './KnowledgeDetailPage'
+export { CategoriesPage } from './CategoriesPage'
 export { ApiKeysPage } from './ApiKeysPage'
 export { UsersPage } from './UsersPage'
 export { AuditLogsPage } from './AuditLogsPage'
