@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { knowledgeApi } from '@/api'
-import type { AdminKnowledgeListItem, KnowledgeEntry, UpdateEntryRequest } from '@/types'
+import { useNavigate } from 'react-router-dom'
+import { knowledgeApi, categoriesApi } from '@/api'
+import type { AdminKnowledgeListItem, KnowledgeEntry, UpdateEntryRequest, AdminCategoryListItem } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -40,12 +41,15 @@ import { formatDate } from '@/lib/utils'
 export function KnowledgePage() {
   const { t } = useTranslation()
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [entries, setEntries] = useState<AdminKnowledgeListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [categories, setCategories] = useState<AdminCategoryListItem[]>([])
+  const [categoryFilter, setCategoryFilter] = useState('')
   
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -67,12 +71,21 @@ export function KnowledgePage() {
 
   useEffect(() => {
     fetchEntries()
-  }, [page])
+  }, [page, categoryFilter])
+
+  useEffect(() => {
+    categoriesApi.adminList({ limit: 100 }).then(res => setCategories(res.data)).catch(() => {})
+  }, [])
 
   const fetchEntries = async () => {
     setLoading(true)
     try {
-      const response = await knowledgeApi.list({ page, limit, search: search || undefined })
+      const response = await knowledgeApi.list({
+        page,
+        limit,
+        search: search || undefined,
+        category: categoryFilter || undefined,
+      })
       setEntries(response.data)
       setTotal(response.total)
     } catch (error) {
@@ -89,6 +102,11 @@ export function KnowledgePage() {
   const handleSearch = () => {
     setPage(1)
     fetchEntries()
+  }
+
+  const handleCategoryFilter = (value: string) => {
+    setCategoryFilter(value)
+    setPage(1)
   }
 
   const handleEdit = async (id: string) => {
@@ -220,6 +238,18 @@ export function KnowledgePage() {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="w-64"
               />
+              <select
+                className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={categoryFilter}
+                onChange={(e) => handleCategoryFilter(e.target.value)}
+              >
+                <option value="">{t('knowledge.allCategories')}</option>
+                {categories.map((cat) => (
+                  <option key={cat.name} value={cat.name}>
+                    {cat.name} ({cat.entry_count})
+                  </option>
+                ))}
+              </select>
               <Button variant="outline" size="icon" onClick={handleSearch}>
                 <Search className="h-4 w-4" />
               </Button>
@@ -270,8 +300,19 @@ export function KnowledgePage() {
                         onCheckedChange={() => toggleSelect(entry.id)}
                       />
                     </TableCell>
-                    <TableCell className="font-medium">{entry.title}</TableCell>
-                    <TableCell>{entry.category || '-'}</TableCell>
+                    <TableCell className="font-medium">
+                      <button
+                        onClick={() => navigate(`/knowledge/${entry.id}`)}
+                        className="text-primary hover:underline text-left"
+                      >
+                        {entry.title}
+                      </button>
+                    </TableCell>
+                    <TableCell>
+                      {entry.category ? (
+                        <Badge variant="outline">{entry.category}</Badge>
+                      ) : '-'}
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {entry.tags?.slice(0, 3).map((tag) => (
@@ -376,11 +417,17 @@ export function KnowledgePage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category">{t('knowledge.category')}</Label>
-                <Input
+                <select
                   id="category"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                />
+                >
+                  <option value="">{t('knowledge.noCategory')}</option>
+                  {categories.map((cat) => (
+                    <option key={cat.name} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="language">{t('knowledge.language')}</Label>
