@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { systemApi, statsApi } from '@/api'
-import type { DashboardStats, KnowledgeTrends, RequestAnalytics, SystemHealth } from '@/types'
+import type { DashboardStats, RequestAnalytics, SystemHealth } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BookOpen, Activity, Key, AlertTriangle, Plus } from 'lucide-react'
 import { StatCard } from '@/components/charts/StatCard'
@@ -13,7 +13,6 @@ import { TopApiKeysTable } from '@/components/charts/TopApiKeysTable'
 export function DashboardPage() {
   const { t } = useTranslation()
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null)
-  const [knowledgeTrends, setKnowledgeTrends] = useState<KnowledgeTrends | null>(null)
   const [requestAnalytics, setRequestAnalytics] = useState<RequestAnalytics | null>(null)
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null)
   const [loading, setLoading] = useState(true)
@@ -21,14 +20,12 @@ export function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [dashboard, trends, requests, health] = await Promise.all([
+        const [dashboard, requests, health] = await Promise.all([
           statsApi.getDashboard(),
-          statsApi.getKnowledgeTrends({ period: 'week' }),
           statsApi.getRequestAnalytics({ period: 'day' }),
           systemApi.getHealth(),
         ])
         setDashboardStats(dashboard)
-        setKnowledgeTrends(trends)
         setRequestAnalytics(requests)
         setSystemHealth(health)
       } catch (error) {
@@ -109,7 +106,7 @@ export function DashboardPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <KnowledgeTrendsChart data={knowledgeTrends} />
+        <KnowledgeTrendsChart />
         <RequestTrendChart
           data={requestAnalytics?.requestVolumeTrend ?? []}
         />
