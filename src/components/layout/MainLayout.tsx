@@ -34,7 +34,7 @@ import {
   Gauge,
   KeyRound,
 } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
@@ -154,18 +154,10 @@ export function MainLayout() {
     const { t } = useTranslation()
     const location = useLocation()
     const Icon = item.icon
-    const hasAutoExpanded = useRef(false)
     
     const hasActiveChild = item.children?.some(child => 
       location.pathname === child.path || location.pathname.startsWith(child.path! + '/')
     )
-    
-    useEffect(() => {
-      if (hasActiveChild && isCollapsed && !hasAutoExpanded.current) {
-        hasAutoExpanded.current = true
-        onToggle()
-      }
-    }, [hasActiveChild, isCollapsed, onToggle])
     
     return (
       <div>
@@ -173,7 +165,7 @@ export function MainLayout() {
           onClick={onToggle}
           className={cn(
             'w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
-            'hover:bg-muted text-muted-foreground hover:text-foreground'
+            hasActiveChild ? 'bg-muted text-foreground' : 'hover:bg-muted text-muted-foreground hover:text-foreground'
           )}
         >
           <div className="flex items-center gap-3">
