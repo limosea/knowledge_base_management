@@ -178,35 +178,37 @@ export function MainLayout() {
           )} />
         </button>
         
-        <div className={cn(
-          'grid transition-all duration-200 ease-in-out',
-          isCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
-        )}>
+        <div 
+          style={{
+            maxHeight: isCollapsed ? '0px' : '500px',
+            opacity: isCollapsed ? 0 : 1,
+            overflow: 'hidden',
+            transition: 'max-height 0.2s ease-in-out, opacity 0.2s ease-in-out'
+          }}
+        >
           {item.children && (
-            <div className="overflow-hidden">
-              <div className="ml-4 mt-1 space-y-1">
-                {item.children.map((child) => {
-                  const ChildIcon = child.icon
-                  const isActive = location.pathname === child.path
-                  
-                  return (
-                    <Link
-                      key={child.path}
-                      to={child.path!}
-                      onClick={() => setSidebarOpen(false)}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
-                        isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <ChildIcon className="h-4 w-4" />
-                      {t(child.labelKey)}
-                    </Link>
-                  )
-                })}
-              </div>
+            <div className="ml-4 mt-1 space-y-1">
+              {item.children.map((child) => {
+                const ChildIcon = child.icon
+                const isActive = location.pathname === child.path
+                
+                return (
+                  <Link
+                    key={child.path}
+                    to={child.path!}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <ChildIcon className="h-4 w-4" />
+                    {t(child.labelKey)}
+                  </Link>
+                )
+              })}
             </div>
           )}
         </div>
@@ -278,7 +280,7 @@ export function MainLayout() {
         <div className="h-16 flex items-center px-6 border-b">
           <h1 className="font-bold text-xl">{t('auth.loginTitle')}</h1>
         </div>
-        <nav className="p-4 space-y-6 overflow-y-auto h-[calc(100vh-4rem)]">
+        <nav className="p-4 space-y-6 overflow-y-auto h-[calc(100vh-4rem)] scrollbar-gutter-stable">
           {navSections.map((section) => (
             <div key={section.titleKey}>
               <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
