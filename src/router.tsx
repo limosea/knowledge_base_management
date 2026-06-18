@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AuthLayout, MainLayout } from '@/components/layout'
 import {
   LoginPage,
+  MfaPage,
   DashboardPage,
   KnowledgePage,
   KnowledgeDetailPage,
@@ -11,6 +12,7 @@ import {
   AuditLogsPage,
   SystemPage,
   AnalyticsPage,
+  SettingsPage,
 } from '@/pages'
 
 const isAuthenticated = () => {
@@ -32,6 +34,10 @@ export const router = createBrowserRouter([
         path: '/login',
         element: <LoginPage />,
       },
+      {
+        path: '/login/mfa',
+        element: <MfaPage />,
+      },
     ],
   },
   {
@@ -41,10 +47,16 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
+      // Dashboard section
       {
         path: '/dashboard',
         element: <DashboardPage />,
       },
+      {
+        path: '/analytics',
+        element: <AnalyticsPage />,
+      },
+      // Knowledge Base section
       {
         path: '/knowledge',
         element: <KnowledgePage />,
@@ -57,14 +69,16 @@ export const router = createBrowserRouter([
         path: '/categories',
         element: <CategoriesPage />,
       },
-      {
-        path: '/api-keys',
-        element: <ApiKeysPage />,
-      },
+      // Users section
       {
         path: '/users',
         element: <UsersPage />,
       },
+      {
+        path: '/api-keys',
+        element: <ApiKeysPage />,
+      },
+      // System section
       {
         path: '/audit-logs',
         element: <AuditLogsPage />,
@@ -74,8 +88,8 @@ export const router = createBrowserRouter([
         element: <SystemPage />,
       },
       {
-        path: '/analytics',
-        element: <AnalyticsPage />,
+        path: '/settings',
+        element: <SettingsPage />,
       },
     ],
   },

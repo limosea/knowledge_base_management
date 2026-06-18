@@ -24,7 +24,9 @@ export function LoginPage() {
     setLoading(true)
     try {
       const response = await authApi.login({ username, password })
-      if (response.requirePasswordChange) {
+      if ('mfaRequired' in response && response.mfaRequired) {
+        navigate('/login/mfa', { state: { tempToken: response.tempToken } })
+      } else if ('requirePasswordChange' in response && response.requirePasswordChange) {
         navigate('/change-password', { state: { username } })
       } else {
         navigate('/dashboard')

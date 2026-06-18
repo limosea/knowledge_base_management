@@ -15,32 +15,65 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard,
+  BarChart3,
   BookOpen,
   Tag,
-  Key,
   Users,
+  Key,
   FileText,
   Activity,
+  Settings,
   LogOut,
   Menu,
   Sun,
   Moon,
   Eye,
   Languages,
-  BarChart3,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
-const navItems = [
-  { path: '/dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
-  { path: '/knowledge', icon: BookOpen, labelKey: 'nav.knowledge' },
-  { path: '/categories', icon: Tag, labelKey: 'nav.categories' },
-  { path: '/api-keys', icon: Key, labelKey: 'nav.apiKeys' },
-  { path: '/users', icon: Users, labelKey: 'nav.users' },
-  { path: '/audit-logs', icon: FileText, labelKey: 'nav.auditLogs' },
-  { path: '/system', icon: Activity, labelKey: 'nav.system' },
-  { path: '/analytics', icon: BarChart3, labelKey: 'nav.analytics' },
+interface NavItem {
+  path: string
+  icon: React.ComponentType<{ className?: string }>
+  labelKey: string
+}
+
+interface NavSection {
+  titleKey: string
+  items: NavItem[]
+}
+
+const navSections: NavSection[] = [
+  {
+    titleKey: 'nav.dashboard',
+    items: [
+      { path: '/dashboard', icon: LayoutDashboard, labelKey: 'nav.overview' },
+      { path: '/analytics', icon: BarChart3, labelKey: 'nav.analytics' },
+    ],
+  },
+  {
+    titleKey: 'nav.knowledgeBase',
+    items: [
+      { path: '/knowledge', icon: BookOpen, labelKey: 'nav.knowledge' },
+      { path: '/categories', icon: Tag, labelKey: 'nav.categories' },
+    ],
+  },
+  {
+    titleKey: 'nav.users',
+    items: [
+      { path: '/users', icon: Users, labelKey: 'nav.userManagement' },
+      { path: '/api-keys', icon: Key, labelKey: 'nav.apiKeys' },
+    ],
+  },
+  {
+    titleKey: 'nav.system',
+    items: [
+      { path: '/audit-logs', icon: FileText, labelKey: 'nav.auditLogs' },
+      { path: '/system', icon: Activity, labelKey: 'nav.systemMonitor' },
+      { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
+    ],
+  },
 ]
 
 export function MainLayout() {
@@ -115,27 +148,37 @@ export function MainLayout() {
         <div className="h-16 flex items-center px-6 border-b">
           <h1 className="font-bold text-xl">{t('auth.loginTitle')}</h1>
         </div>
-        <nav className="p-4 space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const isActive = location.pathname.startsWith(item.path)
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <Icon className="h-5 w-5" />
-                {t(item.labelKey)}
-              </Link>
-            )
-          })}
+        <nav className="p-4 space-y-6 overflow-y-auto h-[calc(100vh-4rem)]">
+          {navSections.map((section) => (
+            <div key={section.titleKey}>
+              <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                {t(section.titleKey)}
+              </h3>
+              <div className="space-y-1">
+                {section.items.map((item) => {
+                  const Icon = item.icon
+                  const isActive = location.pathname === item.path || 
+                    (item.path !== '/dashboard' && location.pathname.startsWith(item.path))
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setSidebarOpen(false)}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {t(item.labelKey)}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
       </aside>
 

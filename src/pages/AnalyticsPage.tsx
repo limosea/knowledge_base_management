@@ -12,13 +12,19 @@ import type {
 import { Skeleton } from '@/components/ui/skeleton'
 import { CategoryPieChart } from '@/components/charts/CategoryPieChart'
 import { QualityBarChart } from '@/components/charts/QualityBarChart'
+import { TopTagsChart } from '@/components/charts/TopTagsChart'
+import { DifficultyDistributionChart } from '@/components/charts/DifficultyDistributionChart'
+import { LanguageDistributionChart } from '@/components/charts/LanguageDistributionChart'
 import { ApiKeyStatusChart } from '@/components/charts/ApiKeyStatusChart'
 import { RequestTrendChart } from '@/components/charts/RequestTrendChart'
 import { ActionStatsChart } from '@/components/charts/ActionStatsChart'
 import { ActivityTrendChart } from '@/components/charts/ActivityTrendChart'
+import { StatusDistributionChart } from '@/components/charts/StatusDistributionChart'
+import { TopErrorsTable } from '@/components/charts/TopErrorsTable'
 import { EmbeddingCoverageChart } from '@/components/charts/EmbeddingCoverageChart'
 import { SearchAnalyticsChart } from '@/components/charts/SearchAnalyticsChart'
 import { LatencyStatsCard } from '@/components/charts/LatencyStatsCard'
+import { TopEndpointsTable } from '@/components/charts/TopEndpointsTable'
 
 export function AnalyticsPage() {
   const { t } = useTranslation()
@@ -112,6 +118,17 @@ export function AnalyticsPage() {
               data={contentDistribution?.qualityScoreDistribution ?? []}
             />
           </div>
+          <div className="grid gap-4 lg:grid-cols-3 mt-4">
+            <TopTagsChart
+              data={contentDistribution?.topTags ?? []}
+            />
+            <DifficultyDistributionChart
+              data={contentDistribution?.byDifficulty ?? []}
+            />
+            <LanguageDistributionChart
+              data={contentDistribution?.byLanguage ?? []}
+            />
+          </div>
         </div>
 
         <div>
@@ -136,6 +153,11 @@ export function AnalyticsPage() {
               data={requestAnalytics?.requestVolumeTrend ?? []}
             />
           </div>
+          <div className="mt-4">
+            <TopEndpointsTable
+              data={requestAnalytics?.topEndpoints ?? []}
+            />
+          </div>
         </div>
 
         <div>
@@ -154,6 +176,10 @@ export function AnalyticsPage() {
           </h2>
           <div className="grid gap-4 lg:grid-cols-2">
             <ActivityTrendChart data={auditAnalytics?.trend ?? []} />
+            <StatusDistributionChart data={auditAnalytics?.byStatus ?? []} />
+          </div>
+          <div className="mt-4">
+            <TopErrorsTable data={auditAnalytics?.topErrors ?? []} />
           </div>
         </div>
       </div>

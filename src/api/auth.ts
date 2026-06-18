@@ -3,18 +3,23 @@ import type {
   LoginRequest,
   LoginResponse,
   MfaLoginRequest,
+  MfaRequiredResponse,
   AdminProfile,
   UpdateProfileRequest,
   ChangePasswordRequest,
   MfaSetupResponse,
 } from '@/types'
 
+export type LoginResult = LoginResponse | MfaRequiredResponse
+
 export const authApi = {
-  login: async (data: LoginRequest): Promise<LoginResponse> => {
-    const response = await apiClient.post<LoginResponse>('/admin/auth/login', data, false)
-    localStorage.setItem('accessToken', response.accessToken)
-    localStorage.setItem('refreshToken', response.refreshToken)
-    localStorage.setItem('user', JSON.stringify(response.user))
+  login: async (data: LoginRequest): Promise<LoginResult> => {
+    const response = await apiClient.post<LoginResult>('/admin/auth/login', data, false)
+    if ('accessToken' in response) {
+      localStorage.setItem('accessToken', response.accessToken)
+      localStorage.setItem('refreshToken', response.refreshToken)
+      localStorage.setItem('user', JSON.stringify(response.user))
+    }
     return response
   },
 

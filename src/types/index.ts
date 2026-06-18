@@ -324,6 +324,9 @@ export interface EmbeddingCoverage {
 }
 
 export interface SearchAnalytics {
+  period: string
+  from: string
+  to: string
   totalSearches: number
   searchesOverTime: Array<{ date: string; count: number }>
   topQueries: Array<{ query: string; count: number }>
@@ -336,6 +339,8 @@ export interface SearchAnalytics {
 }
 
 export interface ApiKeyUsage {
+  from: string
+  to: string
   keys: Array<{
     apiKeyId: string
     apiKeyName: string
