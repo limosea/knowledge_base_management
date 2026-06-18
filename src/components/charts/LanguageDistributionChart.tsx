@@ -45,9 +45,9 @@ export function LanguageDistributionChart({ data }: LanguageDistributionChartPro
                 data={data}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
-                label={({ payload, percent }) => `${payload.language} (${((percent ?? 0) * 100).toFixed(0)}%)`}
-                outerRadius={80}
+                innerRadius={65}
+                outerRadius={110}
+                paddingAngle={2}
                 fill="hsl(var(--chart-1))"
                 dataKey="count"
                 nameKey="language"

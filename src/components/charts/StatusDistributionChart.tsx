@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
 interface StatusDistributionChartProps {
   data: Array<{ status: string; count: number }>
@@ -40,25 +40,17 @@ export function StatusDistributionChart({ data }: StatusDistributionChartProps) 
       <CardContent>
         <div className="h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ payload, percent }) => `${payload.status} (${((percent ?? 0) * 100).toFixed(0)}%)`}
-                outerRadius={80}
-                fill="hsl(var(--chart-1))"
-                dataKey="count"
-                nameKey="status"
-              >
+            <BarChart data={data} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" allowDecimals={false} />
+              <YAxis type="category" dataKey="status" width={120} />
+              <Tooltip />
+              <Bar dataKey="count">
                 {data.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </CardContent>

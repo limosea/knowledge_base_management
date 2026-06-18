@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { systemApi, statsApi } from '@/api'
 import type { DashboardStats, KnowledgeTrends, RequestAnalytics, SystemHealth } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BookOpen, Activity, Key } from 'lucide-react'
+import { BookOpen, Activity, Key, AlertTriangle, Plus } from 'lucide-react'
 import { StatCard } from '@/components/charts/StatCard'
 import { SystemStatusCard } from '@/components/charts/SystemStatusCard'
 import { RequestTrendChart } from '@/components/charts/RequestTrendChart'
 import { KnowledgeTrendsChart } from '@/components/charts/KnowledgeTrendsChart'
+import { TopApiKeysTable } from '@/components/charts/TopApiKeysTable'
 
 export function DashboardPage() {
   const { t } = useTranslation()
@@ -40,12 +41,24 @@ export function DashboardPage() {
     fetchData()
   }, [])
 
+  const errorRateDisplay = useMemo(() => {
+    const er = dashboardStats?.errorRate
+    if (!er || er.total === 0) return '0.0%'
+    return `${((er.errors / er.total) * 100).toFixed(1)}%`
+  }, [dashboardStats])
+
+  const errorRateDescription = useMemo(() => {
+    const er = dashboardStats?.errorRate
+    if (!er) return undefined
+    return `${er.errors.toLocaleString()} / ${er.total.toLocaleString()}`
+  }, [dashboardStats])
+
   if (loading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-10 w-48" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-28" />
           ))}
         </div>
@@ -63,7 +76,7 @@ export function DashboardPage() {
         <h1 className="text-3xl font-bold">{t('dashboard.title')}</h1>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
         <StatCard
           title={t('dashboard.knowledgeEntries')}
           value={dashboardStats?.knowledgeEntries?.total ?? 0}
@@ -79,6 +92,17 @@ export function DashboardPage() {
           value={dashboardStats?.apiKeys?.active ?? 0}
           icon={Key}
         />
+        <StatCard
+          title={t('charts.errorRate')}
+          value={errorRateDisplay}
+          icon={AlertTriangle}
+          description={errorRateDescription}
+        />
+        <StatCard
+          title={t('charts.newEntriesWeek')}
+          value={dashboardStats?.knowledgeEntries?.createdThisWeek ?? 0}
+          icon={Plus}
+        />
         <SystemStatusCard
           status={systemHealth?.status ?? 'unhealthy'}
         />
@@ -86,10 +110,12 @@ export function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <KnowledgeTrendsChart data={knowledgeTrends} />
-        <RequestTrendChart 
-          data={requestAnalytics?.requestVolumeTrend ?? []} 
+        <RequestTrendChart
+          data={requestAnalytics?.requestVolumeTrend ?? []}
         />
       </div>
+
+      <TopApiKeysTable data={dashboardStats?.topApiKeysToday} />
     </div>
   )
 }

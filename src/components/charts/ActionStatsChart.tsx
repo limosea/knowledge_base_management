@@ -32,10 +32,10 @@ export function ActionStatsChart({ data }: ActionStatsChartProps) {
       <CardContent>
         <div className="h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data}>
+            <BarChart data={data} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="action" />
-              <YAxis />
+              <XAxis type="number" allowDecimals={false} />
+              <YAxis type="category" dataKey="action" width={140} />
               <Tooltip />
               <Bar dataKey="count" fill="hsl(var(--chart-1))" />
             </BarChart>

@@ -1,23 +1,22 @@
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import type { SearchAnalytics } from '@/types'
 
 interface SearchAnalyticsChartProps {
-  data: SearchAnalytics | null
+  data: Array<{ query: string; count: number }>
 }
 
 export function SearchAnalyticsChart({ data }: SearchAnalyticsChartProps) {
   const { t } = useTranslation()
 
-  if (!data) {
+  if (!data || data.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t('charts.searchAnalytics')}</CardTitle>
+          <CardTitle>{t('charts.searchQueries')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[350px] flex items-center justify-center text-muted-foreground">
+          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
             {t('charts.noData')}
           </div>
         </CardContent>
@@ -28,30 +27,15 @@ export function SearchAnalyticsChart({ data }: SearchAnalyticsChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('charts.searchAnalytics')}</CardTitle>
+        <CardTitle>{t('charts.searchQueries')}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="text-muted-foreground">{t('charts.totalSearches')}</div>
-            <div className="font-medium">{data.totalSearches}</div>
-          </div>
-          <div>
-            <div className="text-muted-foreground">{t('charts.hitRate')}</div>
-            <div className="font-medium">
-              {data.hitRate.total > 0 
-                ? ((data.hitRate.with_results / data.hitRate.total) * 100).toFixed(1)
-                : '0.0'}%
-            </div>
-          </div>
-        </div>
-        
-        <div className="h-[200px]">
+      <CardContent>
+        <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.topQueries.slice(0, 5)}>
+            <BarChart data={data.slice(0, 10)}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="query" />
-              <YAxis />
+              <XAxis dataKey="query" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={60} />
+              <YAxis allowDecimals={false} />
               <Tooltip />
               <Bar dataKey="count" fill="hsl(var(--chart-1))" />
             </BarChart>
