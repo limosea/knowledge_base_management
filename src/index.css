@@ -135,7 +135,19 @@
   
   /* Collapsible nav animation */
   .collapsible-nav-content {
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transition: grid-template-rows 0.2s ease-in-out, opacity 0.2s ease-in-out;
+  }
+
+  .collapsible-nav-content.collapsed {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+
+  .collapsible-nav-inner {
     overflow: hidden;
-    transition: max-height 0.2s ease-in-out, opacity 0.2s ease-in-out;
+    min-height: 0;
   }
 }

@@ -54,10 +54,10 @@ const navSections: NavSection[] = [
   {
     titleKey: 'nav.dashboard',
     items: [
-      { 
-        path: '/dashboard', 
-        icon: LayoutDashboard, 
-        labelKey: 'nav.overview' 
+      {
+        path: '/dashboard',
+        icon: LayoutDashboard,
+        labelKey: 'nav.overview'
       },
       {
         icon: BarChart3,
@@ -96,123 +96,117 @@ const navSections: NavSection[] = [
   },
 ]
 
+function NavItem({ item, setSidebarOpen }: { item: NavItem; setSidebarOpen: (open: boolean) => void }) {
+  const { t } = useTranslation()
+  const location = useLocation()
+  const Icon = item.icon
+  const isActive = location.pathname === item.path ||
+    (item.path !== '/dashboard' && item.path !== undefined && location.pathname.startsWith(item.path))
+
+  return (
+    <Link
+      to={item.path!}
+      onClick={() => setSidebarOpen(false)}
+      className={cn(
+        'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+        isActive
+          ? 'bg-primary text-primary-foreground'
+          : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+      )}
+    >
+      <Icon className="h-4 w-4" />
+      {t(item.labelKey)}
+    </Link>
+  )
+}
+
+function CollapsibleNavItem({
+  item,
+  isCollapsed,
+  onToggle,
+  setSidebarOpen,
+}: {
+  item: NavItem
+  isCollapsed: boolean
+  onToggle: () => void
+  setSidebarOpen: (open: boolean) => void
+}) {
+  const { t } = useTranslation()
+  const location = useLocation()
+  const Icon = item.icon
+
+  const hasActiveChild = item.children?.some(
+    child => location.pathname === child.path || location.pathname.startsWith(child.path! + '/')
+  )
+
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className={cn(
+          'w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+          hasActiveChild ? 'bg-muted text-foreground' : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <Icon className="h-4 w-4" />
+          {t(item.labelKey)}
+        </div>
+        <ChevronDown
+          className={cn(
+            'h-4 w-4 transition-transform duration-200',
+            isCollapsed && '-rotate-90'
+          )}
+        />
+      </button>
+
+      <div className={cn('collapsible-nav-content', isCollapsed && 'collapsed')}>
+        <div className="collapsible-nav-inner ml-4 mt-1 space-y-1">
+          {item.children?.map((child) => {
+            const ChildIcon = child.icon
+            const isActive = location.pathname === child.path
+
+            return (
+              <Link
+                key={child.path}
+                to={child.path!}
+                onClick={() => setSidebarOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <ChildIcon className="h-4 w-4" />
+                {t(child.labelKey)}
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function MainLayout() {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
   const { i18n } = useTranslation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  
+
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
     const stored = localStorage.getItem('nav-collapsed-state')
     return stored ? JSON.parse(stored) : {}
   })
-  
+
   const toggleCollapse = (key: string) => {
     setCollapsedSections(prev => {
       const newState = { ...prev, [key]: !prev[key] }
       localStorage.setItem('nav-collapsed-state', JSON.stringify(newState))
       return newState
     })
-  }
-  
-  function NavItem({ item, setSidebarOpen }: { item: NavItem; setSidebarOpen: (open: boolean) => void }) {
-    const { t } = useTranslation()
-    const location = useLocation()
-    const Icon = item.icon
-    const isActive = location.pathname === item.path || 
-      (item.path !== '/dashboard' && item.path !== undefined && location.pathname.startsWith(item.path))
-    
-    return (
-      <Link
-        to={item.path!}
-        onClick={() => setSidebarOpen(false)}
-        className={cn(
-          'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
-          isActive
-            ? 'bg-primary text-primary-foreground'
-            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-        )}
-      >
-        <Icon className="h-4 w-4" />
-        {t(item.labelKey)}
-      </Link>
-    )
-  }
-  
-  function CollapsibleNavItem({ 
-    item, 
-    isCollapsed, 
-    onToggle,
-    setSidebarOpen 
-  }: { 
-    item: NavItem
-    isCollapsed: boolean
-    onToggle: () => void
-    setSidebarOpen: (open: boolean) => void
-  }) {
-    const { t } = useTranslation()
-    const location = useLocation()
-    const Icon = item.icon
-    
-    const hasActiveChild = item.children?.some(child => 
-      location.pathname === child.path || location.pathname.startsWith(child.path! + '/')
-    )
-    
-    return (
-      <div>
-        <button
-          onClick={onToggle}
-          className={cn(
-            'w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
-            hasActiveChild ? 'bg-muted text-foreground' : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <Icon className="h-4 w-4" />
-            {t(item.labelKey)}
-          </div>
-          <ChevronDown className={cn(
-            'h-4 w-4 transition-transform duration-200',
-            isCollapsed && '-rotate-90'
-          )} />
-        </button>
-        
-        <div 
-          className="collapsible-nav-content"
-          style={{
-            maxHeight: isCollapsed ? '0px' : '500px',
-            opacity: isCollapsed ? 0 : 1,
-          }}
-        >
-          {item.children && (
-            <div className="ml-4 mt-1 space-y-1">
-              {item.children.map((child) => {
-                const ChildIcon = child.icon
-                const isActive = location.pathname === child.path
-                
-                return (
-                  <Link
-                    key={child.path}
-                    to={child.path!}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
-                      isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <ChildIcon className="h-4 w-4" />
-                    {t(child.labelKey)}
-                  </Link>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    )
   }
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')
