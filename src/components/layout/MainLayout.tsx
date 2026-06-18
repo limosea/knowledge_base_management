@@ -179,11 +179,10 @@ export function MainLayout() {
         </button>
         
         <div 
+          className="collapsible-nav-content"
           style={{
             maxHeight: isCollapsed ? '0px' : '500px',
             opacity: isCollapsed ? 0 : 1,
-            overflow: 'hidden',
-            transition: 'max-height 0.2s ease-in-out, opacity 0.2s ease-in-out'
           }}
         >
           {item.children && (
@@ -280,7 +279,7 @@ export function MainLayout() {
         <div className="h-16 flex items-center px-6 border-b">
           <h1 className="font-bold text-xl">{t('auth.loginTitle')}</h1>
         </div>
-        <nav className="p-4 space-y-6 overflow-y-auto h-[calc(100vh-4rem)] scrollbar-gutter-stable">
+        <nav className="p-4 space-y-6 overflow-y-auto h-[calc(100vh-4rem)]">
           {navSections.map((section) => (
             <div key={section.titleKey}>
               <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">

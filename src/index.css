@@ -127,4 +127,15 @@
   nav::-webkit-scrollbar-button {
     display: none;
   }
+  
+  /* Reserve scrollbar space */
+  nav {
+    scrollbar-gutter: stable;
+  }
+  
+  /* Collapsible nav animation */
+  .collapsible-nav-content {
+    overflow: hidden;
+    transition: max-height 0.2s ease-in-out, opacity 0.2s ease-in-out;
+  }
 }
