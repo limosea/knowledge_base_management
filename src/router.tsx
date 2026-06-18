@@ -11,7 +11,10 @@ import {
   UsersPage,
   AuditLogsPage,
   SystemPage,
-  AnalyticsPage,
+  KnowledgeAnalyticsPage,
+  SearchAnalyticsPage,
+  ApiAnalyticsPage,
+  PerformanceAnalyticsPage,
   SettingsPage,
 } from '@/pages'
 
@@ -54,7 +57,23 @@ export const router = createBrowserRouter([
       },
       {
         path: '/analytics',
-        element: <AnalyticsPage />,
+        element: <Navigate to="/analytics/knowledge" replace />,
+      },
+      {
+        path: '/analytics/knowledge',
+        element: <KnowledgeAnalyticsPage />,
+      },
+      {
+        path: '/analytics/search',
+        element: <SearchAnalyticsPage />,
+      },
+      {
+        path: '/analytics/api',
+        element: <ApiAnalyticsPage />,
+      },
+      {
+        path: '/analytics/performance',
+        element: <PerformanceAnalyticsPage />,
       },
       // Knowledge Base section
       {
