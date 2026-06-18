@@ -29,14 +29,20 @@ import {
   Moon,
   Eye,
   Languages,
+  ChevronDown,
+  Search,
+  Gauge,
+  KeyRound,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
-  path: string
+  path?: string
   icon: React.ComponentType<{ className?: string }>
   labelKey: string
+  collapsible?: boolean
+  children?: NavItem[]
 }
 
 interface NavSection {
@@ -48,8 +54,22 @@ const navSections: NavSection[] = [
   {
     titleKey: 'nav.dashboard',
     items: [
-      { path: '/dashboard', icon: LayoutDashboard, labelKey: 'nav.overview' },
-      { path: '/analytics', icon: BarChart3, labelKey: 'nav.analytics' },
+      { 
+        path: '/dashboard', 
+        icon: LayoutDashboard, 
+        labelKey: 'nav.overview' 
+      },
+      {
+        icon: BarChart3,
+        labelKey: 'nav.analytics',
+        collapsible: true,
+        children: [
+          { path: '/analytics/knowledge', icon: BookOpen, labelKey: 'analytics.knowledgeAnalysis' },
+          { path: '/analytics/search', icon: Search, labelKey: 'analytics.searchAnalysis' },
+          { path: '/analytics/api', icon: KeyRound, labelKey: 'analytics.apiAnalysis' },
+          { path: '/analytics/performance', icon: Gauge, labelKey: 'analytics.performanceAndAudit' },
+        ]
+      }
     ],
   },
   {
