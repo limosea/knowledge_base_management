@@ -32,3 +32,6 @@ dist-ssr
 
 # TypeScript build cache
 *.tsbuildinfo
+
+# Nohup output
+nohup.out
