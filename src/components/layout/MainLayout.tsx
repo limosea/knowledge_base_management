@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard,
   BookOpen,
+  Tag,
   Key,
   Users,
   FileText,
@@ -34,6 +35,7 @@ import { cn } from '@/lib/utils'
 const navItems = [
   { path: '/dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
   { path: '/knowledge', icon: BookOpen, labelKey: 'nav.knowledge' },
+  { path: '/categories', icon: Tag, labelKey: 'nav.categories' },
   { path: '/api-keys', icon: Key, labelKey: 'nav.apiKeys' },
   { path: '/users', icon: Users, labelKey: 'nav.users' },
   { path: '/audit-logs', icon: FileText, labelKey: 'nav.auditLogs' },
@@ -53,7 +55,7 @@ export function MainLayout() {
 
   const handleLogout = async () => {
     try {
-      await apiClient.post('/auth/logout')
+      await apiClient.post('/admin/auth/logout')
     } finally {
       apiClient.clearTokens()
       navigate('/login')

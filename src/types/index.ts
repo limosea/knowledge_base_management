@@ -358,6 +358,57 @@ export interface AuditAnalytics {
   trend: Array<{ date: string; count: number }>
 }
 
+// ==================== Categories API Types ====================
+
+export interface Category {
+  id: string
+  name: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CategoryWithEntryCount {
+  name: string
+  entry_count: number
+}
+
+export interface CategoryListResponse {
+  data: CategoryWithEntryCount[]
+  total: number
+}
+
+export interface AdminCategoryListItem extends Category {
+  entry_count: number
+}
+
+export type AdminCategoryListResponse = PaginatedResponse<AdminCategoryListItem>
+
+export interface CreateCategoryRequest {
+  name: string
+}
+
+export interface UpdateCategoryRequest {
+  name: string
+}
+
+export interface CategoryStats {
+  name: string
+  total_entries: number
+  by_language: Record<string, number>
+  avg_quality_score: number
+}
+
+export interface AdminCategoryStats {
+  id: string
+  name: string
+  total_entries: number
+  by_language: Record<string, number>
+  by_difficulty: Record<string, number>
+  by_framework: Record<string, number>
+  avg_quality_score: number
+  recent_entries: number
+}
+
 export interface RequestAnalytics {
   period: string
   from: string

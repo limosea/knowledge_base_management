@@ -42,18 +42,24 @@ tags:
     description: 健康检查接口
   - name: Knowledge
     description: 知识条目业务接口
+  - name: Categories
+    description: 分类查询业务接口
   - name: Admin Auth
     description: 管理员认证接口
   - name: Admin API Keys
     description: API Key管理接口
   - name: Admin Knowledge
     description: 知识条目管理接口
+  - name: Admin Categories
+    description: 分类管理接口
   - name: Admin Users
     description: 管理员用户管理接口
   - name: Admin Audit Logs
     description: 审计日志接口
   - name: Admin System
     description: 系统监控接口
+  - name: Admin Stats
+    description: 数据统计分析接口
 
 paths:
   # ==================== 健康检查 ====================
@@ -303,6 +309,52 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== 分类业务API ====================
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: 获取分类列表
+      description: 返回所有分类及其关联的知识条目数量
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /categories/{name}/stats:
+    get:
+      tags:
+        - Categories
+      summary: 获取分类统计信息
+      description: 返回指定分类的统计信息，包括条目数量、按语言分布、平均质量分数等
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 分类名称
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -732,6 +784,174 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== 分类管理 ====================
+  /admin/categories:
+    get:
+      tags:
+        - Admin Categories
+      summary: 获取分类列表
+      description: 返回所有分类及其关联的知识条目数量，支持分页和搜索
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: search
+          in: query
+          description: 按分类名称模糊搜索
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCategoryListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    post:
+      tags:
+        - Admin Categories
+      summary: 创建分类
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: 分类名称已存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /admin/categories/{id}:
+    get:
+      tags:
+        - Admin Categories
+      summary: 获取分类详情
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CategoryId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      tags:
+        - Admin Categories
+      summary: 更新分类
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CategoryId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 分类名称已存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags:
+        - Admin Categories
+      summary: 删除分类
+      description: 只能删除没有关联知识条目的分类
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CategoryId'
+      responses:
+        '204':
+          description: 删除成功
+        '400':
+          description: 分类下存在知识条目，无法删除
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/categories/{id}/stats:
+    get:
+      tags:
+        - Admin Categories
+      summary: 获取分类统计信息
+      description: 返回指定分类的详细统计，包括按语言、难度、框架分布，平均质量分数，最近新增条目数等
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CategoryId'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCategoryStats'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -1281,6 +1501,624 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  # ==================== 数据统计分析 ====================
+  /admin/stats/dashboard:
+    get:
+      summary: Dashboard 聚合摘要
+      description: 一次返回所有统计模块的摘要数据，供前端 Dashboard 首页使用。super_admin 角色返回额外字段（API Key 排行、错误率）。
+      tags: [Admin Stats]
+      security:
+        - AdminAuth: []
+      parameters: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  knowledgeEntries:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      avgQualityScore:
+                        type: number
+                      createdThisWeek:
+                        type: integer
+                  apiKeys:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      active:
+                        type: integer
+                  requests:
+                    type: object
+                    properties:
+                      today:
+                        type: integer
+                  topApiKeysToday:
+                    type: array
+                    description: 仅 super_admin 可见
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        count:
+                          type: integer
+                  errorRate:
+                    type: object
+                    description: 仅 super_admin 可见
+                    properties:
+                      total:
+                        type: integer
+                      errors:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/stats/knowledge-trends:
+    get:
+      summary: 知识条目时间趋势
+      description: 按日/周/月粒度统计条目创建数、更新数、删除数，返回时间序列数组。
+      tags: [Admin Stats]
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: day
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: string
+                  from:
+                    type: string
+                    format: date-time
+                  to:
+                    type: string
+                    format: date-time
+                  created:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+                  updated:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+                  deleted:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/stats/content-distribution:
+    get:
+      summary: 内容多维分布统计
+      description: 标签 Top20、framework 分布、难度分布、语言分布、质量分区间分布。
+      tags: [Admin Stats]
+      security:
+        - AdminAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  topTags:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tag:
+                          type: string
+                        count:
+                          type: integer
+                  byFramework:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        framework:
+                          type: string
+                        count:
+                          type: integer
+                  byDifficulty:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        level:
+                          type: integer
+                        count:
+                          type: integer
+                  byLanguage:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        language:
+                          type: string
+                        count:
+                          type: integer
+                  qualityScoreDistribution:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        bucket:
+                          type: string
+                        count:
+                          type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/stats/embedding-coverage:
+    get:
+      summary: 嵌入覆盖率统计
+      description: 有/无 embedding 的条目数、覆盖率百分比、批量嵌入任务状态汇总。
+      tags: [Admin Stats]
+      security:
+        - AdminAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalEntries:
+                    type: integer
+                  withEmbedding:
+                    type: integer
+                  withoutEmbedding:
+                    type: integer
+                  coveragePercent:
+                    type: number
+                  batchStatusSummary:
+                    type: array
+                    items:
+                      type: object
+                  latestBatch:
+                    type: object
+                    nullable: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/stats/search-analytics:
+    get:
+      summary: 搜索行为分析
+      description: 热门搜索关键词 TopN、搜索量趋势、来源 IP 分布、搜索成功率。
+      tags: [Admin Stats]
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: day
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: topN
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalSearches:
+                    type: integer
+                  searchesOverTime:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+                  topQueries:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        query:
+                          type: string
+                        count:
+                          type: integer
+                  topIps:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                        count:
+                          type: integer
+                  hitRate:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      with_results:
+                        type: integer
+                      no_results:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/stats/api-key-usage:
+    get:
+      summary: API Key 使用排行
+      description: 各 API Key 的请求总量排行（仅 super_admin）。
+      tags: [Admin Stats]
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        apiKeyId:
+                          type: string
+                        apiKeyName:
+                          type: string
+                        totalRequests:
+                          type: integer
+                        lastActiveAt:
+                          type: string
+                          format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/stats/api-key-usage/{keyId}:
+    get:
+      summary: 单个 API Key 使用明细
+      description: 指定 API Key 的请求趋势、按 action 类型分布（仅 super_admin）。
+      tags: [Admin Stats]
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: day
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keyId:
+                    type: string
+                  totalRequests:
+                    type: integer
+                  byAction:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        action:
+                          type: string
+                        count:
+                          type: integer
+                  trend:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/stats/audit-analytics:
+    get:
+      summary: 审计日志分析
+      description: 按 action 类型、状态、错误信息多维分析审计日志（仅 super_admin）。
+      tags: [Admin Stats]
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: day
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  byAction:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        action:
+                          type: string
+                        count:
+                          type: integer
+                  byStatus:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                        count:
+                          type: integer
+                  topErrors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        errorMessage:
+                          type: string
+                        action:
+                          type: string
+                        count:
+                          type: integer
+                  trend:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        count:
+                          type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/stats/request-analytics:
+    get:
+      summary: 公开 API 请求分析
+      description: |
+        对公开端 API 请求进行 HTTP 级别的分析，包括状态码分布、请求成功率、
+        请求量趋势（含错误计数）、延迟统计（avg/p50/p95）、热门端点排行。
+        仅 super_admin 可访问。
+
+        统计口径说明：仅包含公开 API（`/api/v1/...`）的请求；管理后台
+        （`/admin/*`）与健康检查端点的流量不纳入统计。
+      tags: [Admin Stats]
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: period
+          in: query
+          description: 时间聚合粒度
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: day
+        - name: from
+          in: query
+          description: 起始时间（默认近 30 天）
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          description: 结束时间（默认当前）
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: string
+                    enum: [day, week, month]
+                  from:
+                    type: string
+                    format: date-time
+                  to:
+                    type: string
+                    format: date-time
+                  statusCodeDistribution:
+                    type: array
+                    description: 按 HTTP 状态码统计请求数
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: integer
+                          description: HTTP 状态码
+                        count:
+                          type: integer
+                  successRate:
+                    type: object
+                    description: 请求成功率汇总
+                    properties:
+                      total:
+                        type: integer
+                        description: 总请求数
+                      success2xx:
+                        type: integer
+                        description: 2xx 响应数
+                      clientError4xx:
+                        type: integer
+                        description: 4xx 响应数
+                      serverError5xx:
+                        type: integer
+                        description: 5xx 响应数
+                  requestVolumeTrend:
+                    type: array
+                    description: 请求量时间趋势
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          description: 日期（YYYY-MM-DD）
+                        total:
+                          type: integer
+                          description: 该时段总请求数
+                        errors:
+                          type: integer
+                          description: 该时段错误请求数（4xx + 5xx）
+                  latencyStats:
+                    type: object
+                    description: 响应延迟统计（单位：毫秒）
+                    properties:
+                      avgMs:
+                        type: integer
+                        description: 平均响应时间
+                      p50Ms:
+                        type: integer
+                        description: P50 响应时间
+                      p95Ms:
+                        type: integer
+                        description: P95 响应时间
+                  topEndpoints:
+                    type: array
+                    description: 热门端点 Top 20
+                    items:
+                      type: object
+                      properties:
+                        method:
+                          type: string
+                          description: HTTP 方法
+                        path:
+                          type: string
+                          description: 请求路径
+                        count:
+                          type: integer
+                          description: 请求数
+                        avgResponseTime:
+                          type: integer
+                          description: 平均响应时间（毫秒）
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -1322,6 +2160,15 @@ components:
         type: string
         format: uuid
       description: 管理员用户ID
+
+    CategoryId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: 分类ID
 
   responses:
     BadRequest:
@@ -1379,6 +2226,134 @@ components:
           type: integer
         totalPages:
           type: integer
+
+    # ========== 分类相关 ==========
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    
+    CategoryWithEntryCount:
+      type: object
+      properties:
+        name:
+          type: string
+        entry_count:
+          type: integer
+          description: 该分类下的知识条目数量
+    
+    CategoryListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryWithEntryCount'
+        total:
+          type: integer
+          description: 分类总数
+    
+    AdminCategoryListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            allOf:
+              - $ref: '#/components/schemas/Category'
+              - type: object
+                properties:
+                  entry_count:
+                    type: integer
+                    description: 该分类下的知识条目数量
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+    
+    CreateCategoryRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+    
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+    
+    CategoryStats:
+      type: object
+      properties:
+        name:
+          type: string
+        total_entries:
+          type: integer
+          description: 该分类下的知识条目总数
+        by_language:
+          type: object
+          additionalProperties:
+            type: integer
+          description: 按编程语言统计的条目数量
+        avg_quality_score:
+          type: number
+          format: float
+          description: 平均质量分数
+    
+    AdminCategoryStats:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        total_entries:
+          type: integer
+          description: 该分类下的知识条目总数
+        by_language:
+          type: object
+          additionalProperties:
+            type: integer
+          description: 按编程语言统计的条目数量
+        by_difficulty:
+          type: object
+          additionalProperties:
+            type: integer
+          description: 按难度等级(1-5)统计的条目数量
+        by_framework:
+          type: object
+          additionalProperties:
+            type: integer
+          description: 按框架统计的条目数量
+        avg_quality_score:
+          type: number
+          format: float
+          description: 平均质量分数
+        recent_entries:
+          type: integer
+          description: 最近7天新增的条目数量
 
     # ========== 认证相关 ==========
     LoginRequest:
