@@ -100,7 +100,6 @@ export function MainLayout() {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
   const { i18n } = useTranslation()
-  const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   
