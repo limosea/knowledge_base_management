@@ -34,7 +34,7 @@ import {
   Gauge,
   KeyRound,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
@@ -154,13 +154,15 @@ export function MainLayout() {
     const { t } = useTranslation()
     const location = useLocation()
     const Icon = item.icon
+    const hasAutoExpanded = useRef(false)
     
     const hasActiveChild = item.children?.some(child => 
       location.pathname === child.path || location.pathname.startsWith(child.path! + '/')
     )
     
     useEffect(() => {
-      if (hasActiveChild && isCollapsed) {
+      if (hasActiveChild && isCollapsed && !hasAutoExpanded.current) {
+        hasAutoExpanded.current = true
         onToggle()
       }
     }, [hasActiveChild, isCollapsed, onToggle])
