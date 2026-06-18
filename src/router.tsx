@@ -4,6 +4,8 @@ import {
   LoginPage,
   DashboardPage,
   KnowledgePage,
+  KnowledgeDetailPage,
+  CategoriesPage,
   ApiKeysPage,
   UsersPage,
   AuditLogsPage,
@@ -46,6 +48,14 @@ export const router = createBrowserRouter([
       {
         path: '/knowledge',
         element: <KnowledgePage />,
+      },
+      {
+        path: '/knowledge/:id',
+        element: <KnowledgeDetailPage />,
+      },
+      {
+        path: '/categories',
+        element: <CategoriesPage />,
       },
       {
         path: '/api-keys',
