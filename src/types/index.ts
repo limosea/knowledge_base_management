@@ -2,6 +2,7 @@ export interface ErrorResponse {
   error: {
     code: string
     message: string
+    request_id?: string
     timestamp: string
   }
 }
@@ -17,9 +18,10 @@ export interface PaginatedResponse<T> extends PaginationMeta {
   data: T[]
 }
 
-export type AdminRole = 'admin' | 'super_admin'
+export type AdminRole = 'user' | 'admin' | 'super_admin'
 export type Permission = 'read' | 'write' | 'admin'
 export type EmbeddingStatus = 'processing' | 'completed' | 'failed'
+export type Visibility = 'private' | 'public'
 
 export interface LoginRequest {
   username: string
@@ -82,6 +84,7 @@ export interface ApiKey {
   permissions: Permission[]
   rateLimit: number
   isActive: boolean
+  ownerId?: string
   lastUsedAt?: string
   expiresAt?: string
   createdAt: string
@@ -116,6 +119,7 @@ export interface KnowledgeEntry {
   qualityScore?: number
   structuredData?: Record<string, unknown>
   createdBy: string
+  visibility?: Visibility
   entryVersion: number
   isLatest: boolean
   createdAt: string
@@ -134,6 +138,7 @@ export interface CreateEntryRequest {
   framework?: string
   difficulty_level?: number
   structured_data?: Record<string, unknown>
+  visibility?: Visibility
 }
 
 export interface UpdateEntryRequest {
@@ -147,11 +152,13 @@ export interface UpdateEntryRequest {
   difficulty_level?: number
   structured_data?: Record<string, unknown>
   change_summary?: string
+  visibility?: Visibility
 }
 
 export interface CreateEntryResponse {
   id: string
   entry_version: number
+  visibility: Visibility
   embedding_status: EmbeddingStatus
   created_at: string
 }
@@ -177,6 +184,7 @@ export interface AdminKnowledgeListItem {
   category?: string
   tags: string[]
   qualityScore?: number
+  visibility?: Visibility
   createdAt: string
   createdBy: string
 }
@@ -217,15 +225,35 @@ export interface ResetPasswordResponse {
   message: string
 }
 
+export type AuditActorType = 'admin_user' | 'api_key' | 'system'
+export type AuditSource = 'admin_panel' | 'public_api' | 'mcp' | 'system'
+export type AuditStatus = 'success' | 'error' | 'failure'
+
+export interface AuditClientInfo {
+  mcpClient?: string
+  clientVersion?: string
+  apiKeyId?: string
+  apiKeyName?: string
+  requestId?: string
+}
+
 export interface AuditLog {
   id: string
+  actorType: AuditActorType
+  actorId?: string
+  actorName?: string
+  actorRole?: AdminRole
+  source: AuditSource
+  clientInfo?: AuditClientInfo
   action: string
-  resourceType: string
+  resourceType?: string
   resourceId?: string
   details?: Record<string, unknown>
   ipAddress?: string
   userAgent?: string
-  apiKeyId?: string
+  httpStatusCode?: number
+  status?: AuditStatus
+  errorMessage?: string
   createdAt: string
 }
 
@@ -437,4 +465,31 @@ export interface RequestAnalytics {
     count: number
     avgResponseTime: number
   }>
+}
+
+// ==================== Self-Service API Types ====================
+
+export interface MyApiKey {
+  id: string
+  key?: string
+  keyPrefix: string
+  name: string
+  permissions: Permission[]
+  rateLimit: number
+  lastUsedAt?: string
+  expiresAt?: string
+  createdAt: string
+}
+
+export type MyApiKeyListResponse = PaginatedResponse<MyApiKey>
+
+export interface MyStats {
+  apiKeys: {
+    total: number
+    active: number
+  }
+  requests: {
+    today: number
+    thisWeek: number
+  }
 }
