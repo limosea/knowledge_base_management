@@ -116,7 +116,7 @@ export function RolesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">{t('roles.title')}</h1>
-          <p className="text-muted-foreground">{t('roles.description')}</p>
+          <p className="text-muted-foreground">{t('roles.subtitle')}</p>
         </div>
         <Button onClick={handleCreate}>
           <Plus className="mr-2 h-4 w-4" />
