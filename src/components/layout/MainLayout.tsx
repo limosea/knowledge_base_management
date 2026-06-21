@@ -33,6 +33,7 @@ import {
   Search,
   Gauge,
   KeyRound,
+  User,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -43,12 +44,15 @@ interface NavItem {
   labelKey: string
   collapsible?: boolean
   children?: NavItem[]
+  minRole?: 'user' | 'admin' | 'super_admin'
 }
 
 interface NavSection {
   titleKey: string
   items: NavItem[]
 }
+
+const roleHierarchy: Record<string, number> = { user: 1, admin: 2, super_admin: 3 }
 
 const navSections: NavSection[] = [
   {
@@ -82,15 +86,16 @@ const navSections: NavSection[] = [
   {
     titleKey: 'nav.users',
     items: [
-      { path: '/users', icon: Users, labelKey: 'nav.userManagement' },
+      { path: '/users', icon: Users, labelKey: 'nav.userManagement', minRole: 'super_admin' },
       { path: '/api-keys', icon: Key, labelKey: 'nav.apiKeys' },
+      { path: '/me/api-keys', icon: User, labelKey: 'nav.myApiKeys' },
     ],
   },
   {
     titleKey: 'nav.system',
     items: [
-      { path: '/audit-logs', icon: FileText, labelKey: 'nav.auditLogs' },
-      { path: '/system', icon: Activity, labelKey: 'nav.systemMonitor' },
+      { path: '/audit-logs', icon: FileText, labelKey: 'nav.auditLogs', minRole: 'admin' },
+      { path: '/system', icon: Activity, labelKey: 'nav.systemMonitor', minRole: 'admin' },
       { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
     ],
   },
@@ -274,13 +279,19 @@ export function MainLayout() {
           <h1 className="font-bold text-xl">{t('auth.loginTitle')}</h1>
         </div>
         <nav className="p-4 space-y-6 overflow-y-auto h-[calc(100vh-4rem)]">
-          {navSections.map((section) => (
-            <div key={section.titleKey}>
-              <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                {t(section.titleKey)}
-              </h3>
-              <div className="space-y-1">
-                {section.items.map((item) => {
+          {navSections.map((section) => {
+            const filteredItems = section.items.filter(item => {
+              if (!item.minRole) return true
+              return roleHierarchy[user.role] >= roleHierarchy[item.minRole]
+            })
+            if (filteredItems.length === 0) return null
+            return (
+              <div key={section.titleKey}>
+                <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  {t(section.titleKey)}
+                </h3>
+                <div className="space-y-1">
+                  {filteredItems.map((item) => {
                   if (item.collapsible && item.children) {
                     return (
                       <CollapsibleNavItem
@@ -297,7 +308,8 @@ export function MainLayout() {
                 })}
               </div>
             </div>
-          ))}
+            )
+          })}
         </nav>
       </aside>
 
@@ -314,7 +326,9 @@ export function MainLayout() {
         {/* Desktop Header */}
         <header className="hidden lg:flex h-16 items-center justify-between px-6 border-b bg-card">
           <div className="flex items-center gap-4">
-            <Badge variant="outline">{user.role === 'super_admin' ? t('users.superAdmin') : t('users.admin')}</Badge>
+            <Badge variant="outline">
+              {user.role === 'super_admin' ? t('users.superAdmin') : user.role === 'admin' ? t('users.admin') : t('users.user')}
+            </Badge>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={toggleLanguage}>
