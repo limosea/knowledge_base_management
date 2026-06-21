@@ -87,7 +87,7 @@ const navSections: NavSection[] = [
     titleKey: 'nav.users',
     items: [
       { path: '/users', icon: Users, labelKey: 'nav.userManagement', minRole: 'super_admin' },
-      { path: '/api-keys', icon: Key, labelKey: 'nav.apiKeys' },
+      { path: '/api-keys', icon: Key, labelKey: 'nav.apiKeys', minRole: 'admin' },
       { path: '/me/api-keys', icon: User, labelKey: 'nav.myApiKeys' },
     ],
   },
