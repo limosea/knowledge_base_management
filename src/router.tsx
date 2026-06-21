@@ -134,7 +134,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/me/api-keys',
-        element: <MyApiKeysPage />,
+        element: <ProtectedRoute><MyApiKeysPage /></ProtectedRoute>,
       },
       // System section (admin only for audit-logs and system)
       {
