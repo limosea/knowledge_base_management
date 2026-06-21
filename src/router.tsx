@@ -17,6 +17,7 @@ import {
   PerformanceAnalyticsPage,
   SettingsPage,
   MyApiKeysPage,
+  RolesPage,
 } from '@/pages'
 
 const isAuthenticated = () => {
@@ -127,6 +128,10 @@ export const router = createBrowserRouter([
       {
         path: '/users',
         element: <SuperAdminRoute><UsersPage /></SuperAdminRoute>,
+      },
+      {
+        path: '/roles',
+        element: <SuperAdminRoute><RolesPage /></SuperAdminRoute>,
       },
       {
         path: '/api-keys',
