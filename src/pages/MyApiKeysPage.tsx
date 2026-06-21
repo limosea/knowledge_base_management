@@ -76,7 +76,7 @@ export function MyApiKeysPage() {
     } catch (error) {
       toast({
         title: t('common.error'),
-        description: 'Failed to fetch API keys',
+        description: t('myApiKeys.fetchError'),
         variant: 'destructive',
       })
     } finally {
@@ -100,7 +100,7 @@ export function MyApiKeysPage() {
     } catch (error) {
       toast({
         title: t('common.error'),
-        description: 'Failed to create API key',
+        description: t('myApiKeys.createError'),
         variant: 'destructive',
       })
     }
@@ -112,7 +112,7 @@ export function MyApiKeysPage() {
       await meApi.deleteKey(deleteId)
       toast({
         title: t('common.success'),
-        description: 'API key deleted successfully',
+        description: t('myApiKeys.deleteSuccess'),
       })
       setDeleteDialogOpen(false)
       setDeleteId(null)
@@ -120,7 +120,7 @@ export function MyApiKeysPage() {
     } catch (error) {
       toast({
         title: t('common.error'),
-        description: 'Failed to delete API key',
+        description: t('myApiKeys.deleteError'),
         variant: 'destructive',
       })
     }
@@ -138,7 +138,7 @@ export function MyApiKeysPage() {
     } catch (error) {
       toast({
         title: t('common.error'),
-        description: 'Failed to regenerate API key',
+        description: t('myApiKeys.regenerateError'),
         variant: 'destructive',
       })
     }
@@ -298,7 +298,7 @@ export function MyApiKeysPage() {
             <div className="space-y-2">
               <Label>{t('apiKeys.permissions')}</Label>
               <div className="flex flex-wrap gap-4">
-                {(['read', 'write', 'admin'] as Permission[]).map((perm) => (
+                {(['read', 'write'] as Permission[]).map((perm) => (
                   <label key={perm} className="flex items-center gap-2">
                     <Checkbox
                       checked={formData.permissions.includes(perm)}
