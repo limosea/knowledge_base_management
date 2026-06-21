@@ -5,7 +5,7 @@ export interface Role {
   description?: string
   isSystem: boolean
   isSuperAdmin: boolean
-  permissions: string[]
+  permissions: Permission[]
   createdAt: string
   updatedAt: string
 }
@@ -13,13 +13,13 @@ export interface Role {
 export interface CreateRoleRequest {
   name: string
   description?: string
-  permissions?: string[]
+  permissions?: Permission[]
 }
 
 export interface UpdateRoleRequest {
   name?: string
   description?: string
-  permissions?: string[]
+  permissions?: Permission[]
 }
 
 export type Permission = 
@@ -35,7 +35,7 @@ export type Permission =
   | 'system:read'
   | 'stats:read'
   | 'libraries:read'
-  | 'libraries:write'
+  | 'libraries:write';
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
   'users:read': '查看用户',

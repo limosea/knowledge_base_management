@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,6 +16,8 @@ export function PermissionSelector({
   onChange,
   disabled = false,
 }: PermissionSelectorProps) {
+  const { t } = useTranslation()
+
   const handlePermissionToggle = (permission: Permission) => {
     if (disabled) return
 
@@ -27,23 +30,23 @@ export function PermissionSelector({
 
   const permissionGroups = [
     {
-      title: '用户管理',
+      title: t('roles.permissionGroups.userManagement'),
       permissions: ['users:read', 'users:write'] as Permission[],
     },
     {
-      title: '知识库',
+      title: t('roles.permissionGroups.knowledge'),
       permissions: ['knowledge:read', 'knowledge:read_all', 'knowledge:delete'] as Permission[],
     },
     {
-      title: 'API Key',
+      title: t('roles.permissionGroups.apiKey'),
       permissions: ['apikeys:read', 'apikeys:write'] as Permission[],
     },
     {
-      title: '系统管理',
+      title: t('roles.permissionGroups.systemManagement'),
       permissions: ['audit:read', 'analytics:read', 'system:read', 'stats:read'] as Permission[],
     },
     {
-      title: '库管理',
+      title: t('roles.permissionGroups.libraryManagement'),
       permissions: ['libraries:read', 'libraries:write'] as Permission[],
     },
   ]

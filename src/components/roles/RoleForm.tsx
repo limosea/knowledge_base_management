@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,16 +31,20 @@ export function RoleForm({ open, onOpenChange, role, onSubmit }: RoleFormProps) 
   )
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    if (open) {
+      setName(role?.name || '')
+      setDescription(role?.description || '')
+      setPermissions((role?.permissions as Permission[]) || [])
+    }
+  }, [open, role])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      if (role) {
-        await onSubmit({ name, description, permissions })
-      } else {
-        await onSubmit({ name, description, permissions })
-      }
+      await onSubmit({ name, description, permissions })
       onOpenChange(false)
     } finally {
       setLoading(false)
