@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { apiKeysApi } from '@/api'
-import type { ApiKey, CreateApiKeyRequest, UpdateApiKeyRequest, Permission } from '@/types'
+import type { ApiKey, CreateApiKeyRequest, UpdateApiKeyRequest, ApiKeyPermission } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -54,7 +54,7 @@ export function ApiKeysPage() {
   
   const [formData, setFormData] = useState({
     name: '',
-    permissions: ['read'] as Permission[],
+    permissions: ['read'] as ApiKeyPermission[],
     rateLimit: 100,
     expiresAt: '',
   })
@@ -167,7 +167,7 @@ export function ApiKeysPage() {
     }
   }
 
-  const togglePermission = (perm: Permission) => {
+  const togglePermission = (perm: ApiKeyPermission) => {
     setFormData(prev => ({
       ...prev,
       permissions: prev.permissions.includes(perm)

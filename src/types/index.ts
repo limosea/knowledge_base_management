@@ -18,7 +18,7 @@ export interface PaginatedResponse<T> extends PaginationMeta {
 }
 
 export type AdminRole = 'admin' | 'super_admin'
-export type Permission = 'read' | 'write' | 'admin'
+export type ApiKeyPermission = 'read' | 'write' | 'admin'
 export type EmbeddingStatus = 'processing' | 'completed' | 'failed'
 
 export interface LoginRequest {
@@ -79,7 +79,7 @@ export interface ApiKey {
   key?: string
   keyPrefix: string
   name: string
-  permissions: Permission[]
+  permissions: ApiKeyPermission[]
   rateLimit: number
   isActive: boolean
   lastUsedAt?: string
@@ -91,14 +91,14 @@ export type ApiKeyListResponse = PaginatedResponse<ApiKey>
 
 export interface CreateApiKeyRequest {
   name: string
-  permissions?: Permission[]
+  permissions?: ApiKeyPermission[]
   rateLimit?: number
   expiresAt?: string
 }
 
 export interface UpdateApiKeyRequest {
   name?: string
-  permissions?: Permission[]
+  permissions?: ApiKeyPermission[]
   rateLimit?: number
   isActive?: boolean
 }
@@ -446,7 +446,7 @@ export interface MyApiKey {
   key?: string
   keyPrefix: string
   name: string
-  permissions: Permission[]
+  permissions: ApiKeyPermission[]
   rateLimit: number
   lastUsedAt?: string
   expiresAt?: string
@@ -465,3 +465,5 @@ export interface MyStats {
     thisWeek: number
   }
 }
+
+export * from './roles'

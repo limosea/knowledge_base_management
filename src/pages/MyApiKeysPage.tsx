@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { meApi } from '@/api'
-import type { MyApiKey, CreateApiKeyRequest, Permission } from '@/types'
+import type { MyApiKey, CreateApiKeyRequest, ApiKeyPermission } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -57,7 +57,7 @@ export function MyApiKeysPage() {
   
   const [formData, setFormData] = useState({
     name: '',
-    permissions: ['read'] as Permission[],
+    permissions: ['read'] as ApiKeyPermission[],
     rateLimit: 100,
   })
 
@@ -298,7 +298,7 @@ export function MyApiKeysPage() {
             <div className="space-y-2">
               <Label>{t('apiKeys.permissions')}</Label>
               <div className="flex flex-wrap gap-4">
-                {(['read', 'write'] as Permission[]).map((perm) => (
+                {(['read', 'write'] as ApiKeyPermission[]).map((perm) => (
                   <label key={perm} className="flex items-center gap-2">
                     <Checkbox
                       checked={formData.permissions.includes(perm)}
