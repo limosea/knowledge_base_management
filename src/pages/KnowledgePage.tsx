@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { knowledgeApi, categoriesApi } from '@/api'
-import type { AdminKnowledgeListItem, KnowledgeEntry, UpdateEntryRequest, AdminCategoryListItem } from '@/types'
+import type { AdminKnowledgeListItem, AdminCategoryListItem } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -14,13 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,12 +24,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Label } from '@/components/ui/label'
+
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
-import { Pencil, Trash2, Search } from 'lucide-react'
+import { Trash2, Search } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export function KnowledgePage() {
@@ -51,21 +45,8 @@ export function KnowledgePage() {
   const [categories, setCategories] = useState<AdminCategoryListItem[]>([])
   const [categoryFilter, setCategoryFilter] = useState('')
   
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [currentEntry, setCurrentEntry] = useState<KnowledgeEntry | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  
-  const [formData, setFormData] = useState({
-    title: '',
-    content: '',
-    summary: '',
-    category: '',
-    tags: '',
-    language: '',
-    framework: '',
-    difficulty_level: 1,
-  })
 
   const limit = 20
 
@@ -107,61 +88,6 @@ export function KnowledgePage() {
   const handleCategoryFilter = (value: string) => {
     setCategoryFilter(value)
     setPage(1)
-  }
-
-  const handleEdit = async (id: string) => {
-    try {
-      const entry = await knowledgeApi.get(id)
-      setCurrentEntry(entry)
-      setFormData({
-        title: entry.title,
-        content: entry.content,
-        summary: entry.summary || '',
-        category: entry.category || '',
-        tags: entry.tags?.join(', ') || '',
-        language: entry.language || '',
-        framework: entry.framework || '',
-        difficulty_level: entry.difficultyLevel || 1,
-      })
-      setEditDialogOpen(true)
-    } catch (error) {
-      toast({
-        title: t('common.error'),
-        description: 'Failed to fetch entry details',
-        variant: 'destructive',
-      })
-    }
-  }
-
-  const handleSave = async () => {
-    if (!currentEntry) return
-    
-    try {
-      const data: UpdateEntryRequest = {
-        title: formData.title,
-        content: formData.content,
-        summary: formData.summary || undefined,
-        category: formData.category || undefined,
-        tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : undefined,
-        language: formData.language || undefined,
-        framework: formData.framework || undefined,
-        difficulty_level: formData.difficulty_level || undefined,
-      }
-      
-      await knowledgeApi.update(currentEntry.id, data)
-      toast({
-        title: t('common.success'),
-        description: 'Entry updated successfully',
-      })
-      setEditDialogOpen(false)
-      fetchEntries()
-    } catch (error) {
-      toast({
-        title: t('common.error'),
-        description: 'Failed to update entry',
-        variant: 'destructive',
-      })
-    }
   }
 
   const handleDelete = async () => {
@@ -333,13 +259,6 @@ export function KnowledgePage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEdit(entry.id)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
                           onClick={() => {
                             setDeleteId(entry.id)
                             setDeleteDialogOpen(true)
@@ -389,73 +308,6 @@ export function KnowledgePage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t('knowledge.edit')}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">{t('knowledge.titleField')}</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="content">{t('knowledge.content')}</Label>
-              <textarea
-                id="content"
-                className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="category">{t('knowledge.category')}</Label>
-                <select
-                  id="category"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                >
-                  <option value="">{t('knowledge.noCategory')}</option>
-                  {categories.map((cat) => (
-                    <option key={cat.name} value={cat.name}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="language">{t('knowledge.language')}</Label>
-                <Input
-                  id="language"
-                  value={formData.language}
-                  onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tags">{t('knowledge.tags')}</Label>
-              <Input
-                id="tags"
-                placeholder="tag1, tag2, tag3"
-                value={formData.tags}
-                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button onClick={handleSave}>{t('common.save')}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
