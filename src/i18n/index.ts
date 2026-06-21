@@ -22,6 +22,7 @@ const resources = {
         updatedAt: 'Updated At',
         success: 'Success',
         error: 'Error',
+        saving: 'Saving...',
       },
       auth: {
         login: 'Login',
@@ -439,6 +440,7 @@ const resources = {
         updatedAt: '更新时间',
         success: '成功',
         error: '错误',
+        saving: '保存中...',
       },
       auth: {
         login: '登录',
