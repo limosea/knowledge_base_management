@@ -31,9 +31,12 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { Trash2, Search, Shield, ShieldOff } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
-import { PermissionGuard } from '@/components/auth/PermissionGuard'
 
-export function KnowledgePage() {
+interface KnowledgePageProps {
+  elevated?: boolean
+}
+
+export function KnowledgePage({ elevated = false }: KnowledgePageProps) {
   const { t } = useTranslation()
   const { toast } = useToast()
   const navigate = useNavigate()
@@ -255,18 +258,18 @@ export function KnowledgePage() {
             </div>
             {selectedIds.length > 0 && (
               <div className="flex items-center gap-2">
-                <PermissionGuard permissions={['content:shield']} requireElevation>
-                  <Button variant="outline" onClick={handleBatchShield}>
-                    <Shield className="h-4 w-4 mr-2" />
-                    {t('knowledge.batchShield')} ({selectedIds.length})
-                  </Button>
-                </PermissionGuard>
-                <PermissionGuard permissions={['content:unshield']} requireElevation>
-                  <Button variant="outline" onClick={handleBatchUnshield}>
-                    <ShieldOff className="h-4 w-4 mr-2" />
-                    {t('knowledge.batchUnshield')} ({selectedIds.length})
-                  </Button>
-                </PermissionGuard>
+                {elevated && (
+                  <>
+                    <Button variant="outline" onClick={handleBatchShield}>
+                      <Shield className="h-4 w-4 mr-2" />
+                      {t('knowledge.batchShield')} ({selectedIds.length})
+                    </Button>
+                    <Button variant="outline" onClick={handleBatchUnshield}>
+                      <ShieldOff className="h-4 w-4 mr-2" />
+                      {t('knowledge.batchUnshield')} ({selectedIds.length})
+                    </Button>
+                  </>
+                )}
                 <Button variant="destructive" onClick={handleBatchDelete}>
                   <Trash2 className="h-4 w-4 mr-2" />
                   {t('knowledge.batchDelete')} ({selectedIds.length})
@@ -351,8 +354,8 @@ export function KnowledgePage() {
                     <TableCell>{formatDate(entry.createdAt)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        {entry.shielded ? (
-                          <PermissionGuard permissions={['content:unshield']} requireElevation>
+                        {elevated && (
+                          entry.shielded ? (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -361,9 +364,7 @@ export function KnowledgePage() {
                             >
                               <ShieldOff className="h-4 w-4" />
                             </Button>
-                          </PermissionGuard>
-                        ) : (
-                          <PermissionGuard permissions={['content:shield']} requireElevation>
+                          ) : (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -372,7 +373,7 @@ export function KnowledgePage() {
                             >
                               <Shield className="h-4 w-4" />
                             </Button>
-                          </PermissionGuard>
+                          )
                         )}
                         <Button
                           variant="ghost"

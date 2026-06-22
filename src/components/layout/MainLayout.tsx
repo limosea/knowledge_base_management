@@ -17,41 +17,27 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard,
-  BarChart3,
   BookOpen,
   Tag,
-  Users,
-  Key,
-  FileText,
-  Activity,
-  Settings,
   LogOut,
   Menu,
   Sun,
   Moon,
   Eye,
   Languages,
-  ChevronDown,
-  Search,
-  Gauge,
-  KeyRound,
-  User,
   Shield,
+  User,
+  Settings,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
-import { ElevationToggle } from './ElevationToggle'
-import { ElevationIndicator } from './ElevationIndicator'
+import { ElevationDialog } from '@/components/auth/ElevationDialog'
 
 interface NavItem {
   path?: string
   icon: React.ComponentType<{ className?: string }>
   labelKey: string
-  collapsible?: boolean
-  children?: NavItem[]
   permissions?: Permission[]
-  requireAll?: boolean
-  superAdminOnly?: boolean
 }
 
 interface NavSection {
@@ -59,7 +45,7 @@ interface NavSection {
   items: NavItem[]
 }
 
-const personalNavSections: NavSection[] = [
+const navSections: NavSection[] = [
   {
     titleKey: 'nav.personalConsole',
     items: [
@@ -90,73 +76,11 @@ const personalNavSections: NavSection[] = [
   },
 ]
 
-const elevatedNavSections: NavSection[] = [
-  {
-    titleKey: 'nav.elevatedConsole',
-    items: [
-      {
-        path: '/users',
-        icon: Users,
-        labelKey: 'nav.userManagement',
-        permissions: ['users:list'],
-      },
-      {
-        path: '/roles',
-        icon: Shield,
-        labelKey: 'nav.roleManagement',
-        superAdminOnly: true,
-      },
-      {
-        path: '/api-keys',
-        icon: Key,
-        labelKey: 'nav.apiKeys',
-        permissions: ['apikeys:list'],
-      },
-    ],
-  },
-  {
-    titleKey: 'nav.knowledgeBase',
-    items: [
-      { path: '/knowledge', icon: BookOpen, labelKey: 'nav.knowledge' },
-      { path: '/categories', icon: Tag, labelKey: 'nav.categories' },
-    ],
-  },
-  {
-    titleKey: 'nav.system',
-    items: [
-      {
-        path: '/audit-logs',
-        icon: FileText,
-        labelKey: 'nav.auditLogs',
-        permissions: ['audit:read'],
-      },
-      {
-        path: '/system',
-        icon: Activity,
-        labelKey: 'nav.systemMonitor',
-        permissions: ['system:read'],
-      },
-      {
-        icon: BarChart3,
-        labelKey: 'nav.analytics',
-        collapsible: true,
-        children: [
-          { path: '/analytics/knowledge', icon: BookOpen, labelKey: 'analytics.knowledgeAnalysis', permissions: ['analytics:read'] },
-          { path: '/analytics/search', icon: Search, labelKey: 'analytics.searchAnalysis', permissions: ['stats:read'] },
-          { path: '/analytics/api', icon: KeyRound, labelKey: 'analytics.apiAnalysis', permissions: ['stats:read'] },
-          { path: '/analytics/performance', icon: Gauge, labelKey: 'analytics.performanceAndAudit', permissions: ['audit:read'] },
-        ],
-      },
-    ],
-  },
-]
-
 function NavItem({ item, setSidebarOpen }: { item: NavItem; setSidebarOpen: (open: boolean) => void }) {
   const { t } = useTranslation()
   const location = useLocation()
   const Icon = item.icon
-  const isActive = location.pathname === item.path ||
-    (item.path !== '/dashboard' && item.path !== undefined && location.pathname.startsWith(item.path))
+  const isActive = location.pathname === item.path
 
   return (
     <Link
@@ -175,142 +99,16 @@ function NavItem({ item, setSidebarOpen }: { item: NavItem; setSidebarOpen: (ope
   )
 }
 
-function CollapsibleNavItem({
-  item,
-  isCollapsed,
-  onToggle,
-  setSidebarOpen,
-}: {
-  item: NavItem
-  isCollapsed: boolean
-  onToggle: () => void
-  setSidebarOpen: (open: boolean) => void
-}) {
-  const { t } = useTranslation()
-  const location = useLocation()
-  const Icon = item.icon
-
-  const hasActiveChild = item.children?.some(
-    child => location.pathname === child.path || location.pathname.startsWith(child.path! + '/')
-  )
-
-  return (
-    <div>
-      <button
-        onClick={onToggle}
-        className={cn(
-          'w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
-          hasActiveChild ? 'bg-muted text-foreground' : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <Icon className="h-4 w-4" />
-          {t(item.labelKey)}
-        </div>
-        <ChevronDown
-          className={cn(
-            'h-4 w-4 transition-transform duration-200',
-            isCollapsed && '-rotate-90'
-          )}
-        />
-      </button>
-
-      <div className={cn('collapsible-nav-content', isCollapsed && 'collapsed')}>
-        <div className="collapsible-nav-inner ml-4 mt-1 space-y-1">
-          {item.children?.map((child) => {
-            const ChildIcon = child.icon
-            const isActive = location.pathname === child.path
-
-            return (
-              <Link
-                key={child.path}
-                to={child.path!}
-                onClick={() => setSidebarOpen(false)}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <ChildIcon className="h-4 w-4" />
-                {t(child.labelKey)}
-              </Link>
-            )
-          })}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export function MainLayout() {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
   const { i18n } = useTranslation()
   const navigate = useNavigate()
-  const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { hasAnyPermission, user: permUser, canAccessElevated, isElevated, loading } = usePermission()
-
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
-    const stored = localStorage.getItem('nav-collapsed-state')
-    return stored ? JSON.parse(stored) : {}
-  })
-
-  const toggleCollapse = (key: string) => {
-    setCollapsedSections(prev => {
-      const newState = { ...prev, [key]: !prev[key] }
-      localStorage.setItem('nav-collapsed-state', JSON.stringify(newState))
-      return newState
-    })
-  }
+  const { canAccessElevated, loading } = usePermission()
+  const [showElevationDialog, setShowElevationDialog] = useState(false)
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')
-
-  const getStoredMode = (): boolean => {
-    try {
-      return localStorage.getItem('console-mode') === 'elevated'
-    } catch {
-      return false
-    }
-  }
-
-  const elevatedPaths = ['/users', '/roles', '/api-keys', '/audit-logs', '/system', '/analytics']
-
-  const isInElevatedMode = (): boolean => {
-    if (permUser?.isSuperAdmin) {
-      return getStoredMode() || elevatedPaths.some(path => location.pathname.startsWith(path))
-    }
-    return isElevated()
-  }
-
-  useEffect(() => {
-    if (!permUser?.isSuperAdmin && !isElevated()) {
-      const isOnElevatedPath = elevatedPaths.some(path => location.pathname.startsWith(path))
-      if (isOnElevatedPath) {
-        navigate('/dashboard', { replace: true })
-      }
-    }
-  }, [isElevated, permUser?.isSuperAdmin, location.pathname, navigate])
-
-  useEffect(() => {
-    if (permUser?.isSuperAdmin) {
-      const elevated = isInElevatedMode()
-      localStorage.setItem('console-mode', elevated ? 'elevated' : 'personal')
-    }
-  }, [location.pathname, permUser?.isSuperAdmin])
-
-  const filterItems = (items: NavItem[]): NavItem[] => {
-    return items.filter(item => {
-      if (item.superAdminOnly && !permUser?.isSuperAdmin) return false
-      if (item.permissions && !hasAnyPermission(item.permissions)) return false
-      if (item.children) {
-        item.children = filterItems(item.children)
-      }
-      return true
-    })
-  }
 
   const handleLogout = async () => {
     try {
@@ -329,11 +127,18 @@ export function MainLayout() {
     )
   }
 
-  const currentNavSections = isInElevatedMode() ? elevatedNavSections : personalNavSections
-
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'zh' : 'en'
     i18n.changeLanguage(newLang)
+  }
+
+  const handleEnterElevated = () => {
+    setShowElevationDialog(true)
+  }
+
+  const handleElevationSuccess = () => {
+    setShowElevationDialog(false)
+    navigate('/elevated/users')
   }
 
   const themeIcons = {
@@ -385,34 +190,18 @@ export function MainLayout() {
           <h1 className="font-bold text-xl">{t('auth.loginTitle')}</h1>
         </div>
         <nav className="p-4 space-y-6 overflow-y-auto h-[calc(100vh-4rem)]">
-          {currentNavSections.map((section) => {
-            const filteredItems = filterItems(section.items)
-            if (filteredItems.length === 0) return null
-            return (
-              <div key={section.titleKey}>
-                <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  {t(section.titleKey)}
-                </h3>
-                <div className="space-y-1">
-                  {filteredItems.map((item) => {
-                  if (item.collapsible && item.children) {
-                    return (
-                      <CollapsibleNavItem
-                        key={item.labelKey}
-                        item={item}
-                        isCollapsed={collapsedSections[item.labelKey] === true}
-                        onToggle={() => toggleCollapse(item.labelKey)}
-                        setSidebarOpen={setSidebarOpen}
-                      />
-                    )
-                  } else {
-                    return <NavItem key={item.path} item={item} setSidebarOpen={setSidebarOpen} />
-                  }
-                })}
+          {navSections.map((section) => (
+            <div key={section.titleKey}>
+              <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                {t(section.titleKey)}
+              </h3>
+              <div className="space-y-1">
+                {section.items.map((item) => (
+                  <NavItem key={item.path} item={item} setSidebarOpen={setSidebarOpen} />
+                ))}
               </div>
             </div>
-            )
-          })}
+          ))}
         </nav>
       </aside>
 
@@ -426,19 +215,28 @@ export function MainLayout() {
 
       {/* Main Content */}
       <main className="lg:pl-64 pt-16 lg:pt-0">
-        <ElevationIndicator />
         {/* Desktop Header */}
         <header className="hidden lg:flex h-16 items-center justify-between px-6 border-b bg-card">
           <div className="flex items-center gap-4">
-            <Badge variant={isInElevatedMode() ? 'default' : 'outline'} className={isInElevatedMode() ? 'bg-orange-500 hover:bg-orange-600' : ''}>
-              {isInElevatedMode() ? t('nav.elevatedConsole') : t('nav.personalConsole')}
+            <Badge variant="outline">
+              {t('nav.personalConsole')}
             </Badge>
             <Badge variant="outline">
               {user.role === 'super_admin' ? t('users.superAdmin') : user.role === 'admin' ? t('users.admin') : t('users.user')}
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            {canAccessElevated() && <ElevationToggle />}
+            {canAccessElevated() && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleEnterElevated}
+                className="text-primary"
+              >
+                <Shield className="h-4 w-4 mr-1" />
+                {t('elevation.enter')}
+              </Button>
+            )}
             <Button variant="ghost" size="icon" onClick={toggleLanguage}>
               <Languages className="h-5 w-5" />
             </Button>
@@ -485,6 +283,12 @@ export function MainLayout() {
           <Outlet />
         </div>
       </main>
+
+      <ElevationDialog
+        open={showElevationDialog}
+        onOpenChange={setShowElevationDialog}
+        onSuccess={handleElevationSuccess}
+      />
     </div>
   )
 }

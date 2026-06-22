@@ -1,16 +1,14 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { usePermission } from '@/contexts/PermissionContext'
 import { ElevationDialog } from './ElevationDialog'
 
 interface ElevationRouteProps {
   children: React.ReactNode
-  fallback?: React.ReactNode
 }
 
-export function ElevationRoute({ children, fallback }: ElevationRouteProps) {
-  const { isElevated, canAccessElevated, loading, user } = usePermission()
-  const [showDialog, setShowDialog] = useState(false)
+export function ElevationRoute({ children }: ElevationRouteProps) {
+  const { isElevated, canAccessElevated, loading } = usePermission()
 
   if (loading) {
     return (
@@ -20,25 +18,17 @@ export function ElevationRoute({ children, fallback }: ElevationRouteProps) {
     )
   }
 
-  if (user?.isSuperAdmin) {
-    return <>{children}</>
-  }
-
   if (!canAccessElevated()) {
-    if (fallback) return <>{fallback}</>
     return <Navigate to="/dashboard" replace />
   }
 
   if (!isElevated()) {
     return (
-      <>
-        <ElevationDialog
-          open={!showDialog}
-          onOpenChange={setShowDialog}
-          onSuccess={() => setShowDialog(false)}
-        />
-        {fallback}
-      </>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <ElevationDialog open={true} onOpenChange={() => {}} onSuccess={() => {}} />
+        </div>
+      </div>
     )
   }
 

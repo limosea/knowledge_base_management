@@ -188,7 +188,7 @@ export function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">{t('users.title')}</h1>
-        <PermissionGuard permissions={['users:manage']} requireElevation>
+        <PermissionGuard permissions={['users:manage']}>
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             {t('users.create')}
@@ -249,7 +249,7 @@ export function UsersPage() {
                       {user.lastLoginAt ? formatDate(user.lastLoginAt) : '-'}
                     </TableCell>
                     <TableCell>
-                      <PermissionGuard permissions={['users:manage']} requireElevation>
+                      <PermissionGuard permissions={['users:manage']}>
                         {permUser?.id !== user.id && (
                           <div className="flex items-center gap-1">
                             <Button

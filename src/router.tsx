@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { AuthLayout, MainLayout } from '@/components/layout'
+import { AuthLayout, MainLayout, ElevatedLayout } from '@/components/layout'
 import { PermissionRoute } from '@/components/auth/PermissionRoute'
 import { ElevationRoute } from '@/components/auth/ElevationRoute'
 import {
@@ -56,42 +56,6 @@ export const router = createBrowserRouter([
         element: <DashboardPage />,
       },
       {
-        path: '/analytics',
-        element: <Navigate to="/analytics/knowledge" replace />,
-      },
-      {
-        path: '/analytics/knowledge',
-        element: (
-          <PermissionRoute permissions={['analytics:read']}>
-            <KnowledgeAnalyticsPage />
-          </PermissionRoute>
-        ),
-      },
-      {
-        path: '/analytics/search',
-        element: (
-          <PermissionRoute permissions={['stats:read']}>
-            <SearchAnalyticsPage />
-          </PermissionRoute>
-        ),
-      },
-      {
-        path: '/analytics/api',
-        element: (
-          <PermissionRoute permissions={['stats:read']}>
-            <ApiAnalyticsPage />
-          </PermissionRoute>
-        ),
-      },
-      {
-        path: '/analytics/performance',
-        element: (
-          <PermissionRoute permissions={['audit:read']}>
-            <PerformanceAnalyticsPage />
-          </PermissionRoute>
-        ),
-      },
-      {
         path: '/knowledge',
         element: <KnowledgePage />,
       },
@@ -104,48 +68,8 @@ export const router = createBrowserRouter([
         element: <CategoriesPage />,
       },
       {
-        path: '/users',
-        element: (
-          <PermissionRoute permissions={['users:list']}>
-            <UsersPage />
-          </PermissionRoute>
-        ),
-      },
-      {
-        path: '/roles',
-        element: (
-          <ElevationRoute>
-            <RolesPage />
-          </ElevationRoute>
-        ),
-      },
-      {
-        path: '/api-keys',
-        element: (
-          <PermissionRoute permissions={['apikeys:list']}>
-            <ApiKeysPage />
-          </PermissionRoute>
-        ),
-      },
-      {
         path: '/me/api-keys',
         element: <MyApiKeysPage />,
-      },
-      {
-        path: '/audit-logs',
-        element: (
-          <PermissionRoute permissions={['audit:read']}>
-            <AuditLogsPage />
-          </PermissionRoute>
-        ),
-      },
-      {
-        path: '/system',
-        element: (
-          <PermissionRoute permissions={['system:read']}>
-            <SystemPage />
-          </PermissionRoute>
-        ),
       },
       {
         path: '/settings',
@@ -154,7 +78,126 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    element: (
+      <ProtectedRoute>
+        <ElevationRoute>
+          <ElevatedLayout />
+        </ElevationRoute>
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: '/elevated/users',
+        element: (
+          <PermissionRoute permissions={['users:list']}>
+            <UsersPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: '/elevated/roles',
+        element: <RolesPage />,
+      },
+      {
+        path: '/elevated/api-keys',
+        element: (
+          <PermissionRoute permissions={['apikeys:list']}>
+            <ApiKeysPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: '/elevated/knowledge',
+        element: <KnowledgePage elevated />,
+      },
+      {
+        path: '/elevated/knowledge/:id',
+        element: <KnowledgeDetailPage />,
+      },
+      {
+        path: '/elevated/categories',
+        element: <CategoriesPage />,
+      },
+      {
+        path: '/elevated/audit-logs',
+        element: (
+          <PermissionRoute permissions={['audit:read']}>
+            <AuditLogsPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: '/elevated/system',
+        element: (
+          <PermissionRoute permissions={['system:read']}>
+            <SystemPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: '/elevated/analytics',
+        element: <Navigate to="/elevated/analytics/knowledge" replace />,
+      },
+      {
+        path: '/elevated/analytics/knowledge',
+        element: (
+          <PermissionRoute permissions={['analytics:read']}>
+            <KnowledgeAnalyticsPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: '/elevated/analytics/search',
+        element: (
+          <PermissionRoute permissions={['stats:read']}>
+            <SearchAnalyticsPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: '/elevated/analytics/api',
+        element: (
+          <PermissionRoute permissions={['stats:read']}>
+            <ApiAnalyticsPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: '/elevated/analytics/performance',
+        element: (
+          <PermissionRoute permissions={['audit:read']}>
+            <PerformanceAnalyticsPage />
+          </PermissionRoute>
+        ),
+      },
+    ],
+  },
+  {
     path: '/',
     element: <Navigate to="/dashboard" replace />,
+  },
+  {
+    path: '/users',
+    element: <Navigate to="/elevated/users" replace />,
+  },
+  {
+    path: '/roles',
+    element: <Navigate to="/elevated/roles" replace />,
+  },
+  {
+    path: '/api-keys',
+    element: <Navigate to="/elevated/api-keys" replace />,
+  },
+  {
+    path: '/audit-logs',
+    element: <Navigate to="/elevated/audit-logs" replace />,
+  },
+  {
+    path: '/system',
+    element: <Navigate to="/elevated/system" replace />,
+  },
+  {
+    path: '/analytics/*',
+    element: <Navigate to="/elevated/analytics" replace />,
   },
 ])
