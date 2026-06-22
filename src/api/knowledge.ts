@@ -60,4 +60,20 @@ export const knowledgeApi = {
   getStats: (): Promise<KnowledgeStats> => {
     return apiClient.get<KnowledgeStats>('/admin/knowledge/stats')
   },
+
+  shield: (id: string): Promise<KnowledgeEntry> => {
+    return apiClient.post<KnowledgeEntry>(`/admin/knowledge/${id}/shield`)
+  },
+
+  unshield: (id: string): Promise<KnowledgeEntry> => {
+    return apiClient.post<KnowledgeEntry>(`/admin/knowledge/${id}/unshield`)
+  },
+
+  batchShield: (ids: string[]): Promise<{ shielded: number; skipped: number }> => {
+    return apiClient.post<{ shielded: number; skipped: number }>('/admin/knowledge/batch-shield', { ids })
+  },
+
+  batchUnshield: (ids: string[]): Promise<{ unshielded: number; skipped: number }> => {
+    return apiClient.post<{ unshielded: number; skipped: number }>('/admin/knowledge/batch-unshield', { ids })
+  },
 }
