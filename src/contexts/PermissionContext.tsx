@@ -82,6 +82,7 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
       const status: ElevationStatus = await elevationApi.getStatus()
       setState(prev => ({
         ...prev,
+        user: prev.user ? { ...prev.user, isSuperAdmin: status.isSuperAdmin } : prev.user,
         elevation: {
           elevated: status.elevated,
           elevatedUntil: status.elevatedUntil,
@@ -151,8 +152,9 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
   }, [state.user?.isSuperAdmin, state.elevation])
 
   const canAccessElevated = useCallback((): boolean => {
+    if (state.user?.isSuperAdmin) return state.elevation.mfaEnabled
     return state.elevation.mfaEnabled && state.elevation.elevatedOnly.length > 0
-  }, [state.elevation])
+  }, [state.user?.isSuperAdmin, state.elevation])
 
   const stepUp = useCallback(
     async (code: string): Promise<{ success: boolean; error?: string }> => {
