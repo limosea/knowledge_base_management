@@ -29,8 +29,9 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
-import { Trash2, Search } from 'lucide-react'
+import { Trash2, Search, Shield, ShieldOff } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { PermissionGuard } from '@/components/auth/PermissionGuard'
 
 export function KnowledgePage() {
   const { t } = useTranslation()
@@ -145,6 +146,78 @@ export function KnowledgePage() {
     }
   }
 
+  const handleShield = async (id: string) => {
+    try {
+      await knowledgeApi.shield(id)
+      toast({
+        title: t('common.success'),
+        description: 'Entry shielded successfully',
+      })
+      fetchEntries()
+    } catch (error) {
+      toast({
+        title: t('common.error'),
+        description: 'Failed to shield entry',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleUnshield = async (id: string) => {
+    try {
+      await knowledgeApi.unshield(id)
+      toast({
+        title: t('common.success'),
+        description: 'Entry unshielded successfully',
+      })
+      fetchEntries()
+    } catch (error) {
+      toast({
+        title: t('common.error'),
+        description: 'Failed to unshield entry',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleBatchShield = async () => {
+    if (selectedIds.length === 0) return
+    try {
+      const result = await knowledgeApi.batchShield(selectedIds)
+      toast({
+        title: t('common.success'),
+        description: `${result.shielded} entries shielded`,
+      })
+      setSelectedIds([])
+      fetchEntries()
+    } catch (error) {
+      toast({
+        title: t('common.error'),
+        description: 'Failed to shield entries',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleBatchUnshield = async () => {
+    if (selectedIds.length === 0) return
+    try {
+      const result = await knowledgeApi.batchUnshield(selectedIds)
+      toast({
+        title: t('common.success'),
+        description: `${result.unshielded} entries unshielded`,
+      })
+      setSelectedIds([])
+      fetchEntries()
+    } catch (error) {
+      toast({
+        title: t('common.error'),
+        description: 'Failed to unshield entries',
+        variant: 'destructive',
+      })
+    }
+  }
+
   const totalPages = Math.ceil(total / limit)
 
   return (
@@ -181,10 +254,24 @@ export function KnowledgePage() {
               </Button>
             </div>
             {selectedIds.length > 0 && (
-              <Button variant="destructive" onClick={handleBatchDelete}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                {t('knowledge.batchDelete')} ({selectedIds.length})
-              </Button>
+              <div className="flex items-center gap-2">
+                <PermissionGuard permissions={['content:shield']}>
+                  <Button variant="outline" onClick={handleBatchShield}>
+                    <Shield className="h-4 w-4 mr-2" />
+                    {t('knowledge.batchShield')} ({selectedIds.length})
+                  </Button>
+                </PermissionGuard>
+                <PermissionGuard permissions={['content:unshield']}>
+                  <Button variant="outline" onClick={handleBatchUnshield}>
+                    <ShieldOff className="h-4 w-4 mr-2" />
+                    {t('knowledge.batchUnshield')} ({selectedIds.length})
+                  </Button>
+                </PermissionGuard>
+                <Button variant="destructive" onClick={handleBatchDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {t('knowledge.batchDelete')} ({selectedIds.length})
+                </Button>
+              </div>
             )}
           </div>
         </CardHeader>
@@ -213,6 +300,7 @@ export function KnowledgePage() {
                   <TableHead>{t('knowledge.category')}</TableHead>
                   <TableHead>{t('knowledge.tags')}</TableHead>
                   <TableHead>{t('knowledge.qualityScore')}</TableHead>
+                  <TableHead>{t('knowledge.shielded')}</TableHead>
                   <TableHead>{t('common.createdAt')}</TableHead>
                   <TableHead className="w-24">{t('common.actions')}</TableHead>
                 </TableRow>
@@ -253,9 +341,39 @@ export function KnowledgePage() {
                         ? entry.qualityScore.toFixed(1)
                         : '-'}
                     </TableCell>
+                    <TableCell>
+                      {entry.shielded ? (
+                        <Badge variant="destructive">{t('knowledge.shielded')}</Badge>
+                      ) : (
+                        <Badge variant="outline">{t('knowledge.notShielded')}</Badge>
+                      )}
+                    </TableCell>
                     <TableCell>{formatDate(entry.createdAt)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
+                        {entry.shielded ? (
+                          <PermissionGuard permissions={['content:unshield']}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleUnshield(entry.id)}
+                              title={t('knowledge.unshield')}
+                            >
+                              <ShieldOff className="h-4 w-4" />
+                            </Button>
+                          </PermissionGuard>
+                        ) : (
+                          <PermissionGuard permissions={['content:shield']}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleShield(entry.id)}
+                              title={t('knowledge.shield')}
+                            >
+                              <Shield className="h-4 w-4" />
+                            </Button>
+                          </PermissionGuard>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
