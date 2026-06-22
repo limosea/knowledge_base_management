@@ -20,7 +20,7 @@ export function PermissionRoute({
   fallback,
   redirectTo = '/dashboard',
 }: PermissionRouteProps) {
-  const { hasPermission, hasAnyPermission, hasAllPermissions, isElevated, loading } = usePermission()
+  const { hasAnyPermission, hasAllPermissions, isElevated, loading } = usePermission()
 
   if (loading) {
     return (

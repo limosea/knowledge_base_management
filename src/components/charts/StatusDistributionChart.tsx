@@ -6,13 +6,13 @@ interface StatusDistributionChartProps {
   data: Array<{ status: string; count: number }>
 }
 
-const COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-]
+const STATUS_COLORS: Record<string, string> = {
+  success: 'hsl(142, 76%, 36%)',
+  failure: 'hsl(45, 93%, 47%)',
+  error: 'hsl(0, 84%, 60%)',
+}
+
+const DEFAULT_COLOR = 'hsl(var(--chart-1))'
 
 export function StatusDistributionChart({ data }: StatusDistributionChartProps) {
   const { t } = useTranslation()
@@ -46,8 +46,11 @@ export function StatusDistributionChart({ data }: StatusDistributionChartProps) 
               <YAxis type="category" dataKey="status" width={120} />
               <Tooltip />
               <Bar dataKey="count">
-                {data.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                {data.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={STATUS_COLORS[entry.status] || DEFAULT_COLOR}
+                  />
                 ))}
               </Bar>
             </BarChart>

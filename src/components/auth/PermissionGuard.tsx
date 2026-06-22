@@ -17,7 +17,7 @@ export function PermissionGuard({
   requireElevation = false,
   fallback = null,
 }: PermissionGuardProps) {
-  const { hasPermission, hasAnyPermission, hasAllPermissions, isElevated } = usePermission()
+  const { hasAnyPermission, hasAllPermissions, isElevated } = usePermission()
 
   if (permissions && permissions.length > 0) {
     const hasAccess = requireAll ? hasAllPermissions(permissions) : hasAnyPermission(permissions)

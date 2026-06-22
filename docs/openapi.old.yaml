@@ -31,61 +31,22 @@ info:
     - `admin`      : 管理员，通过 `role_permissions` 表配置权限
     - `user`       : 普通用户，自助服务权限
 
-    ### 基线权限（账号固有，不存入 `role_permissions`）
-    任何激活的账号均默认拥有以下能力，无需任何权限项：
-    - 登录管理端，使用业务 API（API 端与管理端同权）
-    - 对自己名下的库与条目执行任意 CRUD 并修改其可见性状态（`public` / `private` / `inherit`）
-    - 只读公开且未被屏蔽（`shielded=false`）的库与条目
-    - 通过 `/admin/me/*` 自助接口管理自己的 API Key
-    - 查看个人统计
-
     ### 细粒度管理权限（存储于 `role_permissions` 表）
-    - `users:list`             : 列出全站管理员用户
-    - `users:manage`           : 创建/编辑/停用/重置密码管理员用户（仅 super_admin）
-    - `content:view_shielded`  : 在列表/详情中可见已被屏蔽的库或条目
-    - `content:shield`         : 将他人已公开的库/条目标记为屏蔽（从公开视图隐藏，原始数据不动）
-    - `content:unshield`       : 解除屏蔽，恢复公开
-    - `apikeys:list`           : 列出全站 API Key
-    - `apikeys:manage`         : 管理全站任意 API Key（仅 super_admin）
-    - `audit:read`             : 查看审计日志
-    - `analytics:read`         : 查看分析数据
-    - `system:read`            : 查看系统信息
-    - `stats:read`             : 查看统计信息
-
-    ### 标志位控制的权限（不存入 `role_permissions`）
-    - `roles:manage`           : 角色管理（仅 super_admin，通过 `is_super_admin` 标志位控制）
-    - 系统管理（修改系统配置） : 仅 super_admin，通过 `is_super_admin` 标志位控制，永不下发为权限字符串
-
-    ### 屏蔽 vs 删除
-    管理员**无权**篡改或抹除他人数据（创建者主权）。对公开内容的审核下架通过
-    `content:shield` 翻转 `shielded` 布尔位实现：屏蔽后公开列表不可见，但 owner 与
-    持有 `content:view_shielded` 的管理员仍可见，原始数据纹丝不动。
-    创建者仍可通过业务 API 对自己的条目做软删除/恢复。
-
-    ### 个人控制台 vs 高级控制台（Step-up Elevation）
-    前端将管理端 UI 拆分为两个区域：
-    - **个人控制台**：仅涉及调用者自身资源（自己的 API Key、个人统计、自己的条目等）。
-      只需登录即可访问，无需额外验证。
-    - **高级控制台**：影响全站或其他用户的高危操作（用户管理、任意 API Key 签发、
-      内容屏蔽、角色管理等）。进入前必须通过 step-up 验证。
-
-    进入高级控制台的流程：
-    1. 前端调用 `GET /admin/elevation/status`，若 `elevated=false` 则隐藏高级入口。
-    2. 若 `mfaEnabled=false`，引导用户完成 `POST /admin/auth/mfa/setup` + `enable`。
-    3. 用户点击"进入高级控制台"→前端弹出 TOTP 输入框→
-       `POST /admin/elevation/step-up { code: '123456' }`。
-    4. 成功后 `session.elevated_until = NOW() + 15 分钟`，前端显示高级入口。
-    5. 用户可随时调用 `POST /admin/elevation/revoke` 退出。
-
-    受保护的高级路由在未提权时返回 `403 ELEVATION_REQUIRED`：
-    - `POST/PUT/DELETE /admin/users/*`
-    - `POST/PUT/DELETE /admin/api-keys/*`
-    - `POST /admin/knowledge/{id}/shield|unshield`、`batch-shield`、`batch-unshield`
-    - 全部 `/admin/roles/*`（本身已是 super_admin 专属，额外要求提权）
-
-    列表类端点（`GET /admin/users`、`GET /admin/api-keys`）采用 **elevation-aware
-    scope**：未提权时仅返回调用者名下资源（创建者主权），提权后返回全站资源。
-
+    - `users:read`          : 查看用户列表
+    - `users:write`         : 创建/编辑用户
+    - `knowledge:read`      : 查看自己的知识条目
+    - `knowledge:read_all`  : 查看所有知识条目
+    - `knowledge:delete`    : 删除知识条目
+    - `apikeys:read`        : 查看 API Key
+    - `apikeys:write`       : 管理 API Key
+    - `audit:read`          : 查看审计日志
+    - `analytics:read`      : 查看分析数据
+    - `system:read`         : 查看系统信息
+    - `stats:read`          : 查看统计信息
+    - `libraries:read`      : 查看库
+    - `libraries:write`     : 管理库
+    - `roles:manage`        : 角色管理（仅 super_admin，通过标志位控制，非权限字符串）
+    
   version: 1.0.0
   contact:
     email: support@example.com
@@ -110,12 +71,6 @@ tags:
     description: Model Context Protocol 接口，供 AI Agent（如 Claude Desktop、Cursor 等）通过 MCP 协议查询知识库
   - name: Admin Auth
     description: 管理员认证接口
-  - name: Admin Elevation
-    description: |
-      高级控制台的 step-up 提权接口。用户在从"个人控制台"切换到"高级控制台"时
-      必须通过 TOTP 重新验证，服务端在会话上写入 `elevated_until`（默认 15 分钟）。
-      高级控制台的受保护路由通过 `@RequireElevated()` 守卫拒绝未提权的请求（403
-      `ELEVATION_REQUIRED`）。MFA 是提权的前置条件。
   - name: Admin API Keys
     description: API Key管理接口
   - name: Admin Knowledge
@@ -1117,160 +1072,6 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  # ==================== Step-up Elevation ====================
-  /admin/elevation/step-up:
-    post:
-      tags:
-        - Admin Elevation
-      summary: 通过 TOTP 进入高级控制台
-      description: |
-        用 6 位 TOTP 码重新验证调用者身份，将当前会话的 `elevated_until` 设为
-        `NOW() + 15 分钟`。重复调用会刷新过期时间。
-
-        前置条件：调用者必须已启用 MFA（`admin_users.mfa_enabled = true`）。
-        否则返回 `409 MFA_NOT_ENABLED` 并提示先走 `/admin/auth/mfa/setup` + `enable`。
-
-        成功：`200` 返回 `elevatedUntil`（ISO 时间戳）与 `expiresIn`（秒）。
-        失败：`403` 表示 TOTP 码错误；`409` 表示尚未启用 MFA。
-      security:
-        - AdminAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [code]
-              properties:
-                code:
-                  type: string
-                  minLength: 6
-                  maxLength: 8
-                  description: 当前 TOTP 验证码（不支持备用码）
-      responses:
-        '200':
-          description: 提权成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  elevated:
-                    type: boolean
-                    example: true
-                  elevatedUntil:
-                    type: string
-                    format: date-time
-                  expiresIn:
-                    type: integer
-                    description: 剩余秒数（默认 900）
-        '403':
-          description: TOTP 码无效
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  statusCode:
-                    type: integer
-                    example: 403
-                  message:
-                    type: string
-                    example: Invalid TOTP code
-        '409':
-          description: 用户尚未启用 MFA
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  statusCode:
-                    type: integer
-                    example: 409
-                  code:
-                    type: string
-                    example: MFA_NOT_ENABLED
-                  message:
-                    type: string
-                  mfaSetupEndpoint:
-                    type: string
-                    example: /admin/auth/mfa/setup
-                  mfaEnableEndpoint:
-                    type: string
-                    example: /admin/auth/mfa/enable
-
-  /admin/elevation/status:
-    get:
-      tags:
-        - Admin Elevation
-      summary: 查询当前会话的提权状态与权限分解
-      description: |
-        返回调用者当前会话的提权状态、剩余 TTL、MFA 启用状态，以及按基线 /
-        高级拆分的权限列表。前端依据 `permissions.elevated_only` 是否为空决定
-        是否显示高级控制台入口。
-      security:
-        - AdminAuth: []
-      responses:
-        '200':
-          description: 成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  elevated:
-                    type: boolean
-                  elevatedUntil:
-                    type: string
-                    format: date-time
-                    nullable: true
-                  remainingSeconds:
-                    type: integer
-                  mfaEnabled:
-                    type: boolean
-                  isSuperAdmin:
-                    type: boolean
-                  permissions:
-                    type: object
-                    properties:
-                      held:
-                        type: array
-                        items:
-                          type: string
-                        description: 当前持有的所有权限（super_admin 为完整集合）
-                      baseline:
-                        type: array
-                        items:
-                          type: string
-                        description: 个人控制台可用权限
-                      elevated_only:
-                        type: array
-                        items:
-                          type: string
-                        description: 仅在高级控制台可用的权限
-
-  /admin/elevation/revoke:
-    post:
-      tags:
-        - Admin Elevation
-      summary: 退出高级控制台
-      description: |
-        清除当前会话的 `elevated_until`（等价于 `elevated=false`）。幂等：未提权
-        的会话调用也返回 200。
-      security:
-        - AdminAuth: []
-      responses:
-        '200':
-          description: 成功
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  elevated:
-                    type: boolean
-                    example: false
-
   # ==================== API Key管理 ====================
   /admin/api-keys:
     get:
@@ -1278,9 +1079,7 @@ paths:
         - Admin API Keys
       summary: 获取API Key列表
       description: |
-        需要 `apikeys:list` 权限（admin 默认持有，super_admin 隐式持有）。
-        **elevation-aware**：未提权时仅返回调用者名下 Key；提权后返回全站 Key 列表。
-        user 角色请使用 `/admin/me/api-keys`。
+        需要 admin 或 super_admin 权限。返回全站 API Key 列表。user 角色请使用 `/admin/me/api-keys`。
       security:
         - AdminAuth: []
       parameters:
@@ -1314,9 +1113,7 @@ paths:
         - Admin API Keys
       summary: 创建API Key
       description: |
-        需要 `apikeys:manage` 权限与 step-up 提权（`POST /admin/elevation/step-up`）。
-        新创建的 Key 的 `owner_id`
-        自动绑定为当前调用者。user 角色请使用 `/admin/me/api-keys`。
+        需要 admin 或 super_admin 权限。新创建的 Key 的 `owner_id` 自动绑定为当前调用者。user 角色请使用 `/admin/me/api-keys`。
       security:
         - AdminAuth: []
       requestBody:
@@ -1345,7 +1142,7 @@ paths:
         - Admin API Keys
       summary: 获取API Key详情
       description: |
-        需要 `apikeys:list` 权限。可读取任何 Key 的详情。user 角色请使用 `/admin/me/api-keys/{id}`。
+        需要 admin 或 super_admin 权限。user 角色请使用 `/admin/me/api-keys/{id}`。
       security:
         - AdminAuth: []
       parameters:
@@ -1369,7 +1166,7 @@ paths:
         - Admin API Keys
       summary: 更新API Key
       description: |
-        需要 `apikeys:manage` 权限与 step-up 提权（高级控制台）。可修改任何 Key。user 角色请使用 `/admin/me/api-keys/{id}`。
+        需要 admin 或 super_admin 权限。user 角色请使用 `/admin/me/api-keys/{id}`。
       security:
         - AdminAuth: []
       parameters:
@@ -1393,13 +1190,13 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-
+    
     delete:
       tags:
         - Admin API Keys
       summary: 删除API Key
       description: |
-        需要 `apikeys:manage` 权限与 step-up 提权（高级控制台）。可吊销任何 Key。user 角色请使用 `/admin/me/api-keys/{id}`。
+        需要 admin 或 super_admin 权限。user 角色请使用 `/admin/me/api-keys/{id}`。
       security:
         - AdminAuth: []
       parameters:
@@ -1420,7 +1217,7 @@ paths:
         - Admin API Keys
       summary: 重新生成API Key
       description: |
-        需要 `apikeys:manage` 权限与 step-up 提权（高级控制台）。可重新生成任何 Key 的凭证。user 角色请使用 `/admin/me/api-keys/{id}/regenerate`。
+        需要 admin 或 super_admin 权限。废弃旧 Key 并生成新 Key。user 角色请使用 `/admin/me/api-keys/{id}/regenerate`。
       security:
         - AdminAuth: []
       parameters:
@@ -1615,12 +1412,7 @@ paths:
         - Admin Knowledge
       summary: 管理端查询知识条目列表
       description: |
-        任何已登录管理员均可调用（无权限守卫），由服务端按调用者身份决定可见范围：
-        - `super_admin`：所有条目
-        - 持有 `content:view_shielded`：公开条目（含屏蔽）+ 自己名下全部条目
-        - 其他：公开且未屏蔽条目 + 自己名下全部条目
-
-        响应透出每行的 `visibility`、`shielded`、`shieldedAt` 字段。
+        需要 admin 或 super_admin 权限。返回所有条目（不应用 visibility 过滤），并透出每行的 `visibility` 字段。
       security:
         - AdminAuth: []
       parameters:
@@ -1665,9 +1457,7 @@ paths:
       tags:
         - Admin Knowledge
       summary: 知识库统计信息
-      description: |
-        任何已登录管理员均可调用。统计范围按调用者身份过滤（与 `/admin/knowledge` 同规则），
-        并额外返回 `shielded`（屏蔽条目数）。
+      description: 需要 admin 或 super_admin 权限
       security:
         - AdminAuth: []
       responses:
@@ -1680,14 +1470,13 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /admin/knowledge/batch-shield:
+  /admin/knowledge/batch-delete:
     post:
       tags:
         - Admin Knowledge
-      summary: 批量屏蔽知识条目
+      summary: 批量删除知识条目
       description: |
-        需要 `content:shield` 权限与 step-up 提权（高级控制台）。将匹配条目的 `shielded` 置为 `true`、`shieldedAt`
-        置为当前时间，不修改原始内容。已经屏蔽或已被软删除的条目计入 `skipped`。
+        需要 admin 或 super_admin 权限。批量执行软删除，用于内容审核与违规批量下架。不修改任何条目的内容或可见性。
       security:
         - AdminAuth: []
       requestBody:
@@ -1706,7 +1495,7 @@ paths:
                     format: uuid
       responses:
         '200':
-          description: 屏蔽完成
+          description: 删除成功
           content:
             application/json:
               schema:
@@ -1714,79 +1503,21 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: Entries processed
-                  shielded:
+                    example: Knowledge entries deleted
+                  deleted:
                     type: integer
-                    description: 本次实际新屏蔽的条目数
-                  skipped:
-                    type: integer
-                    description: 已屏蔽/已删除/不存在的条目数
+                    description: 实际删除的条目数（不含已删除的）
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-  /admin/knowledge/batch-unshield:
-    post:
-      tags:
-        - Admin Knowledge
-      summary: 批量解除屏蔽
-      description: |
-        需要 `content:unshield` 权限与 step-up 提权（高级控制台）。将匹配条目的 `shielded` 置为 `false`、
-        `shieldedAt` 置为 NULL，恢复公开可见。
-      security:
-        - AdminAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - ids
-              properties:
-                ids:
-                  type: array
-                  items:
-                    type: string
-                    format: uuid
-      responses:
-        '200':
-          description: 解除完成
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Entries processed
-                  unshielded:
-                    type: integer
-                    description: 本次实际解除屏蔽的条目数
-                  skipped:
-                    type: integer
-                    description: 未屏蔽/已删除/不存在的条目数
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
 
   /admin/knowledge/{id}:
     get:
       tags:
         - Admin Knowledge
       summary: 获取知识条目详情
-      description: |
-        任何已登录管理员均可调用，但受身份作用域限制：
-        - `super_admin`：任何条目
-        - 持有 `content:view_shielded`：公开条目（含屏蔽）+ 自己名下条目
-        - 其他：公开且未屏蔽 + 自己名下条目
-        不可见的条目统一返回 404（不暴露存在性）。
+      description: 需要 admin 或 super_admin 权限
       security:
         - AdminAuth: []
       parameters:
@@ -1803,60 +1534,21 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /admin/knowledge/{id}/shield:
-    post:
+    delete:
       tags:
         - Admin Knowledge
-      summary: 屏蔽知识条目
+      summary: 删除知识条目
       description: |
-        需要 `content:shield` 权限与 step-up 提权（高级控制台）。将 `shielded` 置为 `true`、`shieldedAt` 置为当前时间。
-        已屏蔽的条目再次调用将返回 400。
-        此动作不修改原始数据，仅影响公开列表的可见性；owner 通过业务 API 仍可编辑与软删除。
+        需要 admin 或 super_admin 权限。执行软删除（`deleted_at` 置位）。用于内容审核与违规下架，不影响创建者对条目的编辑权（创建者通过业务 API 仍可修改与恢复）。
       security:
         - AdminAuth: []
       parameters:
         - $ref: '#/components/parameters/EntryId'
       responses:
-        '200':
-          description: 屏蔽成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/KnowledgeEntry'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        '204':
+          description: 删除成功
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /admin/knowledge/{id}/unshield:
-    post:
-      tags:
-        - Admin Knowledge
-      summary: 解除知识条目屏蔽
-      description: |
-        需要 `content:unshield` 权限与 step-up 提权（高级控制台）。将 `shielded` 置为 `false`、`shieldedAt` 置为 NULL。
-        未屏蔽的条目再次调用将返回 400。
-      security:
-        - AdminAuth: []
-      parameters:
-        - $ref: '#/components/parameters/EntryId'
-      responses:
-        '200':
-          description: 解除成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/KnowledgeEntry'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -1867,8 +1559,7 @@ paths:
         - Admin Users
       summary: 获取管理员用户列表
       description: |
-        需要 `users:list` 权限。**elevation-aware**：未提权时仅返回调用者自己创建的用户
-        （创建者主权）；提权后返回全站用户。super_admin 始终看到全部。
+        需要 `users:read` 权限。super_admin 可以查看所有用户；其他角色只能查看自己创建的用户（创建者主权）。
       security:
         - AdminAuth: []
       parameters:
@@ -1902,7 +1593,7 @@ paths:
         - Admin Users
       summary: 创建管理员用户
       description: |
-        需要 `users:manage` 权限与 step-up 提权（高级控制台）。super_admin 可以创建任何角色的用户并可指定角色；其他角色只能创建 user 角色的用户，且创建者自动记录为 createdBy。新用户首次登录需修改密码。
+        需要 `users:write` 权限。super_admin 可以创建任何角色的用户并可指定角色；其他角色只能创建 user 角色的用户，且创建者自动记录为 createdBy。新用户首次登录需修改密码。
       security:
         - AdminAuth: []
       requestBody:
@@ -1933,8 +1624,7 @@ paths:
         - Admin Users
       summary: 获取管理员用户详情
       description: |
-        需要 `users:list` 权限。**elevation-aware**：未提权时只能查看自己创建的用户；
-        提权后可查看任何用户。super_admin 始终可见。尝试查看无权限的用户返回 404（不暴露存在性）。
+        需要 `users:read` 权限。super_admin 可以查看任何用户；其他角色只能查看自己创建的用户。尝试查看无权限的用户返回 404（不暴露存在性）。
       security:
         - AdminAuth: []
       parameters:
@@ -1958,7 +1648,7 @@ paths:
         - Admin Users
       summary: 更新管理员用户
       description: |
-        需要 `users:manage` 权限与 step-up 提权（高级控制台）。super_admin 可以更新任何用户并修改角色；其他角色只能更新自己创建的用户，且不可修改角色。
+        需要 `users:write` 权限。super_admin 可以更新任何用户并修改角色；其他角色只能更新自己创建的用户，且不可修改角色。
         
         系统会保护最后一个活跃的 super_admin：尝试降级或停用最后一个活跃 super_admin 将返回 400。
       security:
@@ -1992,7 +1682,7 @@ paths:
         - Admin Users
       summary: 删除管理员用户
       description: |
-        需要 `users:manage` 权限与 step-up 提权（高级控制台）。super_admin 可以删除任何用户（除了自己和其他 super_admin）；其他角色只能删除自己创建的用户。
+        需要 `users:write` 权限。super_admin 可以删除任何用户（除了自己和其他 super_admin）；其他角色只能删除自己创建的用户。
         
         不允许删除自己，也不允许删除最后一个 super_admin。
       security:
@@ -2017,7 +1707,7 @@ paths:
         - Admin Users
       summary: 重置管理员密码
       description: |
-        需要 `users:manage` 权限与 step-up 提权（高级控制台）。super_admin 可以重置任何用户的密码；其他角色只能重置自己创建的用户的密码。
+        需要 `users:write` 权限。super_admin 可以重置任何用户的密码；其他角色只能重置自己创建的用户的密码。
         生成一个新的临时密码并强制该用户下次登录时修改。临时密码**仅在此响应中返回一次**，请通过安全渠道交给目标用户，且不在任何地方持久化明文。
       security:
         - AdminAuth: []
@@ -2058,7 +1748,7 @@ paths:
         - Admin Roles
       summary: 获取角色列表
       description: |
-        仅 super_admin 可访问，且需 step-up 提权（高级控制台）。返回所有角色及其权限配置。系统角色（is_system=true）不可删除，但可修改描述和权限。
+        仅 super_admin 可访问。返回所有角色及其权限配置。系统角色（is_system=true）不可删除，但可修改描述和权限。
       security:
         - AdminAuth: []
       responses:
@@ -2080,7 +1770,7 @@ paths:
         - Admin Roles
       summary: 创建自定义角色
       description: |
-        仅 super_admin 可访问，且需 step-up 提权（高级控制台）。创建新的自定义角色。角色名称不能与系统角色重复。
+        仅 super_admin 可访问。创建新的自定义角色。角色名称不能与系统角色重复。
       security:
         - AdminAuth: []
       requestBody:
@@ -2114,7 +1804,7 @@ paths:
       tags:
         - Admin Roles
       summary: 获取角色详情
-      description: 仅 super_admin 可访问，且需 step-up 提权（高级控制台）。
+      description: 仅 super_admin 可访问。
       security:
         - AdminAuth: []
       parameters:
@@ -2143,7 +1833,7 @@ paths:
         - Admin Roles
       summary: 更新角色
       description: |
-        仅 super_admin 可访问，且需 step-up 提权（高级控制台）。系统角色的名称不可修改，但可修改描述和权限。自定义角色可修改所有字段。
+        仅 super_admin 可访问。系统角色的名称不可修改，但可修改描述和权限。自定义角色可修改所有字段。
       security:
         - AdminAuth: []
       parameters:
@@ -2186,7 +1876,7 @@ paths:
         - Admin Roles
       summary: 删除角色
       description: |
-        仅 super_admin 可访问，且需 step-up 提权（高级控制台）。只能删除自定义角色，系统角色不可删除。如果有用户仍分配了该角色，则无法删除。
+        仅 super_admin 可访问。只能删除自定义角色，系统角色不可删除。如果有用户仍分配了该角色，则无法删除。
       security:
         - AdminAuth: []
       parameters:
@@ -3794,18 +3484,6 @@ components:
                       type: string
                   qualityScore:
                     type: number
-                  visibility:
-                    type: string
-                    enum: [private, public]
-                    description: 创建者设置的可见性状态
-                  shielded:
-                    type: boolean
-                    description: 是否被管理员屏蔽（屏蔽后不出现在公开列表）
-                  shieldedAt:
-                    type: string
-                    format: date-time
-                    nullable: true
-                    description: 最近一次屏蔽时间（未屏蔽时为 null）
                   createdAt:
                     type: string
                     format: date-time
@@ -3813,15 +3491,12 @@ components:
                     type: string
                     format: uuid
                     description: 创建该条目的 API Key ID（UUID 格式，非用户名）
-
+    
     AdminKnowledgeStats:
       type: object
       properties:
         total:
           type: integer
-        shielded:
-          type: integer
-          description: 被屏蔽的条目数（调用者可见范围内）
         byCategory:
           type: object
           additionalProperties:
@@ -3954,22 +3629,20 @@ components:
           items:
             type: string
             enum:
-              - users:list
-              - users:manage
-              - content:view_shielded
-              - content:shield
-              - content:unshield
-              - apikeys:list
-              - apikeys:manage
+              - users:read
+              - users:write
+              - knowledge:read
+              - knowledge:read_all
+              - knowledge:delete
+              - apikeys:read
+              - apikeys:write
               - audit:read
               - analytics:read
               - system:read
               - stats:read
-          description: |
-            可授予自定义角色的权限列表。`roles:manage` 与系统配置权由 super_admin
-            通过 `is_super_admin` 标志位隐式持有，永不出现在此列表中。
-            `users:manage` / `apikeys:manage` 虽然技术上可写入此表，但服务端
-            守卫会对非 super_admin 角色拒绝这些动作；建议仅向 super_admin 角色授予。
+              - libraries:read
+              - libraries:write
+          description: 权限列表（roles:manage 仅 super_admin 通过标志位控制）
 
     UpdateRoleRequest:
       type: object
@@ -3987,18 +3660,19 @@ components:
           items:
             type: string
             enum:
-              - users:list
-              - users:manage
-              - content:view_shielded
-              - content:shield
-              - content:unshield
-              - apikeys:list
-              - apikeys:manage
+              - users:read
+              - users:write
+              - knowledge:read
+              - knowledge:read_all
+              - knowledge:delete
+              - apikeys:read
+              - apikeys:write
               - audit:read
               - analytics:read
               - system:read
               - stats:read
-          description: 同 CreateRoleRequest。
+              - libraries:read
+              - libraries:write
 
     # ========== 审计日志相关 ==========
     AuditLog:

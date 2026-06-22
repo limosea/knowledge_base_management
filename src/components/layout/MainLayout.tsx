@@ -237,7 +237,7 @@ export function MainLayout() {
   const { i18n } = useTranslation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { hasPermission, hasAnyPermission, isElevated, user: permUser, canAccessElevated } = usePermission()
+  const { hasAnyPermission, user: permUser, canAccessElevated } = usePermission()
 
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
     const stored = localStorage.getItem('nav-collapsed-state')
