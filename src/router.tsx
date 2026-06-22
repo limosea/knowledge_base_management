@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AuthLayout, MainLayout } from '@/components/layout'
+import { PermissionRoute } from '@/components/auth/PermissionRoute'
+import { ElevationRoute } from '@/components/auth/ElevationRoute'
 import {
   LoginPage,
   MfaPage,
@@ -20,47 +22,10 @@ import {
   RolesPage,
 } from '@/pages'
 
-const isAuthenticated = () => {
-  return !!localStorage.getItem('accessToken')
-}
-
-const getCurrentUser = () => {
-  try {
-    return JSON.parse(localStorage.getItem('user') || '{}')
-  } catch {
-    return {}
-  }
-}
-
-const hasRole = (minRole: 'user' | 'admin' | 'super_admin') => {
-  const user = getCurrentUser()
-  const roleHierarchy: Record<string, number> = { user: 1, admin: 2, super_admin: 3 }
-  return (roleHierarchy[user.role] || 0) >= (roleHierarchy[minRole] || 0)
-}
-
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isAuthenticated()) {
+  const accessToken = localStorage.getItem('accessToken')
+  if (!accessToken) {
     return <Navigate to="/login" replace />
-  }
-  return <>{children}</>
-}
-
-const SuperAdminRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />
-  }
-  if (!hasRole('super_admin')) {
-    return <Navigate to="/dashboard" replace />
-  }
-  return <>{children}</>
-}
-
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />
-  }
-  if (!hasRole('admin')) {
-    return <Navigate to="/dashboard" replace />
   }
   return <>{children}</>
 }
@@ -86,7 +51,6 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      // Dashboard section
       {
         path: '/dashboard',
         element: <DashboardPage />,
@@ -97,21 +61,36 @@ export const router = createBrowserRouter([
       },
       {
         path: '/analytics/knowledge',
-        element: <KnowledgeAnalyticsPage />,
+        element: (
+          <PermissionRoute permissions={['analytics:read']}>
+            <KnowledgeAnalyticsPage />
+          </PermissionRoute>
+        ),
       },
       {
         path: '/analytics/search',
-        element: <SearchAnalyticsPage />,
+        element: (
+          <PermissionRoute permissions={['stats:read']}>
+            <SearchAnalyticsPage />
+          </PermissionRoute>
+        ),
       },
       {
         path: '/analytics/api',
-        element: <ApiAnalyticsPage />,
+        element: (
+          <PermissionRoute permissions={['stats:read']}>
+            <ApiAnalyticsPage />
+          </PermissionRoute>
+        ),
       },
       {
         path: '/analytics/performance',
-        element: <PerformanceAnalyticsPage />,
+        element: (
+          <PermissionRoute permissions={['audit:read']}>
+            <PerformanceAnalyticsPage />
+          </PermissionRoute>
+        ),
       },
-      // Knowledge Base section
       {
         path: '/knowledge',
         element: <KnowledgePage />,
@@ -124,31 +103,49 @@ export const router = createBrowserRouter([
         path: '/categories',
         element: <CategoriesPage />,
       },
-      // Users section (admin+ only)
       {
         path: '/users',
-        element: <SuperAdminRoute><UsersPage /></SuperAdminRoute>,
+        element: (
+          <PermissionRoute permissions={['users:list']}>
+            <UsersPage />
+          </PermissionRoute>
+        ),
       },
       {
         path: '/roles',
-        element: <SuperAdminRoute><RolesPage /></SuperAdminRoute>,
+        element: (
+          <ElevationRoute>
+            <RolesPage />
+          </ElevationRoute>
+        ),
       },
       {
         path: '/api-keys',
-        element: <ApiKeysPage />,
+        element: (
+          <PermissionRoute permissions={['apikeys:list']}>
+            <ApiKeysPage />
+          </PermissionRoute>
+        ),
       },
       {
         path: '/me/api-keys',
-        element: <ProtectedRoute><MyApiKeysPage /></ProtectedRoute>,
+        element: <MyApiKeysPage />,
       },
-      // System section (admin only for audit-logs and system)
       {
         path: '/audit-logs',
-        element: <AdminRoute><AuditLogsPage /></AdminRoute>,
+        element: (
+          <PermissionRoute permissions={['audit:read']}>
+            <AuditLogsPage />
+          </PermissionRoute>
+        ),
       },
       {
         path: '/system',
-        element: <AdminRoute><SystemPage /></AdminRoute>,
+        element: (
+          <PermissionRoute permissions={['system:read']}>
+            <SystemPage />
+          </PermissionRoute>
+        ),
       },
       {
         path: '/settings',
