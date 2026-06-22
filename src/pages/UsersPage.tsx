@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { adminUsersApi } from '@/api'
-import type { AdminUserSummary, UpdateAdminUserRequest, ResetPasswordResponse } from '@/types'
+import type { AdminUserSummary, UpdateAdminUserRequest, ResetPasswordResponse, AdminRole } from '@/types'
+import { PermissionGuard } from '@/components/auth/PermissionGuard'
+import { usePermission } from '@/contexts/PermissionContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -57,11 +59,11 @@ export function UsersPage() {
     username: '',
     password: '',
     email: '',
-    role: 'admin' as 'admin' | 'super_admin',
+    role: 'user' as AdminRole,
   })
 
   const limit = 20
-  const currentUserData = JSON.parse(localStorage.getItem('user') || '{}')
+  const { user: permUser } = usePermission()
 
   useEffect(() => {
     fetchUsers()
@@ -97,7 +99,7 @@ export function UsersPage() {
         description: 'User created successfully',
       })
       setCreateDialogOpen(false)
-      setFormData({ username: '', password: '', email: '', role: 'admin' })
+      setFormData({ username: '', password: '', email: '', role: 'user' })
       fetchUsers()
     } catch (error) {
       toast({
@@ -186,12 +188,12 @@ export function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">{t('users.title')}</h1>
-        {currentUserData.role === 'super_admin' && (
+        <PermissionGuard permissions={['users:manage']} requireElevation>
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             {t('users.create')}
           </Button>
-        )}
+        </PermissionGuard>
       </div>
 
       <Card>
@@ -226,8 +228,9 @@ export function UsersPage() {
                     <TableCell className="font-medium">{user.username}</TableCell>
                     <TableCell>{user.email || '-'}</TableCell>
                     <TableCell>
-                      <Badge variant={user.role === 'super_admin' ? 'default' : 'secondary'}>
-                        {user.role === 'super_admin' ? t('users.superAdmin') : t('users.admin')}
+                      <Badge variant={user.role === 'super_admin' ? 'default' : user.role === 'admin' ? 'secondary' : 'outline'}>
+                        {user.role === 'super_admin' ? t('users.superAdmin') : 
+                         user.role === 'admin' ? t('users.admin') : t('users.user')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -246,37 +249,39 @@ export function UsersPage() {
                       {user.lastLoginAt ? formatDate(user.lastLoginAt) : '-'}
                     </TableCell>
                     <TableCell>
-                      {currentUserData.role === 'super_admin' && user.id !== currentUserData.id && (
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(user)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setCurrentUser(user)
-                              setResetDialogOpen(true)
-                            }}
-                          >
-                            <KeyRound className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setDeleteId(user.id)
-                              setDeleteDialogOpen(true)
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      )}
+                      <PermissionGuard permissions={['users:manage']} requireElevation>
+                        {permUser?.id !== user.id && (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(user)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setCurrentUser(user)
+                                setResetDialogOpen(true)
+                              }}
+                            >
+                              <KeyRound className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setDeleteId(user.id)
+                                setDeleteDialogOpen(true)
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        )}
+                      </PermissionGuard>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -359,8 +364,9 @@ export function UsersPage() {
                 id="role"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'super_admin' })}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminRole })}
               >
+                <option value="user">{t('users.user')}</option>
                 <option value="admin">{t('users.admin')}</option>
                 <option value="super_admin">{t('users.superAdmin')}</option>
               </select>
@@ -397,8 +403,9 @@ export function UsersPage() {
                 id="edit-role"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'super_admin' })}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminRole })}
               >
+                <option value="user">{t('users.user')}</option>
                 <option value="admin">{t('users.admin')}</option>
                 <option value="super_admin">{t('users.superAdmin')}</option>
               </select>
