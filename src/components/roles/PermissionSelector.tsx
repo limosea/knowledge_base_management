@@ -3,7 +3,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Permission } from '@/types'
-import { PERMISSION_LABELS } from '@/types'
+import { PERMISSION_LABELS, PERMISSION_DESCRIPTIONS } from '@/types'
 
 interface PermissionSelectorProps {
   selectedPermissions: Permission[]
@@ -31,23 +31,19 @@ export function PermissionSelector({
   const permissionGroups = [
     {
       title: t('roles.permissionGroups.userManagement'),
-      permissions: ['users:read', 'users:write'] as Permission[],
+      permissions: ['users:list', 'users:manage'] as Permission[],
     },
     {
-      title: t('roles.permissionGroups.knowledge'),
-      permissions: ['knowledge:read', 'knowledge:read_all', 'knowledge:delete'] as Permission[],
+      title: t('roles.permissionGroups.contentManagement'),
+      permissions: ['content:view_shielded', 'content:shield', 'content:unshield'] as Permission[],
     },
     {
       title: t('roles.permissionGroups.apiKey'),
-      permissions: ['apikeys:read', 'apikeys:write'] as Permission[],
+      permissions: ['apikeys:list', 'apikeys:manage'] as Permission[],
     },
     {
       title: t('roles.permissionGroups.systemManagement'),
       permissions: ['audit:read', 'analytics:read', 'system:read', 'stats:read'] as Permission[],
-    },
-    {
-      title: t('roles.permissionGroups.libraryManagement'),
-      permissions: ['libraries:read', 'libraries:write'] as Permission[],
     },
   ]
 
@@ -71,6 +67,7 @@ export function PermissionSelector({
                   <Label
                     htmlFor={permission}
                     className="text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                    title={PERMISSION_DESCRIPTIONS[permission]}
                   >
                     {PERMISSION_LABELS[permission]}
                   </Label>
