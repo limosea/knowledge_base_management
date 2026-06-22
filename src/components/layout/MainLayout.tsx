@@ -1,6 +1,8 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/contexts/ThemeContext'
+import { usePermission } from '@/contexts/PermissionContext'
+import type { Permission } from '@/types'
 import { apiClient } from '@/api'
 import { Button } from '@/components/ui/button'
 import {
@@ -38,6 +40,8 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { ElevationToggle } from './ElevationToggle'
+import { ElevationIndicator } from './ElevationIndicator'
 
 interface NavItem {
   path?: string
@@ -45,7 +49,10 @@ interface NavItem {
   labelKey: string
   collapsible?: boolean
   children?: NavItem[]
-  minRole?: 'user' | 'admin' | 'super_admin'
+  permissions?: Permission[]
+  requireAll?: boolean
+  requireElevation?: boolean
+  superAdminOnly?: boolean
 }
 
 interface NavSection {
@@ -53,28 +60,20 @@ interface NavSection {
   items: NavItem[]
 }
 
-const roleHierarchy: Record<string, number> = { user: 1, admin: 2, super_admin: 3 }
-
 const navSections: NavSection[] = [
   {
-    titleKey: 'nav.dashboard',
+    titleKey: 'nav.personalConsole',
     items: [
       {
         path: '/dashboard',
         icon: LayoutDashboard,
-        labelKey: 'nav.overview'
+        labelKey: 'nav.overview',
       },
       {
-        icon: BarChart3,
-        labelKey: 'nav.analytics',
-        collapsible: true,
-        children: [
-          { path: '/analytics/knowledge', icon: BookOpen, labelKey: 'analytics.knowledgeAnalysis' },
-          { path: '/analytics/search', icon: Search, labelKey: 'analytics.searchAnalysis' },
-          { path: '/analytics/api', icon: KeyRound, labelKey: 'analytics.apiAnalysis' },
-          { path: '/analytics/performance', icon: Gauge, labelKey: 'analytics.performanceAndAudit' },
-        ]
-      }
+        path: '/me/api-keys',
+        icon: User,
+        labelKey: 'nav.myApiKeys',
+      },
     ],
   },
   {
@@ -85,19 +84,55 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    titleKey: 'nav.users',
+    titleKey: 'nav.elevatedConsole',
     items: [
-      { path: '/users', icon: Users, labelKey: 'nav.userManagement', minRole: 'super_admin' },
-      { path: '/roles', icon: Shield, labelKey: 'nav.roleManagement', minRole: 'super_admin' },
-      { path: '/api-keys', icon: Key, labelKey: 'nav.apiKeys', minRole: 'admin' },
-      { path: '/me/api-keys', icon: User, labelKey: 'nav.myApiKeys' },
+      {
+        path: '/users',
+        icon: Users,
+        labelKey: 'nav.userManagement',
+        permissions: ['users:list'],
+      },
+      {
+        path: '/roles',
+        icon: Shield,
+        labelKey: 'nav.roleManagement',
+        superAdminOnly: true,
+        requireElevation: true,
+      },
+      {
+        path: '/api-keys',
+        icon: Key,
+        labelKey: 'nav.apiKeys',
+        permissions: ['apikeys:list'],
+      },
     ],
   },
   {
     titleKey: 'nav.system',
     items: [
-      { path: '/audit-logs', icon: FileText, labelKey: 'nav.auditLogs', minRole: 'admin' },
-      { path: '/system', icon: Activity, labelKey: 'nav.systemMonitor', minRole: 'admin' },
+      {
+        path: '/audit-logs',
+        icon: FileText,
+        labelKey: 'nav.auditLogs',
+        permissions: ['audit:read'],
+      },
+      {
+        path: '/system',
+        icon: Activity,
+        labelKey: 'nav.systemMonitor',
+        permissions: ['system:read'],
+      },
+      {
+        icon: BarChart3,
+        labelKey: 'nav.analytics',
+        collapsible: true,
+        children: [
+          { path: '/analytics/knowledge', icon: BookOpen, labelKey: 'analytics.knowledgeAnalysis', permissions: ['analytics:read'] },
+          { path: '/analytics/search', icon: Search, labelKey: 'analytics.searchAnalysis', permissions: ['stats:read'] },
+          { path: '/analytics/api', icon: KeyRound, labelKey: 'analytics.apiAnalysis', permissions: ['stats:read'] },
+          { path: '/analytics/performance', icon: Gauge, labelKey: 'analytics.performanceAndAudit', permissions: ['audit:read'] },
+        ],
+      },
       { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
     ],
   },
@@ -202,6 +237,7 @@ export function MainLayout() {
   const { i18n } = useTranslation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { hasPermission, hasAnyPermission, isElevated, user: permUser, canAccessElevated } = usePermission()
 
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
     const stored = localStorage.getItem('nav-collapsed-state')
@@ -217,6 +253,18 @@ export function MainLayout() {
   }
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+
+  const filterItems = (items: NavItem[]): NavItem[] => {
+    return items.filter(item => {
+      if (item.superAdminOnly && !permUser?.isSuperAdmin) return false
+      if (item.permissions && !hasAnyPermission(item.permissions)) return false
+      if (item.requireElevation && !canAccessElevated()) return false
+      if (item.children) {
+        item.children = filterItems(item.children)
+      }
+      return true
+    })
+  }
 
   const handleLogout = async () => {
     try {
@@ -282,10 +330,7 @@ export function MainLayout() {
         </div>
         <nav className="p-4 space-y-6 overflow-y-auto h-[calc(100vh-4rem)]">
           {navSections.map((section) => {
-            const filteredItems = section.items.filter(item => {
-              if (!item.minRole) return true
-              return roleHierarchy[user.role] >= roleHierarchy[item.minRole]
-            })
+            const filteredItems = filterItems(section.items)
             if (filteredItems.length === 0) return null
             return (
               <div key={section.titleKey}>
@@ -325,6 +370,7 @@ export function MainLayout() {
 
       {/* Main Content */}
       <main className="lg:pl-64 pt-16 lg:pt-0">
+        <ElevationIndicator />
         {/* Desktop Header */}
         <header className="hidden lg:flex h-16 items-center justify-between px-6 border-b bg-card">
           <div className="flex items-center gap-4">
@@ -333,6 +379,7 @@ export function MainLayout() {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
+            <ElevationToggle />
             <Button variant="ghost" size="icon" onClick={toggleLanguage}>
               <Languages className="h-5 w-5" />
             </Button>
