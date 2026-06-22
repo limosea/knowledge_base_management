@@ -255,13 +255,13 @@ export function KnowledgePage() {
             </div>
             {selectedIds.length > 0 && (
               <div className="flex items-center gap-2">
-                <PermissionGuard permissions={['content:shield']}>
+                <PermissionGuard permissions={['content:shield']} requireElevation>
                   <Button variant="outline" onClick={handleBatchShield}>
                     <Shield className="h-4 w-4 mr-2" />
                     {t('knowledge.batchShield')} ({selectedIds.length})
                   </Button>
                 </PermissionGuard>
-                <PermissionGuard permissions={['content:unshield']}>
+                <PermissionGuard permissions={['content:unshield']} requireElevation>
                   <Button variant="outline" onClick={handleBatchUnshield}>
                     <ShieldOff className="h-4 w-4 mr-2" />
                     {t('knowledge.batchUnshield')} ({selectedIds.length})
@@ -352,7 +352,7 @@ export function KnowledgePage() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         {entry.shielded ? (
-                          <PermissionGuard permissions={['content:unshield']}>
+                          <PermissionGuard permissions={['content:unshield']} requireElevation>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -363,7 +363,7 @@ export function KnowledgePage() {
                             </Button>
                           </PermissionGuard>
                         ) : (
-                          <PermissionGuard permissions={['content:shield']}>
+                          <PermissionGuard permissions={['content:shield']} requireElevation>
                             <Button
                               variant="ghost"
                               size="icon"

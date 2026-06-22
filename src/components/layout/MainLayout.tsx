@@ -115,6 +115,13 @@ const elevatedNavSections: NavSection[] = [
     ],
   },
   {
+    titleKey: 'nav.knowledgeBase',
+    items: [
+      { path: '/knowledge', icon: BookOpen, labelKey: 'nav.knowledge' },
+      { path: '/categories', icon: Tag, labelKey: 'nav.categories' },
+    ],
+  },
+  {
     titleKey: 'nav.system',
     items: [
       {
@@ -261,11 +268,19 @@ export function MainLayout() {
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
+  const getStoredMode = (): boolean => {
+    try {
+      return localStorage.getItem('console-mode') === 'elevated'
+    } catch {
+      return false
+    }
+  }
+
   const elevatedPaths = ['/users', '/roles', '/api-keys', '/audit-logs', '/system', '/analytics']
 
   const isInElevatedMode = (): boolean => {
     if (permUser?.isSuperAdmin) {
-      return elevatedPaths.some(path => location.pathname.startsWith(path))
+      return getStoredMode() || elevatedPaths.some(path => location.pathname.startsWith(path))
     }
     return isElevated()
   }
@@ -278,6 +293,13 @@ export function MainLayout() {
       }
     }
   }, [isElevated, permUser?.isSuperAdmin, location.pathname, navigate])
+
+  useEffect(() => {
+    if (permUser?.isSuperAdmin) {
+      const elevated = isInElevatedMode()
+      localStorage.setItem('console-mode', elevated ? 'elevated' : 'personal')
+    }
+  }, [location.pathname, permUser?.isSuperAdmin])
 
   const filterItems = (items: NavItem[]): NavItem[] => {
     return items.filter(item => {

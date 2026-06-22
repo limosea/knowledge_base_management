@@ -18,9 +18,17 @@ export function ElevationToggle() {
 
   const isSuperAdmin = user?.isSuperAdmin ?? false
 
+  const getStoredMode = (): boolean => {
+    try {
+      return localStorage.getItem('console-mode') === 'elevated'
+    } catch {
+      return false
+    }
+  }
+
   const isInElevatedMode = (): boolean => {
     if (isSuperAdmin) {
-      return elevatedPaths.some(path => location.pathname.startsWith(path))
+      return getStoredMode() || elevatedPaths.some(path => location.pathname.startsWith(path))
     }
     return isElevated()
   }
@@ -53,10 +61,12 @@ export function ElevationToggle() {
 
   if (isSuperAdmin) {
     const handleToggle = () => {
-      if (isInElevatedMode()) {
-        navigate('/dashboard')
-      } else {
+      const newMode = !isInElevatedMode()
+      localStorage.setItem('console-mode', newMode ? 'elevated' : 'personal')
+      if (newMode) {
         navigate('/users')
+      } else {
+        navigate('/dashboard')
       }
     }
 

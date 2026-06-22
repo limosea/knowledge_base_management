@@ -9,7 +9,7 @@ interface ElevationRouteProps {
 }
 
 export function ElevationRoute({ children, fallback }: ElevationRouteProps) {
-  const { isElevated, canAccessElevated, loading } = usePermission()
+  const { isElevated, canAccessElevated, loading, user } = usePermission()
   const [showDialog, setShowDialog] = useState(false)
 
   if (loading) {
@@ -18,6 +18,10 @@ export function ElevationRoute({ children, fallback }: ElevationRouteProps) {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     )
+  }
+
+  if (user?.isSuperAdmin) {
+    return <>{children}</>
   }
 
   if (!canAccessElevated()) {

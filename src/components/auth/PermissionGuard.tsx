@@ -17,7 +17,7 @@ export function PermissionGuard({
   requireElevation = false,
   fallback = null,
 }: PermissionGuardProps) {
-  const { hasAnyPermission, hasAllPermissions, isElevated } = usePermission()
+  const { hasAnyPermission, hasAllPermissions, isElevated, user } = usePermission()
 
   if (permissions && permissions.length > 0) {
     const hasAccess = requireAll ? hasAllPermissions(permissions) : hasAnyPermission(permissions)
@@ -26,8 +26,15 @@ export function PermissionGuard({
     }
   }
 
-  if (requireElevation && !isElevated()) {
-    return <>{fallback}</>
+  if (requireElevation) {
+    if (user?.isSuperAdmin) {
+      const storedMode = localStorage.getItem('console-mode')
+      if (storedMode !== 'elevated') {
+        return <>{fallback}</>
+      }
+    } else if (!isElevated()) {
+      return <>{fallback}</>
+    }
   }
 
   return <>{children}</>
