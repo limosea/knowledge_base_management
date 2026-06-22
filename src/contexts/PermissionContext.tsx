@@ -152,7 +152,7 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
   }, [state.user?.isSuperAdmin, state.elevation])
 
   const canAccessElevated = useCallback((): boolean => {
-    if (state.user?.isSuperAdmin) return state.elevation.mfaEnabled
+    if (state.user?.isSuperAdmin) return true
     return state.elevation.mfaEnabled && state.elevation.elevatedOnly.length > 0
   }, [state.user?.isSuperAdmin, state.elevation])
 

@@ -6,7 +6,11 @@ import { Button } from '@/components/ui/button'
 
 export function ElevationIndicator() {
   const { t } = useTranslation()
-  const { isElevated, revokeElevation, canAccessElevated } = usePermission()
+  const { isElevated, revokeElevation, canAccessElevated, user } = usePermission()
+
+  if (user?.isSuperAdmin) {
+    return null
+  }
 
   if (!canAccessElevated() || !isElevated()) {
     return null

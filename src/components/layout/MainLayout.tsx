@@ -38,7 +38,7 @@ import {
   User,
   Shield,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { ElevationToggle } from './ElevationToggle'
 import { ElevationIndicator } from './ElevationIndicator'
@@ -51,7 +51,6 @@ interface NavItem {
   children?: NavItem[]
   permissions?: Permission[]
   requireAll?: boolean
-  requireElevation?: boolean
   superAdminOnly?: boolean
 }
 
@@ -60,7 +59,7 @@ interface NavSection {
   items: NavItem[]
 }
 
-const navSections: NavSection[] = [
+const personalNavSections: NavSection[] = [
   {
     titleKey: 'nav.personalConsole',
     items: [
@@ -84,6 +83,15 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    titleKey: 'nav.settings',
+    items: [
+      { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
+    ],
+  },
+]
+
+const elevatedNavSections: NavSection[] = [
+  {
     titleKey: 'nav.elevatedConsole',
     items: [
       {
@@ -97,7 +105,6 @@ const navSections: NavSection[] = [
         icon: Shield,
         labelKey: 'nav.roleManagement',
         superAdminOnly: true,
-        requireElevation: true,
       },
       {
         path: '/api-keys',
@@ -133,7 +140,6 @@ const navSections: NavSection[] = [
           { path: '/analytics/performance', icon: Gauge, labelKey: 'analytics.performanceAndAudit', permissions: ['audit:read'] },
         ],
       },
-      { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
     ],
   },
 ]
@@ -236,8 +242,9 @@ export function MainLayout() {
   const { theme, setTheme } = useTheme()
   const { i18n } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { hasAnyPermission, user: permUser, canAccessElevated, loading } = usePermission()
+  const { hasAnyPermission, user: permUser, canAccessElevated, isElevated, loading } = usePermission()
 
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
     const stored = localStorage.getItem('nav-collapsed-state')
@@ -254,11 +261,28 @@ export function MainLayout() {
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
+  const elevatedPaths = ['/users', '/roles', '/api-keys', '/audit-logs', '/system', '/analytics']
+
+  const isInElevatedMode = (): boolean => {
+    if (permUser?.isSuperAdmin) {
+      return elevatedPaths.some(path => location.pathname.startsWith(path))
+    }
+    return isElevated()
+  }
+
+  useEffect(() => {
+    if (!permUser?.isSuperAdmin && !isElevated()) {
+      const isOnElevatedPath = elevatedPaths.some(path => location.pathname.startsWith(path))
+      if (isOnElevatedPath) {
+        navigate('/dashboard', { replace: true })
+      }
+    }
+  }, [isElevated, permUser?.isSuperAdmin, location.pathname, navigate])
+
   const filterItems = (items: NavItem[]): NavItem[] => {
     return items.filter(item => {
       if (item.superAdminOnly && !permUser?.isSuperAdmin) return false
       if (item.permissions && !hasAnyPermission(item.permissions)) return false
-      if (item.requireElevation && !canAccessElevated()) return false
       if (item.children) {
         item.children = filterItems(item.children)
       }
@@ -282,6 +306,8 @@ export function MainLayout() {
       </div>
     )
   }
+
+  const currentNavSections = isInElevatedMode() ? elevatedNavSections : personalNavSections
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'en' ? 'zh' : 'en'
@@ -337,7 +363,7 @@ export function MainLayout() {
           <h1 className="font-bold text-xl">{t('auth.loginTitle')}</h1>
         </div>
         <nav className="p-4 space-y-6 overflow-y-auto h-[calc(100vh-4rem)]">
-          {navSections.map((section) => {
+          {currentNavSections.map((section) => {
             const filteredItems = filterItems(section.items)
             if (filteredItems.length === 0) return null
             return (
@@ -382,12 +408,15 @@ export function MainLayout() {
         {/* Desktop Header */}
         <header className="hidden lg:flex h-16 items-center justify-between px-6 border-b bg-card">
           <div className="flex items-center gap-4">
+            <Badge variant={isInElevatedMode() ? 'default' : 'outline'} className={isInElevatedMode() ? 'bg-orange-500 hover:bg-orange-600' : ''}>
+              {isInElevatedMode() ? t('nav.elevatedConsole') : t('nav.personalConsole')}
+            </Badge>
             <Badge variant="outline">
               {user.role === 'super_admin' ? t('users.superAdmin') : user.role === 'admin' ? t('users.admin') : t('users.user')}
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            <ElevationToggle />
+            {canAccessElevated() && <ElevationToggle />}
             <Button variant="ghost" size="icon" onClick={toggleLanguage}>
               <Languages className="h-5 w-5" />
             </Button>

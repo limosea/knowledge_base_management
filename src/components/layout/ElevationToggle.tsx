@@ -1,15 +1,29 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { usePermission } from '@/contexts/PermissionContext'
 import { Button } from '@/components/ui/button'
 import { ElevationDialog } from '@/components/auth/ElevationDialog'
-import { Shield, ShieldOff, Clock } from 'lucide-react'
+import { Shield, ShieldOff, Clock, ArrowRightLeft } from 'lucide-react'
+
+const elevatedPaths = ['/users', '/roles', '/api-keys', '/audit-logs', '/system', '/analytics']
 
 export function ElevationToggle() {
   const { t } = useTranslation()
-  const { isElevated, canAccessElevated, elevation, revokeElevation } = usePermission()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { isElevated, canAccessElevated, elevation, revokeElevation, user } = usePermission()
   const [showDialog, setShowDialog] = useState(false)
   const [remainingTime, setRemainingTime] = useState<string>('')
+
+  const isSuperAdmin = user?.isSuperAdmin ?? false
+
+  const isInElevatedMode = (): boolean => {
+    if (isSuperAdmin) {
+      return elevatedPaths.some(path => location.pathname.startsWith(path))
+    }
+    return isElevated()
+  }
 
   useEffect(() => {
     if (!elevation.elevated || !elevation.remainingSeconds) {
@@ -33,8 +47,35 @@ export function ElevationToggle() {
     return () => clearInterval(interval)
   }, [elevation.elevated, elevation.remainingSeconds])
 
-  if (!canAccessElevated()) {
+  if (!canAccessElevated() && !isSuperAdmin) {
     return null
+  }
+
+  if (isSuperAdmin) {
+    const handleToggle = () => {
+      if (isInElevatedMode()) {
+        navigate('/dashboard')
+      } else {
+        navigate('/users')
+      }
+    }
+
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleToggle}
+        className="text-primary"
+      >
+        <ArrowRightLeft className="h-4 w-4 mr-1" />
+        {isInElevatedMode() ? t('elevation.toPersonal') : t('elevation.toElevated')}
+      </Button>
+    )
+  }
+
+  const handleExit = async () => {
+    await revokeElevation()
+    navigate('/dashboard')
   }
 
   if (isElevated()) {
@@ -47,7 +88,7 @@ export function ElevationToggle() {
         <Button
           variant="outline"
           size="sm"
-          onClick={revokeElevation}
+          onClick={handleExit}
           className="text-orange-600 border-orange-300 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-700 dark:hover:bg-orange-950"
         >
           <ShieldOff className="h-4 w-4 mr-1" />
@@ -71,7 +112,10 @@ export function ElevationToggle() {
       <ElevationDialog
         open={showDialog}
         onOpenChange={setShowDialog}
-        onSuccess={() => setShowDialog(false)}
+        onSuccess={() => {
+          setShowDialog(false)
+          navigate('/users')
+        }}
       />
     </>
   )
