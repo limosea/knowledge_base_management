@@ -1,3 +1,5 @@
+import type { Permission } from './roles'
+
 export interface ErrorResponse {
   error: {
     code: string
@@ -17,7 +19,7 @@ export interface PaginatedResponse<T> extends PaginationMeta {
   data: T[]
 }
 
-export type AdminRole = 'admin' | 'super_admin'
+export type AdminRole = 'user' | 'admin' | 'super_admin'
 export type ApiKeyPermission = 'read' | 'write' | 'admin'
 export type EmbeddingStatus = 'processing' | 'completed' | 'failed'
 
@@ -37,6 +39,8 @@ export interface LoginResponse {
     username: string
     role: AdminRole
     email: string
+    isSuperAdmin: boolean
+    permissions: Permission[]
   }
 }
 
@@ -55,6 +59,8 @@ export interface AdminProfile {
   username: string
   email: string
   role: AdminRole
+  isSuperAdmin: boolean
+  permissions: Permission[]
   mfaEnabled: boolean
   createdAt: string
 }
@@ -177,6 +183,9 @@ export interface AdminKnowledgeListItem {
   category?: string
   tags: string[]
   qualityScore?: number
+  visibility: 'private' | 'public'
+  shielded: boolean
+  shieldedAt?: string
   createdAt: string
   createdBy: string
 }
@@ -191,6 +200,7 @@ export interface AdminUserSummary {
   isActive: boolean
   mfaEnabled: boolean
   lastLoginAt?: string
+  createdBy?: string
   createdAt: string
 }
 
@@ -467,3 +477,4 @@ export interface MyStats {
 }
 
 export * from './roles'
+export * from './elevation'
