@@ -237,7 +237,7 @@ export function MainLayout() {
   const { i18n } = useTranslation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { hasAnyPermission, user: permUser, canAccessElevated } = usePermission()
+  const { hasAnyPermission, user: permUser, canAccessElevated, loading } = usePermission()
 
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
     const stored = localStorage.getItem('nav-collapsed-state')
@@ -273,6 +273,14 @@ export function MainLayout() {
       apiClient.clearTokens()
       navigate('/login')
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   const toggleLanguage = () => {

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api'
+import { usePermission } from '@/contexts/PermissionContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,6 +19,7 @@ export function MfaPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { toast } = useToast()
+  const { refreshPermissions } = usePermission()
   const [mfaCode, setMfaCode] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -36,6 +38,7 @@ export function MfaPage() {
     setLoading(true)
     try {
       await authApi.loginWithMfa({ tempToken, mfaCode })
+      await refreshPermissions()
       navigate('/dashboard')
     } catch (error: unknown) {
       const err = error as { error?: { message?: string } }

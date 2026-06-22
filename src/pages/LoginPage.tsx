@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api'
+import { usePermission } from '@/contexts/PermissionContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,6 +14,7 @@ export function LoginPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { refreshPermissions } = usePermission()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -29,6 +31,7 @@ export function LoginPage() {
       } else if ('requirePasswordChange' in response && response.requirePasswordChange) {
         navigate('/change-password', { state: { username } })
       } else {
+        await refreshPermissions()
         navigate('/dashboard')
       }
     } catch (error: unknown) {
