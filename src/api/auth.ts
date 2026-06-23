@@ -19,6 +19,11 @@ export const authApi = {
       localStorage.setItem('accessToken', response.accessToken)
       localStorage.setItem('refreshToken', response.refreshToken)
       localStorage.setItem('user', JSON.stringify(response.user))
+      if (response.requirePasswordChange) {
+        localStorage.setItem('requirePasswordChange', 'true')
+      } else {
+        localStorage.removeItem('requirePasswordChange')
+      }
     }
     return response
   },
@@ -28,6 +33,11 @@ export const authApi = {
     localStorage.setItem('accessToken', response.accessToken)
     localStorage.setItem('refreshToken', response.refreshToken)
     localStorage.setItem('user', JSON.stringify(response.user))
+    if (response.requirePasswordChange) {
+      localStorage.setItem('requirePasswordChange', 'true')
+    } else {
+      localStorage.removeItem('requirePasswordChange')
+    }
     return response
   },
 
@@ -57,8 +67,9 @@ export const authApi = {
     return apiClient.put<AdminProfile>('/admin/auth/profile', data)
   },
 
-  changePassword: (data: ChangePasswordRequest): Promise<void> => {
-    return apiClient.post('/admin/auth/change-password', data)
+  changePassword: async (data: ChangePasswordRequest): Promise<void> => {
+    await apiClient.put('/admin/auth/password', data)
+    localStorage.removeItem('requirePasswordChange')
   },
 
   setupMfa: (): Promise<MfaSetupResponse> => {

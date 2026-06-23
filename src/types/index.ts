@@ -476,5 +476,59 @@ export interface MyStats {
   }
 }
 
+// ==================== Messages API Types ====================
+
+export type MessageType = 'announcement' | 'approval' | 'system'
+export type TargetType = 'all' | 'users' | 'role' | 'permission'
+
+export interface MessageListItem {
+  id: string
+  title: string
+  content: string
+  type: MessageType
+  isRead: boolean
+  isStarred: boolean
+  createdAt: string
+  readAt: string | null
+}
+
+export interface MessageDetail extends MessageListItem {
+  sender?: {
+    id: string
+    name: string
+  } | null
+  metadata?: Record<string, unknown> | null
+}
+
+export interface MessageListResponse {
+  items: MessageListItem[]
+  total: number
+  unreadCount: number
+}
+
+export interface SendMessageRequest {
+  title: string
+  content: string
+  type: MessageType
+  targetType: TargetType
+  targetValue?: string[]
+  metadata?: Record<string, unknown>
+}
+
+export interface SendMessageResponse {
+  success: boolean
+  messageId: string
+  recipientCount: number
+}
+
+export interface UnreadCountResponse {
+  count: number
+}
+
+export interface BatchOperationResponse {
+  success: boolean
+  count: number
+}
+
 export * from './roles'
 export * from './elevation'

@@ -4,6 +4,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 class ApiClient {
   private baseUrl: string
+  private refreshPromise: Promise<boolean> | null = null
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
@@ -29,9 +30,10 @@ class ApiClient {
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
+    localStorage.removeItem('requirePasswordChange')
   }
 
-  private async refreshAccessToken(): Promise<boolean> {
+  private async doRefreshAccessToken(): Promise<boolean> {
     const refreshToken = this.getRefreshToken()
     if (!refreshToken) return false
 
@@ -59,6 +61,24 @@ class ApiClient {
       this.clearTokens()
       return false
     }
+  }
+
+  private async refreshAccessToken(): Promise<boolean> {
+    if (this.refreshPromise) {
+      return this.refreshPromise
+    }
+    const currentAccess = this.getAuthToken()
+    this.refreshPromise = this.doRefreshAccessToken().finally(() => {
+      this.refreshPromise = null
+    })
+    const ok = await this.refreshPromise
+    if (!ok) {
+      const nextAccess = this.getAuthToken()
+      if (nextAccess && nextAccess !== currentAccess) {
+        return true
+      }
+    }
+    return ok
   }
 
   async request<T>(
@@ -117,6 +137,14 @@ class ApiClient {
           },
         }
       }
+
+      if (response.status === 403 && errorData.error.code === 'PASSWORD_CHANGE_REQUIRED') {
+        localStorage.setItem('requirePasswordChange', 'true')
+        if (window.location.pathname !== '/change-password') {
+          window.location.href = '/change-password'
+        }
+      }
+
       throw errorData
     }
 
@@ -158,8 +186,26 @@ class ApiClient {
     )
   }
 
-  async delete<T>(endpoint: string, requireAuth = true): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' }, requireAuth)
+  async patch<T>(endpoint: string, data?: unknown, requireAuth = true): Promise<T> {
+    return this.request<T>(
+      endpoint,
+      {
+        method: 'PATCH',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      requireAuth
+    )
+  }
+
+  async delete<T>(endpoint: string, data?: unknown, requireAuth = true): Promise<T> {
+    return this.request<T>(
+      endpoint,
+      {
+        method: 'DELETE',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      requireAuth
+    )
   }
 }
 

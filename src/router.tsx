@@ -4,6 +4,7 @@ import { PermissionRoute } from '@/components/auth/PermissionRoute'
 import { ElevationRoute } from '@/components/auth/ElevationRoute'
 import {
   LoginPage,
+  ChangePasswordPage,
   MfaPage,
   DashboardPage,
   KnowledgePage,
@@ -20,12 +21,17 @@ import {
   SettingsPage,
   MyApiKeysPage,
   RolesPage,
+  MessagesPage,
 } from '@/pages'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const accessToken = localStorage.getItem('accessToken')
   if (!accessToken) {
     return <Navigate to="/login" replace />
+  }
+  const requirePasswordChange = localStorage.getItem('requirePasswordChange')
+  if (requirePasswordChange === 'true') {
+    return <Navigate to="/change-password" replace />
   }
   return <>{children}</>
 }
@@ -41,6 +47,10 @@ export const router = createBrowserRouter([
       {
         path: '/login/mfa',
         element: <MfaPage />,
+      },
+      {
+        path: '/change-password',
+        element: <ChangePasswordPage />,
       },
     ],
   },
@@ -74,6 +84,10 @@ export const router = createBrowserRouter([
       {
         path: '/settings',
         element: <SettingsPage />,
+      },
+      {
+        path: '/messages',
+        element: <MessagesPage />,
       },
     ],
   },

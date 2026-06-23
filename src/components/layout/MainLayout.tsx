@@ -28,6 +28,7 @@ import {
   Shield,
   User,
   Settings,
+  Mail,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -58,6 +59,11 @@ const navSections: NavSection[] = [
         path: '/me/api-keys',
         icon: User,
         labelKey: 'nav.myApiKeys',
+      },
+      {
+        path: '/messages',
+        icon: Mail,
+        labelKey: 'nav.messages',
       },
     ],
   },

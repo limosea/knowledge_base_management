@@ -11,6 +11,8 @@ export type Permission =
   | 'analytics:read'
   | 'system:read'
   | 'stats:read'
+  | 'messages:send'
+  | 'messages:manage'
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
   'users:list': '列出用户',
@@ -24,6 +26,8 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   'analytics:read': '查看分析数据',
   'system:read': '查看系统信息',
   'stats:read': '查看统计信息',
+  'messages:send': '发送消息',
+  'messages:manage': '管理消息',
 }
 
 export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
@@ -38,6 +42,8 @@ export const PERMISSION_DESCRIPTIONS: Record<Permission, string> = {
   'analytics:read': '查看分析数据',
   'system:read': '查看系统信息',
   'stats:read': '查看统计信息',
+  'messages:send': '向指定目标发送系统消息',
+  'messages:manage': '管理消息（撤回等，预留）',
 }
 
 export interface Role {
