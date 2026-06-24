@@ -29,6 +29,7 @@ import {
   User,
   Settings,
   Mail,
+  BarChart3,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -64,6 +65,11 @@ const navSections: NavSection[] = [
         path: '/messages',
         icon: Mail,
         labelKey: 'nav.messages',
+      },
+      {
+        path: '/me/analytics',
+        icon: BarChart3,
+        labelKey: 'nav.myAnalytics',
       },
     ],
   },

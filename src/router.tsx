@@ -22,6 +22,7 @@ import {
   MyApiKeysPage,
   RolesPage,
   MessagesPage,
+  MyAnalyticsPage,
 } from '@/pages'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -88,6 +89,10 @@ export const router = createBrowserRouter([
       {
         path: '/messages',
         element: <MessagesPage />,
+      },
+      {
+        path: '/me/analytics',
+        element: <MyAnalyticsPage />,
       },
     ],
   },

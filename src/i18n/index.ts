@@ -69,6 +69,7 @@ const resources = {
         personalConsole: 'Personal Console',
         elevatedConsole: 'Elevated Console',
         messages: 'Messages',
+        myAnalytics: 'My Analytics',
       },
       theme: {
         light: 'Light',
@@ -519,6 +520,12 @@ const resources = {
         toElevated: 'Switch to Elevated',
         remaining: 'Remaining',
       },
+      myAnalytics: {
+        title: 'My Analytics',
+        knowledgeSection: 'Knowledge Analysis',
+        searchSection: 'Search Analysis',
+        apiUsageSection: 'API Usage',
+      },
     },
   },
   zh: {
@@ -587,6 +594,7 @@ const resources = {
         personalConsole: '个人控制台',
         elevatedConsole: '高级控制台',
         messages: '站内信',
+        myAnalytics: '我的分析',
       },
       theme: {
         light: '浅色',
@@ -1036,6 +1044,12 @@ const resources = {
         toPersonal: '切换到个人控制台',
         toElevated: '切换到高级控制台',
         remaining: '剩余时间',
+      },
+      myAnalytics: {
+        title: '我的分析',
+        knowledgeSection: '知识库分析',
+        searchSection: '搜索分析',
+        apiUsageSection: 'API 使用',
       },
     },
   },

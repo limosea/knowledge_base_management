@@ -86,6 +86,40 @@ info:
     列表类端点（`GET /admin/users`、`GET /admin/api-keys`）采用 **elevation-aware
     scope**：未提权时仅返回调用者名下资源（创建者主权），提权后返回全站资源。
 
+    ### 强制改密策略（服务端强制执行）
+    新建管理员、管理员密码被上级重置、或凭证轮换后，账号会被置为
+    `requirePasswordChange = true`。此时登录响应会携带
+    `requirePasswordChange: true`，**且服务端会在所有受保护端点上强制执行**：
+
+    - 除下文列出的"改密流程白名单"外，所有需要 `AdminAuth` 的端点一律返回
+      `403 PASSWORD_CHANGE_REQUIRED`，前端必须把用户引导到改密页面，
+      仅靠修改前端路由无法绕过。
+    - 改密成功后服务端会将 `requirePasswordChange` 置 `false` 并**清除该用户的
+      全部会话**（`AdminAuthService.changePassword`），前端必须使用新凭证重新登录。
+
+    改密流程白名单（即便 `requirePasswordChange = true` 仍可访问）：
+    - `POST /admin/auth/logout`
+    - `GET  /admin/auth/profile`
+    - `PUT  /admin/auth/password`
+    - `POST /admin/auth/mfa/setup`
+    - `POST /admin/auth/mfa/enable`
+
+    未登录接口（`POST /admin/auth/login`、`POST /admin/auth/login/mfa`、
+    `POST /admin/auth/refresh`）与上述白名单之外的所有 `/admin/*` 端点
+    均会被 `403 PASSWORD_CHANGE_REQUIRED` 拦截。
+
+    `403 PASSWORD_CHANGE_REQUIRED` 响应使用统一错误信封：
+    ```json
+    {
+      "error": {
+        "code": "PASSWORD_CHANGE_REQUIRED",
+        "message": "Password change required before accessing this resource",
+        "request_id": "…",
+        "timestamp": "2026-06-24T10:00:00.000Z"
+      }
+    }
+    ```
+
   version: 1.0.0
   contact:
     email: support@example.com
@@ -145,6 +179,11 @@ tags:
     description: 数据统计分析接口
   - name: Admin Self-Service
     description: 管理员自助服务接口，供普通用户管理自己的 API Key 和查看个人统计
+  - name: Admin Messages
+    description: |
+      系统消息管理接口。支持消息的发送、查询、标记已读、收藏、删除等操作。
+      消息类型包括：system（系统通知）、notification（业务通知）、alert（告警）。
+      消息目标支持：all（全体用户）、role（指定角色）、user（指定用户）。
 
 paths:
   # ==================== 健康检查 ====================
@@ -710,6 +749,12 @@ paths:
       tags:
         - Admin Auth
       summary: 管理员登出
+      description: |
+        吊销当前请求使用的 access token 对应的 `admin_sessions` 行。
+
+        该端点**位于强制改密白名单内**：即便调用者账号处于
+        `requirePasswordChange = true` 状态也可以访问，便于用户在强制改密页面上
+        选择"退出登录"。
       security:
         - AdminAuth: []
       responses:
@@ -759,6 +804,12 @@ paths:
       tags:
         - Admin Auth
       summary: 获取个人信息
+      description: |
+        返回当前登录用户的基本资料（id / username / email / role / 权限 / MFA 状态）。
+
+        该端点**位于强制改密白名单内**：即便调用者账号处于
+        `requirePasswordChange = true` 状态也可以访问，便于强制改密页面展示当前
+        用户名与 MFA 状态。
       security:
         - AdminAuth: []
       responses:
@@ -770,11 +821,16 @@ paths:
                 $ref: '#/components/schemas/AdminProfile'
         '401':
           $ref: '#/components/responses/Unauthorized'
-    
+
     put:
       tags:
         - Admin Auth
       summary: 更新个人信息
+      description: |
+        修改当前用户的个人档案（如 email）。该端点**不在强制改密白名单内**：
+        账号处于 `requirePasswordChange = true` 时调用会返回
+        `403 PASSWORD_CHANGE_REQUIRED`，必须先用 `PUT /admin/auth/password`
+        完成改密。
       security:
         - AdminAuth: []
       requestBody:
@@ -794,12 +850,22 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/PasswordChangeRequired'
 
   /admin/auth/password:
     put:
       tags:
         - Admin Auth
       summary: 修改密码
+      description: |
+        修改当前登录用户的密码。该端点**位于强制改密白名单内**：即便调用者账号处于
+        `requirePasswordChange = true` 状态也可以访问，是首次登录流程中客户端必须调用的
+        端点。
+
+        成功后服务端会把 `requirePasswordChange` 置为 `false` 并**删除该用户名下的
+        全部 `admin_sessions` 行**（含本次调用使用的 access token），因此客户端在
+        收到 `200` 后必须使用新密码重新登录，不能继续复用旧 token。
       security:
         - AdminAuth: []
       requestBody:
@@ -810,7 +876,7 @@ paths:
               $ref: '#/components/schemas/ChangePasswordRequest'
       responses:
         '200':
-          description: 修改成功
+          description: 修改成功（注意：当前 token 已被失效，必须重新登录）
           content:
             application/json:
               schema:
@@ -829,7 +895,12 @@ paths:
       tags:
         - Admin Auth
       summary: 设置MFA
-      description: 生成MFA密钥和二维码URL
+      description: |
+        生成MFA密钥和二维码URL。
+
+        该端点**位于强制改密白名单内**：即便调用者账号处于
+        `requirePasswordChange = true` 状态也可以访问，便于首次登录流程中
+        先完成 MFA 注册再改密。
       security:
         - AdminAuth: []
       responses:
@@ -847,6 +918,12 @@ paths:
       tags:
         - Admin Auth
       summary: 启用MFA
+      description: |
+        用 `setup` 返回的 secret 在客户端生成 TOTP 后提交 6 位验证码完成启用。
+
+        该端点**位于强制改密白名单内**：即便调用者账号处于
+        `requirePasswordChange = true` 状态也可以访问，便于首次登录流程中
+        先完成 MFA 注册再改密。
       security:
         - AdminAuth: []
       requestBody:
@@ -890,6 +967,11 @@ paths:
       tags:
         - Admin Auth
       summary: 禁用MFA
+      description: |
+        提交当前 TOTP 验证码关闭 MFA。该端点**不在强制改密白名单内**：
+        账号处于 `requirePasswordChange = true` 时调用会返回
+        `403 PASSWORD_CHANGE_REQUIRED`，必须先用 `PUT /admin/auth/password`
+        完成改密。
       security:
         - AdminAuth: []
       requestBody:
@@ -927,6 +1009,8 @@ paths:
                     example: MFA is not enabled
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/PasswordChangeRequired'
 
   # ==================== 管理员自助服务 ====================
   /admin/me/api-keys:
@@ -961,7 +1045,9 @@ paths:
                 $ref: '#/components/schemas/ApiKeyListResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
-    
+        '403':
+          $ref: '#/components/responses/PasswordChangeRequired'
+
     post:
       tags:
         - Admin Self-Service
@@ -988,6 +1074,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/PasswordChangeRequired'
 
   /admin/me/api-keys/{id}:
     get:
@@ -1445,7 +1533,7 @@ paths:
       tags:
         - Admin Categories
       summary: 获取分类列表
-      description: 返回所有分类及其关联的知识条目数量，支持分页和搜索。需要 admin 或 super_admin 权限。
+      description: 返回所有分类及其关联的知识条目数量，支持分页和搜索。任何已登录管理员均可调用。
       security:
         - AdminAuth: []
       parameters:
@@ -1481,7 +1569,7 @@ paths:
       tags:
         - Admin Categories
       summary: 创建分类
-      description: 需要 admin 或 super_admin 权限
+      description: 需要 `content:shield` 权限与 step-up 提权（高级控制台）。
       security:
         - AdminAuth: []
       requestBody:
@@ -1533,6 +1621,7 @@ paths:
       tags:
         - Admin Categories
       summary: 更新分类
+      description: 需要 `content:shield` 权限与 step-up 提权（高级控制台）。
       security:
         - AdminAuth: []
       parameters:
@@ -1567,7 +1656,7 @@ paths:
       tags:
         - Admin Categories
       summary: 删除分类
-      description: 只能删除没有关联知识条目的分类
+      description: 需要 `content:shield` 权限与 step-up 提权（高级控制台）。只能删除没有关联知识条目的分类。
       security:
         - AdminAuth: []
       parameters:
@@ -1860,6 +1949,80 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /admin/knowledge/{id}/self-shield:
+    post:
+      tags:
+        - Admin Knowledge
+      summary: 屏蔽自己创建的知识条目
+      description: |
+        需要认证。条目所有者主动屏蔽自己创建的条目，使其从公开列表隐藏。
+        仅条目所有者可操作，且条目必须是 `visibility=public` 状态。
+        操作后 `shielded=true`，`shieldedAt` 记录操作时间。
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      responses:
+        '200':
+          description: 屏蔽成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeEntry'
+        '400':
+          description: 条目未公开或已被屏蔽
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 非条目所有者
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/knowledge/{id}/self-unshield:
+    post:
+      tags:
+        - Admin Knowledge
+      summary: 解除屏蔽自己创建的知识条目
+      description: |
+        需要认证。条目所有者解除对自己条目的屏蔽，恢复公开可见。
+        仅条目所有者可操作，且条目必须处于 `shielded=true` 状态。
+        操作后 `shielded=false`，`shieldedAt` 置为 null。
+      security:
+        - AdminAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EntryId'
+      responses:
+        '200':
+          description: 解除屏蔽成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeEntry'
+        '400':
+          description: 条目未被屏蔽
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 非条目所有者
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   # ==================== 管理员用户管理 ====================
   /admin/users:
     get:
@@ -1895,7 +2058,15 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            以下任一情况都会返回 `403`：
+            - `code = FORBIDDEN`：调用者缺少 `users:list` 权限或未进入高级控制台（step-up 提权）。
+            - `code = PASSWORD_CHANGE_REQUIRED`：调用者尚未完成强制改密，必须先调用
+              `PUT /admin/auth/password`，详见文档头部的"强制改密策略"。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     post:
       tags:
@@ -3085,6 +3256,310 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  # ==================== 系统消息管理 ====================
+  /admin/messages:
+    get:
+      tags:
+        - Admin Messages
+      summary: 获取消息列表
+      description: |
+        需要认证。返回当前用户的消息列表，支持分页和按类型、已读状态、收藏状态过滤。
+        默认按创建时间倒序排列。
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: type
+          in: query
+          description: 按消息类型过滤
+          schema:
+            type: string
+            enum: [announcement, approval, system]
+        - name: unreadOnly
+          in: query
+          description: 仅返回未读消息
+          schema:
+            type: boolean
+            default: false
+        - name: starredOnly
+          in: query
+          description: 仅返回收藏的消息
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/messages/send:
+    post:
+      tags:
+        - Admin Messages
+      summary: 发送系统消息
+      description: |
+        需要 `messages:send` 权限。向指定目标发送系统消息。
+        支持四种目标类型：all（全体用户，仅 super_admin）、users（指定用户）、role（指定角色）、permission（指定权限）。
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '201':
+          description: 发送成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendMessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/messages/unread-count:
+    get:
+      tags:
+        - Admin Messages
+      summary: 获取未读消息数量
+      description: 需要认证。返回当前用户的未读消息总数。
+      security:
+        - AdminAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadCountResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/messages/batch-read:
+    patch:
+      tags:
+        - Admin Messages
+      summary: 批量标记已读
+      description: 需要认证。将指定消息列表标记为已读。
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchMessageOperation'
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchOperationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/messages/read-all:
+    patch:
+      tags:
+        - Admin Messages
+      summary: 标记所有消息为已读
+      description: 需要认证。将当前用户的所有未读消息标记为已读。
+      security:
+        - AdminAuth: []
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchOperationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/messages/{id}:
+    get:
+      tags:
+        - Admin Messages
+      summary: 获取消息详情
+      description: 需要认证。获取指定消息的详细信息。
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 消息ID
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Admin Messages
+      summary: 删除消息
+      description: 需要认证。删除指定消息（软删除）。
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 消息ID
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/messages/{id}/read:
+    patch:
+      tags:
+        - Admin Messages
+      summary: 标记单条消息已读
+      description: 需要认证。将指定消息标记为已读。
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 消息ID
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/messages/{id}/star:
+    patch:
+      tags:
+        - Admin Messages
+      summary: 设置/取消收藏消息
+      description: 需要认证。设置或取消指定消息的收藏状态。
+      security:
+        - AdminAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: 消息ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - starred
+              properties:
+                starred:
+                  type: boolean
+                  description: true=收藏，false=取消收藏
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  starred:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/messages/batch:
+    delete:
+      tags:
+        - Admin Messages
+      summary: 批量删除消息
+      description: 需要认证。批量删除指定消息列表（软删除）。
+      security:
+        - AdminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchMessageOperation'
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchOperationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -3167,6 +3642,29 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+
+    PasswordChangeRequired:
+      description: |
+        当前账号处于强制改密状态（`requirePasswordChange = true`），本次请求被
+        服务端拦截。客户端应将用户引导到 `PUT /admin/auth/password` 完成改密，
+        改密成功后需要重新登录（所有会话会被清除）。详见文档头部的"强制改密策略"。
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/ErrorResponse'
+              - type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum: [PASSWORD_CHANGE_REQUIRED]
+                        example: PASSWORD_CHANGE_REQUIRED
+                      message:
+                        type: string
+                        example: Password change required before accessing this resource
     
     NotFound:
       description: 资源不存在
@@ -3372,6 +3870,13 @@ components:
           description: 过期时间（秒）
         requirePasswordChange:
           type: boolean
+          description: |
+            为 `true` 时表示该账号当前处于"强制改密"状态（新建账号、管理员重置密码、
+            凭证轮换后均会进入此状态）。该标志**不是提示性字段**：服务端会在绝大多数
+            受保护端点上拦截并返回 `403 PASSWORD_CHANGE_REQUIRED`，仅允许
+            改密流程白名单内的端点被调用。客户端必须在检测到该标志后把用户引导到
+            改密/MFA 初始化页面；详见文档头部的"强制改密策略"章节。
+          example: false
         user:
           type: object
           properties:
@@ -3450,7 +3955,7 @@ components:
           type: string
           format: email
     
-    ChangePasswordRequest:
+    # ChangePasswordRequest:
       type: object
       required:
         - currentPassword
@@ -4100,6 +4605,133 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AuditLog'
+
+    # ========== 系统消息相关 ==========
+    MessageType:
+      type: string
+      enum: [announcement, approval, system]
+      description: 消息类型
+
+    TargetType:
+      type: string
+      enum: [all, users, role, permission]
+      description: 消息目标类型
+
+    MessageListItem:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        type:
+          $ref: '#/components/schemas/MessageType'
+        isRead:
+          type: boolean
+        isStarred:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    MessageDetail:
+      allOf:
+        - $ref: '#/components/schemas/MessageListItem'
+        - type: object
+          properties:
+            sender:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+            metadata:
+              type: object
+              nullable: true
+              description: 消息元数据
+
+    MessageListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageListItem'
+        total:
+          type: integer
+        unreadCount:
+          type: integer
+
+    SendMessageRequest:
+      type: object
+      required:
+        - title
+        - content
+        - type
+        - targetType
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        content:
+          type: string
+        type:
+          $ref: '#/components/schemas/MessageType'
+        targetType:
+          $ref: '#/components/schemas/TargetType'
+        targetValue:
+          type: array
+          items:
+            type: string
+          description: 目标值数组（当 targetType 为 users、role 或 permission 时必填）
+        metadata:
+          type: object
+          description: 消息元数据
+
+    SendMessageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        messageId:
+          type: string
+        recipientCount:
+          type: integer
+          description: 接收者数量
+
+    UnreadCountResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+
+    BatchMessageOperation:
+      type: object
+      required:
+        - messageIds
+      properties:
+        messageIds:
+          type: array
+          items:
+            type: string
+          description: 消息ID列表
+
+    BatchOperationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        count:
+          type: integer
+          description: 操作成功的数量
 
     # ========== 系统统计相关 ==========
     SystemStats:
