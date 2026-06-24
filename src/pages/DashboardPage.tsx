@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { systemApi, statsApi, meApi } from '@/api'
-import type { DashboardStats, RequestAnalytics, SystemHealth, MyStats } from '@/types'
+import type { DashboardStats, RequestAnalytics, SystemHealth, MyStats, MyDashboardStats } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BookOpen, Activity, Key, AlertTriangle, Plus } from 'lucide-react'
+import { BookOpen, Activity, Key, AlertTriangle, Plus, BarChart3 } from 'lucide-react'
 import { StatCard } from '@/components/charts/StatCard'
 import { SystemStatusCard } from '@/components/charts/SystemStatusCard'
 import { RequestTrendChart } from '@/components/charts/RequestTrendChart'
 import { KnowledgeTrendsChart } from '@/components/charts/KnowledgeTrendsChart'
 import { TopApiKeysTable } from '@/components/charts/TopApiKeysTable'
 import { usePermission } from '@/contexts/PermissionContext'
+import { Link } from 'react-router-dom'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { Button } from '@/components/ui/button'
 
 export function DashboardPage() {
   const { t } = useTranslation()
@@ -23,6 +27,7 @@ export function DashboardPage() {
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null)
   const [requestAnalytics, setRequestAnalytics] = useState<RequestAnalytics | null>(null)
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null)
+  const [myDashboardStats, setMyDashboardStats] = useState<MyDashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -31,6 +36,7 @@ export function DashboardPage() {
 
     const fetchers: Promise<void>[] = [
       meApi.getStats().then((d) => { if (!cancelled) setMyStats(d) }).catch(() => {}),
+      meApi.getDashboardStats().then((d) => { if (!cancelled) setMyDashboardStats(d) }).catch(() => {}),
     ]
 
     if (hasStats) {
@@ -107,7 +113,15 @@ export function DashboardPage() {
       </div>
 
       <div>
-        <h2 className="mb-3 text-lg font-semibold text-muted-foreground">{t('dashboard.personalOverview')}</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-muted-foreground">{t('dashboard.personalOverview')}</h2>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/me/analytics">
+              <BarChart3 className="h-4 w-4 mr-1" />
+              {t('nav.myAnalytics')}
+            </Link>
+          </Button>
+        </div>
         <div className="grid gap-4 md:grid-cols-3">
           <StatCard
             title={t('dashboard.myApiKeys')}
@@ -126,6 +140,45 @@ export function DashboardPage() {
             icon={Activity}
           />
         </div>
+        {myDashboardStats && (
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">{t('charts.embeddingCoverage')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>{t('charts.withEmbedding')}: {myDashboardStats.embeddingCoverage.withEmbedding}</span>
+                    <span>{t('charts.withoutEmbedding')}: {myDashboardStats.embeddingCoverage.withoutEmbedding}</span>
+                  </div>
+                  <Progress value={myDashboardStats.embeddingCoverage.coveragePercent} />
+                  <p className="text-xs text-muted-foreground text-right">
+                    {myDashboardStats.embeddingCoverage.coveragePercent.toFixed(1)}%
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">{t('charts.topTags')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {myDashboardStats.topTags.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {myDashboardStats.topTags.slice(0, 10).map((tag) => (
+                      <span key={tag.tag} className="px-2 py-0.5 bg-muted rounded text-xs">
+                        {tag.tag} ({tag.count})
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">{t('charts.noData')}</div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
       {showGlobalStats && (
