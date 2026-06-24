@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import type { EmbeddingCoverage } from '@/types'
+import type { EmbeddingCoverage, MyEmbeddingCoverage } from '@/types'
 
 interface EmbeddingCoverageChartProps {
-  data: EmbeddingCoverage | null
+  data: EmbeddingCoverage | MyEmbeddingCoverage | null
 }
 
 export function EmbeddingCoverageChart({ data }: EmbeddingCoverageChartProps) {
@@ -60,7 +60,7 @@ export function EmbeddingCoverageChart({ data }: EmbeddingCoverageChartProps) {
           </div>
         </div>
         
-        {data.batchStatusSummary && data.batchStatusSummary.length > 0 && (
+        {data.batchStatusSummary && Array.isArray(data.batchStatusSummary) && data.batchStatusSummary.length > 0 && (
           <div className="text-sm">
             <div className="text-muted-foreground mb-2">{t('charts.batchStatusSummary')}</div>
             <div className="grid grid-cols-2 gap-2">
