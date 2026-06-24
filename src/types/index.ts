@@ -476,6 +476,89 @@ export interface MyStats {
   }
 }
 
+export interface MyDashboardStats {
+  knowledgeEntries: {
+    total: number
+    avgQualityScore: number
+    createdThisWeek: number
+  }
+  apiKeys: {
+    total: number
+    active: number
+  }
+  requests: {
+    today: number
+  }
+  embeddingCoverage: {
+    totalEntries: number
+    withEmbedding: number
+    withoutEmbedding: number
+    coveragePercent: number
+  }
+  topTags: Array<{ tag: string; count: number }>
+}
+
+export interface MyKnowledgeTrends {
+  period: string
+  from: string
+  to: string
+  created: Array<{ date: string; count: number }>
+  updated: Array<{ date: string; count: number }>
+  deleted: Array<{ date: string; count: number }>
+}
+
+export interface MyContentDistribution {
+  topTags: Array<{ tag: string; count: number }>
+  byFramework: Array<{ framework: string; count: number }>
+  byDifficulty: Array<{ level: number; count: number }>
+  byLanguage: Array<{ language: string; count: number }>
+  qualityScoreDistribution: Array<{ bucket: string; count: number }>
+}
+
+export interface MyEmbeddingCoverage {
+  totalEntries: number
+  withEmbedding: number
+  withoutEmbedding: number
+  coveragePercent: number
+  batchStatusSummary: null
+  latestBatch: null
+}
+
+export interface MySearchAnalytics {
+  period: string
+  from: string
+  to: string
+  totalSearches: number
+  searchesOverTime: Array<{ date: string; count: number }>
+  topQueries: Array<{ query: string; count: number }>
+  topIps: Array<{ ip: string; count: number }>
+  hitRate: {
+    total: number
+    with_results: number
+    no_results: number
+  }
+}
+
+export interface MyApiKeyUsage {
+  from: string
+  to: string
+  keys: Array<{
+    apiKeyId: string
+    apiKeyName: string
+    totalRequests: number
+    lastActiveAt: string
+  }>
+}
+
+export interface MyApiKeyUsageDetail {
+  keyId: string
+  from: string
+  to: string
+  totalRequests: number
+  byAction: Array<{ action: string; count: number }>
+  trend: Array<{ date: string; count: number }>
+}
+
 // ==================== Messages API Types ====================
 
 export type MessageType = 'announcement' | 'approval' | 'system'

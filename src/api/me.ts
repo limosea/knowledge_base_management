@@ -3,6 +3,13 @@ import type {
   MyApiKey,
   MyApiKeyListResponse,
   MyStats,
+  MyDashboardStats,
+  MyKnowledgeTrends,
+  MyContentDistribution,
+  MyEmbeddingCoverage,
+  MySearchAnalytics,
+  MyApiKeyUsage,
+  MyApiKeyUsageDetail,
   CreateApiKeyRequest,
   UpdateApiKeyRequest,
 } from '@/types'
@@ -41,5 +48,80 @@ export const meApi = {
 
   getStats: (): Promise<MyStats> => {
     return apiClient.get<MyStats>('/admin/me/stats')
+  },
+
+  getDashboardStats: (): Promise<MyDashboardStats> => {
+    return apiClient.get<MyDashboardStats>('/admin/me/stats')
+  },
+
+  getKnowledgeTrends: (params?: {
+    period?: string
+    from?: string
+    to?: string
+  }): Promise<MyKnowledgeTrends> => {
+    const searchParams = new URLSearchParams()
+    if (params?.period) searchParams.set('period', params.period)
+    if (params?.from) searchParams.set('from', params.from)
+    if (params?.to) searchParams.set('to', params.to)
+    const query = searchParams.toString()
+    return apiClient.get<MyKnowledgeTrends>(
+      `/admin/me/stats/knowledge-trends${query ? `?${query}` : ''}`
+    )
+  },
+
+  getContentDistribution: (): Promise<MyContentDistribution> => {
+    return apiClient.get<MyContentDistribution>('/admin/me/stats/content-distribution')
+  },
+
+  getEmbeddingCoverage: (): Promise<MyEmbeddingCoverage> => {
+    return apiClient.get<MyEmbeddingCoverage>('/admin/me/stats/embedding-coverage')
+  },
+
+  getSearchAnalytics: (params?: {
+    period?: string
+    from?: string
+    to?: string
+    topN?: number
+  }): Promise<MySearchAnalytics> => {
+    const searchParams = new URLSearchParams()
+    if (params?.period) searchParams.set('period', params.period)
+    if (params?.from) searchParams.set('from', params.from)
+    if (params?.to) searchParams.set('to', params.to)
+    if (params?.topN) searchParams.set('topN', String(params.topN))
+    const query = searchParams.toString()
+    return apiClient.get<MySearchAnalytics>(
+      `/admin/me/stats/search-analytics${query ? `?${query}` : ''}`
+    )
+  },
+
+  getApiKeyUsage: (params?: {
+    from?: string
+    to?: string
+  }): Promise<MyApiKeyUsage> => {
+    const searchParams = new URLSearchParams()
+    if (params?.from) searchParams.set('from', params.from)
+    if (params?.to) searchParams.set('to', params.to)
+    const query = searchParams.toString()
+    return apiClient.get<MyApiKeyUsage>(
+      `/admin/me/stats/api-key-usage${query ? `?${query}` : ''}`
+    )
+  },
+
+  getApiKeyUsageDetail: (
+    keyId: string,
+    params?: {
+      period?: string
+      from?: string
+      to?: string
+    }
+  ): Promise<MyApiKeyUsageDetail> => {
+    const searchParams = new URLSearchParams()
+    if (params?.period) searchParams.set('period', params.period)
+    if (params?.from) searchParams.set('from', params.from)
+    if (params?.to) searchParams.set('to', params.to)
+    const query = searchParams.toString()
+    return apiClient.get<MyApiKeyUsageDetail>(
+      `/admin/me/stats/api-key-usage/${keyId}${query ? `?${query}` : ''}`
+    )
   },
 }
