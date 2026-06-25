@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { librariesApi, knowledgeApi } from '@/api'
@@ -283,8 +283,8 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
               </TableHeader>
               <TableBody>
                 {libraries.map((lib) => (
-                  <>
-                    <TableRow key={lib.id}>
+                  <Fragment key={lib.id}>
+                    <TableRow>
                       <TableCell>
                         <button onClick={() => toggleExpand(lib.id)} className="p-1 hover:bg-muted rounded">
                           {expandedLibId === lib.id
@@ -390,7 +390,7 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </TableBody>
             </Table>
