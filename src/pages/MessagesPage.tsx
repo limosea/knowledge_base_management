@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
-import { usePermission } from '@/contexts/PermissionContext'
 import { cn, formatDate, formatRelativeTime } from '@/lib/utils'
 import {
   Mail,
@@ -24,17 +23,13 @@ import {
   Star,
   Trash2,
   CheckCheck,
-  Send,
   RefreshCw,
   Inbox,
 } from 'lucide-react'
-import { SendMessageDialog } from '@/components/messages/SendMessageDialog'
 
 export function MessagesPage() {
   const { t } = useTranslation()
   const { toast } = useToast()
-  const { hasPermission, user } = usePermission()
-
   const [messages, setMessages] = useState<MessageListItem[]>([])
   const [selectedMessage, setSelectedMessage] = useState<MessageDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -44,11 +39,9 @@ export function MessagesPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [unreadOnly, setUnreadOnly] = useState(false)
   const [starredOnly, setStarredOnly] = useState(false)
-  const [showSendDialog, setShowSendDialog] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const limit = 20
-  const canSend = user?.isSuperAdmin || hasPermission('messages:send')
 
   const fetchMessages = useCallback(async () => {
     setLoading(true)
@@ -194,15 +187,6 @@ export function MessagesPage() {
     }
   }
 
-  const handleSendSuccess = () => {
-    setShowSendDialog(false)
-    fetchMessages()
-    toast({
-      title: t('common.success'),
-      description: t('messages.sendSuccess'),
-    })
-  }
-
   const typeBadgeVariant = (type: MessageType) => {
     switch (type) {
       case 'announcement':
@@ -226,12 +210,6 @@ export function MessagesPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {canSend && (
-            <Button onClick={() => setShowSendDialog(true)}>
-              <Send className="h-4 w-4 mr-2" />
-              {t('messages.send')}
-            </Button>
-          )}
           {unreadCount > 0 && (
             <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
               <CheckCheck className="h-4 w-4 mr-1" />
@@ -458,11 +436,6 @@ export function MessagesPage() {
         </div>
       </Card>
 
-      <SendMessageDialog
-        open={showSendDialog}
-        onOpenChange={setShowSendDialog}
-        onSuccess={handleSendSuccess}
-      />
     </div>
   )
 }
