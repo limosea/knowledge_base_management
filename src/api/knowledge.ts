@@ -17,6 +17,7 @@ export const knowledgeApi = {
     language?: string
     tags?: string
     search?: string
+    libraryId?: string
   }): Promise<AdminKnowledgeListResponse> => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.set('page', String(params.page))
@@ -25,24 +26,25 @@ export const knowledgeApi = {
     if (params?.language) searchParams.set('language', params.language)
     if (params?.tags) searchParams.set('tags', params.tags)
     if (params?.search) searchParams.set('search', params.search)
+    if (params?.libraryId) searchParams.set('libraryId', params.libraryId)
     const query = searchParams.toString()
     return apiClient.get<AdminKnowledgeListResponse>(`/admin/knowledge${query ? `?${query}` : ''}`)
   },
 
   get: (id: string): Promise<KnowledgeEntry> => {
-    return apiClient.get<KnowledgeEntry>(`/admin/knowledge/${id}`)
+    return apiClient.get<KnowledgeEntry>(`/admin/me/knowledge/${id}`)
   },
 
   create: (data: CreateEntryRequest): Promise<CreateEntryResponse> => {
-    return apiClient.post<CreateEntryResponse>('/knowledge', data)
+    return apiClient.post<CreateEntryResponse>('/admin/me/knowledge', data)
   },
 
   update: (id: string, data: UpdateEntryRequest): Promise<KnowledgeEntry> => {
-    return apiClient.put<KnowledgeEntry>(`/admin/knowledge/${id}`, data)
+    return apiClient.put<KnowledgeEntry>(`/admin/me/knowledge/${id}`, data)
   },
 
   delete: (id: string): Promise<{ message: string }> => {
-    return apiClient.delete(`/admin/knowledge/${id}`)
+    return apiClient.delete(`/admin/me/knowledge/${id}`)
   },
 
   batchDelete: (ids: string[]): Promise<{ message: string; deleted: number }> => {
@@ -75,5 +77,13 @@ export const knowledgeApi = {
 
   batchUnshield: (ids: string[]): Promise<{ unshielded: number; skipped: number }> => {
     return apiClient.post<{ unshielded: number; skipped: number }>('/admin/knowledge/batch-unshield', { ids })
+  },
+
+  selfShield: (id: string): Promise<KnowledgeEntry> => {
+    return apiClient.post<KnowledgeEntry>(`/admin/knowledge/${id}/self-shield`)
+  },
+
+  selfUnshield: (id: string): Promise<KnowledgeEntry> => {
+    return apiClient.post<KnowledgeEntry>(`/admin/knowledge/${id}/self-unshield`)
   },
 }

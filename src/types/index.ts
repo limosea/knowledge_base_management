@@ -140,6 +140,8 @@ export interface CreateEntryRequest {
   framework?: string
   difficulty_level?: number
   structured_data?: Record<string, unknown>
+  visibility?: 'private' | 'public'
+  library_id?: string
 }
 
 export interface UpdateEntryRequest {
@@ -158,6 +160,7 @@ export interface UpdateEntryRequest {
 export interface CreateEntryResponse {
   id: string
   entry_version: number
+  visibility?: string
   embedding_status: EmbeddingStatus
   created_at: string
 }
@@ -186,6 +189,9 @@ export interface AdminKnowledgeListItem {
   visibility: 'private' | 'public'
   shielded: boolean
   shieldedAt?: string
+  selfShielded: boolean
+  selfShieldedAt?: string
+  library?: { id: string; name: string; icon?: string } | null
   createdAt: string
   createdBy: string
 }

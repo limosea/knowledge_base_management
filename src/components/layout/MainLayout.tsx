@@ -17,7 +17,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard,
-  BookOpen,
   LogOut,
   Menu,
   Sun,
@@ -29,6 +28,8 @@ import {
   Settings,
   Mail,
   BarChart3,
+  Library,
+  Globe,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -75,7 +76,8 @@ const navSections: NavSection[] = [
   {
     titleKey: 'nav.knowledgeBase',
     items: [
-      { path: '/knowledge', icon: BookOpen, labelKey: 'nav.knowledge' },
+      { path: '/knowledge', icon: Library, labelKey: 'nav.libraries' },
+      { path: '/plaza', icon: Globe, labelKey: 'nav.plaza' },
     ],
   },
   {

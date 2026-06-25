@@ -319,7 +319,7 @@ export function KnowledgePage({ elevated = false }: KnowledgePageProps) {
                     </TableCell>
                     <TableCell className="font-medium">
                       <button
-                        onClick={() => navigate(`/knowledge/${entry.id}`)}
+                        onClick={() => navigate(`/entry/${entry.id}`)}
                         className="text-primary hover:underline text-left"
                       >
                         {entry.title}

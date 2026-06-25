@@ -150,16 +150,20 @@ export function DashboardPage() {
                 <CardTitle className="text-sm">{t('charts.embeddingCoverage')}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>{t('charts.withEmbedding')}: {myDashboardStats.embeddingCoverage.withEmbedding}</span>
-                    <span>{t('charts.withoutEmbedding')}: {myDashboardStats.embeddingCoverage.withoutEmbedding}</span>
+                {myDashboardStats.embeddingCoverage.totalEntries > 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>{t('charts.withEmbedding')}: {myDashboardStats.embeddingCoverage.withEmbedding}</span>
+                      <span>{t('charts.withoutEmbedding')}: {myDashboardStats.embeddingCoverage.withoutEmbedding}</span>
+                    </div>
+                    <Progress value={myDashboardStats.embeddingCoverage.coveragePercent} />
+                    <p className="text-xs text-muted-foreground text-right">
+                      {myDashboardStats.embeddingCoverage.coveragePercent.toFixed(1)}%
+                    </p>
                   </div>
-                  <Progress value={myDashboardStats.embeddingCoverage.coveragePercent} />
-                  <p className="text-xs text-muted-foreground text-right">
-                    {myDashboardStats.embeddingCoverage.coveragePercent.toFixed(1)}%
-                  </p>
-                </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-4">{t('charts.noData')}</div>
+                )}
               </CardContent>
             </Card>
             <Card>

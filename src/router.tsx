@@ -7,7 +7,6 @@ import {
   ChangePasswordPage,
   MfaPage,
   DashboardPage,
-  KnowledgePage,
   KnowledgeDetailPage,
   CategoriesPage,
   ApiKeysPage,
@@ -23,6 +22,9 @@ import {
   RolesPage,
   MessagesPage,
   MyAnalyticsPage,
+  LibrariesPage,
+  LibraryEntriesPage,
+  PlazaPage,
 } from '@/pages'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -68,10 +70,18 @@ export const router = createBrowserRouter([
       },
       {
         path: '/knowledge',
-        element: <KnowledgePage />,
+        element: <LibrariesPage />,
       },
       {
-        path: '/knowledge/:id',
+        path: '/knowledge/:libraryId',
+        element: <LibraryEntriesPage />,
+      },
+      {
+        path: '/plaza',
+        element: <PlazaPage />,
+      },
+      {
+        path: '/entry/:id',
         element: <KnowledgeDetailPage />,
       },
       {
@@ -93,6 +103,10 @@ export const router = createBrowserRouter([
       {
         path: '/me/analytics',
         element: <MyAnalyticsPage />,
+      },
+      {
+        path: '/libraries',
+        element: <Navigate to="/knowledge" replace />,
       },
     ],
   },
@@ -127,10 +141,18 @@ export const router = createBrowserRouter([
       },
       {
         path: '/elevated/knowledge',
-        element: <KnowledgePage elevated />,
+        element: <LibrariesPage elevated />,
       },
       {
-        path: '/elevated/knowledge/:id',
+        path: '/elevated/knowledge/:libraryId',
+        element: <LibraryEntriesPage elevated />,
+      },
+      {
+        path: '/elevated/plaza',
+        element: <PlazaPage />,
+      },
+      {
+        path: '/elevated/entry/:id',
         element: <KnowledgeDetailPage />,
       },
       {
@@ -188,6 +210,10 @@ export const router = createBrowserRouter([
             <PerformanceAnalyticsPage />
           </PermissionRoute>
         ),
+      },
+      {
+        path: '/elevated/libraries',
+        element: <Navigate to="/elevated/knowledge" replace />,
       },
     ],
   },

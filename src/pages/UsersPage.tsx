@@ -49,7 +49,6 @@ export function UsersPage() {
   
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [disableDialogOpen, setDisableDialogOpen] = useState(false)
   const [enableDialogOpen, setEnableDialogOpen] = useState(false)
   const [toggleUserId, setToggleUserId] = useState<string | null>(null)
