@@ -1,5 +1,5 @@
 import React from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { usePermission } from '@/contexts/PermissionContext'
 import { ElevationDialog } from './ElevationDialog'
 
@@ -9,6 +9,7 @@ interface ElevationRouteProps {
 
 export function ElevationRoute({ children }: ElevationRouteProps) {
   const { isElevated, canAccessElevated, loading } = usePermission()
+  const navigate = useNavigate()
 
   if (loading) {
     return (
@@ -26,7 +27,11 @@ export function ElevationRoute({ children }: ElevationRouteProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <ElevationDialog open={true} onOpenChange={() => {}} onSuccess={() => {}} />
+          <ElevationDialog
+            open={true}
+            onOpenChange={() => navigate('/dashboard', { replace: true })}
+            onSuccess={() => {}}
+          />
         </div>
       </div>
     )

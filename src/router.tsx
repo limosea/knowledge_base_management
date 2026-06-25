@@ -76,7 +76,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/categories',
-        element: <CategoriesPage />,
+        element: <Navigate to="/elevated/categories" replace />,
       },
       {
         path: '/me/api-keys',

@@ -17,11 +17,14 @@ import { Button } from '@/components/ui/button'
 
 export function DashboardPage() {
   const { t } = useTranslation()
-  const { hasPermission } = usePermission()
+  const { hasPermission, isElevated } = usePermission()
 
-  const hasStats = hasPermission('stats:read')
-  const hasAnalytics = hasPermission('analytics:read')
-  const hasSystem = hasPermission('system:read')
+  const elevated = isElevated()
+  // Per instructions.md: site-wide stats require elevated (TOTP step-up).
+  // Basic permissions only cover personal data.
+  const hasStats = hasPermission('stats:read') && elevated
+  const hasAnalytics = hasPermission('analytics:read') && elevated
+  const hasSystem = hasPermission('system:read') && elevated
 
   const [myStats, setMyStats] = useState<MyStats | null>(null)
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null)

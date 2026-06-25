@@ -36,7 +36,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Pencil, Trash2, KeyRound } from 'lucide-react'
+import { Plus, Pencil, KeyRound, Ban, CheckCircle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export function UsersPage() {
@@ -50,9 +50,11 @@ export function UsersPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [disableDialogOpen, setDisableDialogOpen] = useState(false)
+  const [enableDialogOpen, setEnableDialogOpen] = useState(false)
+  const [toggleUserId, setToggleUserId] = useState<string | null>(null)
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<AdminUserSummary | null>(null)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [resetResult, setResetResult] = useState<ResetPasswordResponse | null>(null)
   
   const [formData, setFormData] = useState({
@@ -146,22 +148,21 @@ export function UsersPage() {
     }
   }
 
-  const handleDelete = async () => {
-    if (!deleteId) return
-    
+  const handleToggleActive = async (userId: string, isActive: boolean) => {
     try {
-      await adminUsersApi.delete(deleteId)
+      await adminUsersApi.update(userId, { isActive })
       toast({
         title: t('common.success'),
-        description: 'User deleted successfully',
+        description: isActive ? 'User enabled successfully' : 'User disabled successfully',
       })
-      setDeleteDialogOpen(false)
-      setDeleteId(null)
+      setDisableDialogOpen(false)
+      setEnableDialogOpen(false)
+      setToggleUserId(null)
       fetchUsers()
     } catch (error) {
       toast({
         title: t('common.error'),
-        description: 'Failed to delete user',
+        description: isActive ? 'Failed to enable user' : 'Failed to disable user',
         variant: 'destructive',
       })
     }
@@ -273,11 +274,19 @@ export function UsersPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => {
-                                setDeleteId(user.id)
-                                setDeleteDialogOpen(true)
+                                setToggleUserId(user.id)
+                                if (user.isActive) {
+                                  setDisableDialogOpen(true)
+                                } else {
+                                  setEnableDialogOpen(true)
+                                }
                               }}
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              {user.isActive ? (
+                                <Ban className="h-4 w-4 text-orange-500" />
+                              ) : (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              )}
                             </Button>
                           </div>
                         )}
@@ -385,7 +394,7 @@ export function UsersPage() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('users.create')}</DialogTitle>
+            <DialogTitle>{t('users.edit')}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
@@ -455,16 +464,31 @@ export function UsersPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Disable Dialog */}
+      <AlertDialog open={disableDialogOpen} onOpenChange={setDisableDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('users.confirmDelete')}</AlertDialogTitle>
+            <AlertDialogTitle>{t('users.confirmDisable')}</AlertDialogTitle>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {t('common.delete')}
+            <AlertDialogAction onClick={() => toggleUserId && handleToggleActive(toggleUserId, false)} className="bg-orange-500 text-white hover:bg-orange-600">
+              {t('users.disable')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Enable Dialog */}
+      <AlertDialog open={enableDialogOpen} onOpenChange={setEnableDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('users.confirmEnable')}</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => toggleUserId && handleToggleActive(toggleUserId, true)}>
+              {t('users.enable')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

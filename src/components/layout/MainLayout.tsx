@@ -18,7 +18,6 @@ import { Badge } from '@/components/ui/badge'
 import {
   LayoutDashboard,
   BookOpen,
-  Tag,
   LogOut,
   Menu,
   Sun,
@@ -77,7 +76,6 @@ const navSections: NavSection[] = [
     titleKey: 'nav.knowledgeBase',
     items: [
       { path: '/knowledge', icon: BookOpen, labelKey: 'nav.knowledge' },
-      { path: '/categories', icon: Tag, labelKey: 'nav.categories' },
     ],
   },
   {

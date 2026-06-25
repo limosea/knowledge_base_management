@@ -147,13 +147,18 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
   )
 
   const isElevated = useCallback((): boolean => {
-    if (state.user?.isSuperAdmin) return true
+    // Per instructions.md: ALL users (including super_admin) must complete
+    // TOTP step-up to access the elevated console.
     return state.elevation.elevated && (state.elevation.remainingSeconds ?? 0) > 0
-  }, [state.user?.isSuperAdmin, state.elevation])
+  }, [state.elevation])
 
   const canAccessElevated = useCallback((): boolean => {
+    // Check if the user has any elevated permissions available.
+    // MFA enablement is a prerequisite checked in the ElevationDialog,
+    // not here - so users without MFA can still see the entry point
+    // and be guided to set up MFA.
     if (state.user?.isSuperAdmin) return true
-    return state.elevation.mfaEnabled && state.elevation.elevatedOnly.length > 0
+    return state.elevation.elevatedOnly.length > 0
   }, [state.user?.isSuperAdmin, state.elevation])
 
   const stepUp = useCallback(

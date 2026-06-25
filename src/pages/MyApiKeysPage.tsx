@@ -187,7 +187,7 @@ export function MyApiKeysPage() {
                   <TableHead>{t('apiKeys.keyPrefix')}</TableHead>
                   <TableHead>{t('apiKeys.permissions')}</TableHead>
                   <TableHead>{t('apiKeys.rateLimit')}</TableHead>
-                  <TableHead>{t('apiKeys.lastUsed')}</TableHead>
+                  <TableHead>{t('apiKeys.lastUsedAt')}</TableHead>
                   <TableHead>{t('common.createdAt')}</TableHead>
                   <TableHead className="w-24">{t('common.actions')}</TableHead>
                 </TableRow>
