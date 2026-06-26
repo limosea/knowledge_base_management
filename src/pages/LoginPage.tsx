@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
+import type { LoginResponse } from '@/types'
 
 export function LoginPage() {
   const { t } = useTranslation()
@@ -31,6 +32,17 @@ export function LoginPage() {
       } else if ('requirePasswordChange' in response && response.requirePasswordChange) {
         navigate('/change-password', { state: { username } })
       } else {
+        const user = (response as LoginResponse).user
+        if (user && user.isActive === false) {
+          authApi.logout()
+          toast({
+            title: t('common.error'),
+            description: t('auth.accountDisabled', 'Your account has been disabled. Please contact an administrator.'),
+            variant: 'destructive',
+          })
+          setLoading(false)
+          return
+        }
         await refreshPermissions()
         navigate('/dashboard')
       }

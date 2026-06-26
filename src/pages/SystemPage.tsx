@@ -1,26 +1,41 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { systemApi } from '@/api'
-import type { SystemHealth, SystemStats } from '@/types'
+import type { SystemHealth, SystemStats, GlobalRateLimit } from '@/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useToast } from '@/hooks/use-toast'
+import { usePermission } from '@/contexts/PermissionContext'
+import { Save } from 'lucide-react'
 
 export function SystemPage() {
   const { t } = useTranslation()
+  const { toast } = useToast()
+  const { user } = usePermission()
   const [health, setHealth] = useState<SystemHealth | null>(null)
   const [stats, setStats] = useState<SystemStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [globalRateLimit, setGlobalRateLimit] = useState<GlobalRateLimit>({ limit: 10000, windowMs: 60000 })
+  const [rateLimitEditing, setRateLimitEditing] = useState(false)
+  const [rateLimitForm, setRateLimitForm] = useState({ limit: 10000, windowMs: 60000 })
+  const isSuperAdmin = user?.isSuperAdmin ?? false
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [healthData, statsData] = await Promise.all([
+        const [healthData, statsData, rateLimitData] = await Promise.all([
           systemApi.getHealth(),
           systemApi.getStats(),
+          systemApi.getGlobalRateLimit(),
         ])
         setHealth(healthData)
         setStats(statsData)
+        setGlobalRateLimit(rateLimitData)
+        setRateLimitForm({ limit: rateLimitData.limit, windowMs: rateLimitData.windowMs })
       } catch (error) {
         console.error('Failed to fetch system data:', error)
       } finally {
@@ -30,6 +45,17 @@ export function SystemPage() {
 
     fetchData()
   }, [])
+
+  const handleSaveGlobalRateLimit = async () => {
+    try {
+      const result = await systemApi.updateGlobalRateLimit(rateLimitForm)
+      setGlobalRateLimit(result)
+      setRateLimitEditing(false)
+      toast({ title: t('common.success'), description: '全站速率限制已更新' })
+    } catch (error) {
+      toast({ title: t('common.error'), description: '更新全站速率限制失败', variant: 'destructive' })
+    }
+  }
 
   if (loading) {
     return (
@@ -187,6 +213,72 @@ export function SystemPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Global Rate Limit Card */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{t('system.globalRateLimit', '全站速率限制')}</CardTitle>
+          {isSuperAdmin && !rateLimitEditing && (
+            <Button variant="outline" size="sm" onClick={() => {
+              setRateLimitForm({ limit: globalRateLimit.limit, windowMs: globalRateLimit.windowMs })
+              setRateLimitEditing(true)
+            }}>
+              {t('common.edit')}
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {rateLimitEditing ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="rl-limit">{t('system.rateLimitMax', '最大请求数')}</Label>
+                  <Input
+                    id="rl-limit"
+                    type="number"
+                    min={1}
+                    max={1000000}
+                    value={rateLimitForm.limit}
+                    onChange={(e) => setRateLimitForm({ ...rateLimitForm, limit: parseInt(e.target.value) || 10000 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rl-window">{t('system.rateLimitWindow', '时间窗口 (ms)')}</Label>
+                  <Input
+                    id="rl-window"
+                    type="number"
+                    min={1000}
+                    max={3600000}
+                    step={1000}
+                    value={rateLimitForm.windowMs}
+                    onChange={(e) => setRateLimitForm({ ...rateLimitForm, windowMs: parseInt(e.target.value) || 60000 })}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSaveGlobalRateLimit}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {t('common.save')}
+                </Button>
+                <Button variant="outline" onClick={() => setRateLimitEditing(false)}>
+                  {t('common.cancel')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-8">
+              <div>
+                <div className="text-sm text-muted-foreground">{t('system.rateLimitMax', '最大请求数')}</div>
+                <div className="text-2xl font-bold">{globalRateLimit.limit.toLocaleString()}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">{t('system.rateLimitWindow', '时间窗口')}</div>
+                <div className="text-2xl font-bold">{globalRateLimit.windowMs / 1000}s</div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

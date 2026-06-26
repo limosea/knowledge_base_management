@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import QRCode from 'qrcode'
-import { authApi } from '@/api'
+import { authApi, meApi } from '@/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Shield, ShieldOff, Copy, Check } from 'lucide-react'
+import { Loader2, Shield, ShieldOff, Copy, Check, Trash2 } from 'lucide-react'
 import type { AdminProfile, MfaSetupResponse } from '@/types'
 
 export function SettingsPage() {
@@ -21,6 +21,9 @@ export function SettingsPage() {
   const [mfaCode, setMfaCode] = useState('')
   const [mfaLoading, setMfaLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [deletionMfaCode, setDeletionMfaCode] = useState('')
+  const [deletionLoading, setDeletionLoading] = useState(false)
+  const [deletionPending, setDeletionPending] = useState(false)
 
   useEffect(() => {
     loadProfile()
@@ -146,6 +149,36 @@ export function SettingsPage() {
     }
   }
 
+  const handleRequestDeletion = async () => {
+    if (!deletionMfaCode || deletionMfaCode.length < 6) return
+    setDeletionLoading(true)
+    try {
+      await meApi.requestDeletion({ mfaCode: deletionMfaCode })
+      toast({ title: t('common.success'), description: t('settings.deletionRequested', '销户申请已提交，等待管理员审批') })
+      setDeletionPending(true)
+      setDeletionMfaCode('')
+    } catch (error: unknown) {
+      const err = error as { error?: { message?: string } }
+      toast({ title: t('common.error'), description: err?.error?.message || t('settings.deletionError', '销户申请失败'), variant: 'destructive' })
+    } finally {
+      setDeletionLoading(false)
+    }
+  }
+
+  const handleCancelDeletion = async () => {
+    setDeletionLoading(true)
+    try {
+      await meApi.cancelDeletion()
+      toast({ title: t('common.success'), description: t('settings.deletionCancelled', '销户申请已取消') })
+      setDeletionPending(false)
+    } catch (error: unknown) {
+      const err = error as { error?: { message?: string } }
+      toast({ title: t('common.error'), description: err?.error?.message || '取消失败', variant: 'destructive' })
+    } finally {
+      setDeletionLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -169,6 +202,10 @@ export function SettingsPage() {
             <div>
               <Label className="text-muted-foreground">{t('users.username')}</Label>
               <p className="font-medium">{profile?.username}</p>
+            </div>
+            <div>
+              <Label className="text-muted-foreground">{t('users.nickname', 'Nickname')}</Label>
+              <p className="font-medium">{profile?.nickname || '-'}</p>
             </div>
             <div>
               <Label className="text-muted-foreground">{t('users.email')}</Label>
@@ -296,6 +333,59 @@ export function SettingsPage() {
                 {mfaLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t('settings.mfaDisableButton')}
               </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Account Deletion Card */}
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <Trash2 className="h-5 w-5" />
+            {t('settings.deleteAccount', '销户申请')}
+          </CardTitle>
+          <CardDescription>{t('settings.deleteAccountDescription', '提交销户申请后，管理员审批通过后将禁用您的账户和所有API密钥。此操作不可由您自行撤销。')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {deletionPending ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="destructive">{t('settings.deletionPending', '待审批')}</Badge>
+                <span className="text-sm text-muted-foreground">{t('settings.deletionPendingInfo', '您的销户申请正在等待管理员审批')}</span>
+              </div>
+              <Button variant="outline" onClick={handleCancelDeletion} disabled={deletionLoading}>
+                {deletionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('settings.cancelDeletion', '取消销户申请')}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {!profile?.mfaEnabled ? (
+                <p className="text-sm text-muted-foreground">{t('settings.deletionRequiresMfa', '请先启用MFA后才能申请销户')}</p>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="deletionMfaCode">{t('settings.mfaVerifyCode', 'MFA验证码')}</Label>
+                    <Input
+                      id="deletionMfaCode"
+                      type="text"
+                      placeholder="000000"
+                      value={deletionMfaCode}
+                      onChange={(e) => setDeletionMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      maxLength={6}
+                    />
+                  </div>
+                  <Button
+                    variant="destructive"
+                    onClick={handleRequestDeletion}
+                    disabled={deletionLoading || deletionMfaCode.length < 6}
+                  >
+                    {deletionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {t('settings.requestDeletion', '提交销户申请')}
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </CardContent>

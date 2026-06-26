@@ -11,11 +11,16 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { ArrowLeft, RotateCcw } from 'lucide-react'
 
-export function KnowledgeDetailPage() {
+interface KnowledgeDetailPageProps {
+  elevated?: boolean
+}
+
+export function KnowledgeDetailPage({ elevated = false }: KnowledgeDetailPageProps) {
   const { t } = useTranslation()
   const { toast } = useToast()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const backPath = elevated ? '/elevated/knowledge' : '/knowledge'
   const [entry, setEntry] = useState<KnowledgeEntry | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -77,7 +82,7 @@ export function KnowledgeDetailPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/knowledge')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(backPath)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-3xl font-bold">{t('knowledge.detailPage.notFound')}</h1>
@@ -105,7 +110,7 @@ export function KnowledgeDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/knowledge')}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(backPath)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-3xl font-bold">{entry.title}</h1>
@@ -149,7 +154,7 @@ export function KnowledgeDetailPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t('knowledge.detailPage.createdBy')}</p>
-              <p className="font-medium">{entry.createdBy}</p>
+              <p className="font-medium">{entry.creatorNickname || entry.createdBy}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{t('common.createdAt')}</p>

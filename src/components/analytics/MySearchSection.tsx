@@ -8,8 +8,13 @@ import { StatCard } from '@/components/charts/StatCard'
 import { SearchVolumeTrendChart } from '@/components/charts/SearchVolumeTrendChart'
 import { TopSearchIpsChart } from '@/components/charts/TopSearchIpsChart'
 import { Search } from 'lucide-react'
+import type { StatsFilterState } from '@/components/charts/StatsFilterBar'
 
-export function MySearchSection() {
+interface MySearchSectionProps {
+  filter?: StatsFilterState
+}
+
+export function MySearchSection({ filter }: MySearchSectionProps) {
   const { t } = useTranslation()
   const [data, setData] = useState<MySearchAnalytics | null>(null)
   const [loading, setLoading] = useState(true)
@@ -17,12 +22,12 @@ export function MySearchSection() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    meApi.getSearchAnalytics({ period: 'day' })
+    meApi.getSearchAnalytics({ period: filter?.period, from: filter?.from, to: filter?.to })
       .then((d) => { if (!cancelled) setData(d) })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [filter?.period, filter?.from, filter?.to])
 
   if (loading && !data) {
     return (

@@ -5,6 +5,7 @@ import type {
   CreateAdminUserRequest,
   UpdateAdminUserRequest,
   ResetPasswordResponse,
+  DeletionResponse,
 } from '@/types'
 
 export const adminUsersApi = {
@@ -37,5 +38,13 @@ export const adminUsersApi = {
 
   resetPassword: (id: string): Promise<ResetPasswordResponse> => {
     return apiClient.post<ResetPasswordResponse>(`/admin/users/${id}/reset-password`)
+  },
+
+  approveDeletion: (id: string): Promise<DeletionResponse> => {
+    return apiClient.post<DeletionResponse>(`/admin/users/${id}/approve-deletion`)
+  },
+
+  rejectDeletion: (id: string): Promise<DeletionResponse> => {
+    return apiClient.post<DeletionResponse>(`/admin/users/${id}/reject-deletion`)
   },
 }

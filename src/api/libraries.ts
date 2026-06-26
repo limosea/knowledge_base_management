@@ -6,12 +6,14 @@ export interface Library {
   description?: string
   icon?: string
   tags?: string[]
+  categoryId?: string
   visibility: 'private' | 'public'
   shielded: boolean
   shieldedAt?: string
   selfShielded: boolean
   selfShieldedAt?: string
   createdBy: string
+  creatorNickname?: string
   createdAt: string
   updatedAt?: string
   entryCount?: number
@@ -23,8 +25,10 @@ export interface PlazaLibrary {
   description?: string
   icon?: string
   tags?: string[]
+  categoryId?: string
+  creatorNickname: string
   entryCount: number
-  entries: PlazaEntry[]
+  createdAt: string
 }
 
 export interface PlazaEntry {
@@ -50,6 +54,7 @@ export interface CreateLibraryRequest {
   icon?: string
   tags?: string[]
   visibility?: 'private' | 'public'
+  categoryId?: string
 }
 
 export interface UpdateLibraryRequest {
@@ -58,6 +63,7 @@ export interface UpdateLibraryRequest {
   icon?: string
   tags?: string[]
   visibility?: 'private' | 'public'
+  categoryId?: string
 }
 
 export interface LibraryStats {

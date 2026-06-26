@@ -227,6 +227,7 @@ export function ElevatedLayout() {
   })
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const displayName = user.nickname || user.username
 
   const toggleCollapse = (key: string) => {
     setCollapsedSections(prev => {
@@ -310,12 +311,12 @@ export function ElevatedLayout() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
               <Avatar className="h-8 w-8">
-                <AvatarFallback>{user.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+                <AvatarFallback>{(user.nickname || user.username)?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{user.username}</DropdownMenuLabel>
+            <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={toggleLanguage}>
               <Languages className="mr-2 h-4 w-4" />
@@ -442,9 +443,9 @@ export function ElevatedLayout() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="gap-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>{user.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+                    <AvatarFallback>{(user.nickname || user.username)?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
-                  <span>{user.username}</span>
+                  <span>{displayName}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

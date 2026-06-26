@@ -46,7 +46,7 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
   const [editEntry, setEditEntry] = useState<AdminKnowledgeListItem | null>(null)
   const [deleteEntry, setDeleteEntry] = useState<AdminKnowledgeListItem | null>(null)
   const [formSaving, setFormSaving] = useState(false)
-  const [form, setForm] = useState({ title: '', content: '', summary: '', category: '', tags: '', visibility: 'private' as 'private' | 'public' })
+  const [form, setForm] = useState({ title: '', content: '', summary: '', tags: '', visibility: 'private' as 'private' | 'public' })
 
   const limit = 20
   const basePath = elevated ? '/elevated/knowledge' : '/knowledge'
@@ -92,7 +92,6 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
         title: form.title.trim(),
         content: form.content.trim(),
         summary: form.summary.trim() || undefined,
-        category: form.category.trim() || undefined,
         tags: form.tags.trim() ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
         visibility: form.visibility,
         library_id: libraryId,
@@ -100,7 +99,7 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
       await knowledgeApi.create(data)
       toast({ title: t('knowledge.entryCreated') })
       setCreateOpen(false)
-      setForm({ title: '', content: '', summary: '', category: '', tags: '', visibility: 'private' })
+      setForm({ title: '', content: '', summary: '', tags: '', visibility: 'private' })
       fetchEntries()
       fetchLibrary()
     } catch {
@@ -117,7 +116,6 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
         title: detail.title,
         content: detail.content,
         summary: detail.summary || '',
-        category: detail.category || '',
         tags: detail.tags?.join(', ') || '',
         visibility: entry.visibility,
       })
@@ -135,7 +133,6 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
         title: form.title.trim(),
         content: form.content.trim(),
         summary: form.summary.trim() || undefined,
-        category: form.category.trim() || undefined,
         tags: form.tags.trim() ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
       }
       await knowledgeApi.update(editEntry.id, data)
@@ -177,6 +174,7 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
   }
 
   const handleSelfShield = async (entry: AdminKnowledgeListItem) => {
+    // Self-shield is a personal-console action only; not available in elevated mode
     try {
       if (entry.selfShielded) { await knowledgeApi.selfUnshield(entry.id) }
       else { await knowledgeApi.selfShield(entry.id) }
@@ -195,8 +193,16 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
         <Link to={basePath}>
           <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
         </Link>
+        <div className="text-sm text-muted-foreground">
+          <Link to={basePath} className="hover:text-foreground">{t('libraries.title')}</Link>
+          <span className="mx-2">/</span>
+        </div>
         <div className="flex items-center gap-2">
-          {library?.icon && <span className="text-2xl">{library.icon}</span>}
+          {library?.icon && (
+            library.icon.startsWith('data:') || library.icon.startsWith('http') || library.icon.startsWith('/')
+              ? <img src={library.icon} alt="" className="h-8 w-8 rounded object-cover" />
+              : <span className="text-2xl">{library.icon}</span>
+          )}
           <h1 className="text-2xl font-bold">{library?.name || '...'}</h1>
           <Badge variant="secondary">{total}</Badge>
         </div>
@@ -208,7 +214,7 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
             {library.visibility === 'public' ? t('common.public') : t('common.private')}
           </Badge>
           {library.shielded && <Badge variant="destructive"><Shield className="h-3 w-3 mr-1" />{t('common.shielded')}</Badge>}
-          {library.selfShielded && <Badge variant="outline"><EyeOff className="h-3 w-3 mr-1" />{t('common.selfShielded')}</Badge>}
+          {library.selfShielded && !elevated && <Badge variant="outline"><EyeOff className="h-3 w-3 mr-1" />{t('common.selfShielded')}</Badge>}
           {library.description && <span className="truncate max-w-md">{library.description}</span>}
         </div>
       )}
@@ -260,7 +266,7 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
                 {entries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className="font-medium">
-                      <button onClick={() => navigate(`/entry/${entry.id}`)} className="text-primary hover:underline text-left">
+                      <button onClick={() => navigate(elevated ? `/elevated/entry/${entry.id}` : `/entry/${entry.id}`)} className="text-primary hover:underline text-left">
                         {entry.title}
                       </button>
                     </TableCell>
@@ -274,8 +280,8 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
                     <TableCell>
                       <div className="flex gap-1">
                         {entry.shielded && <Badge variant="destructive">{t('knowledge.shielded')}</Badge>}
-                        {entry.selfShielded && <Badge variant="outline">{t('common.selfShielded')}</Badge>}
-                        {!entry.shielded && !entry.selfShielded && <Badge variant="secondary">{t('common.visible')}</Badge>}
+                        {!elevated && entry.selfShielded && <Badge variant="outline">{t('common.selfShielded')}</Badge>}
+                        {!entry.shielded && !(entry.selfShielded && !elevated) && <Badge variant="secondary">{t('common.visible')}</Badge>}
                       </div>
                     </TableCell>
                     <TableCell>{formatDate(entry.createdAt)}</TableCell>
@@ -288,21 +294,19 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
                           </Button>
                         )}
                         {!elevated && (
-                          <Button variant="ghost" size="icon" onClick={() => handleSelfShield(entry)}
-                            title={entry.selfShielded ? t('knowledge.selfUnshield') : t('knowledge.selfShield')}>
-                            <EyeOff className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {!elevated && (
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(entry)}
-                            title={t('common.edit')}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {!elevated && (
-                          <Button variant="ghost" size="icon" onClick={() => setDeleteEntry(entry)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => handleSelfShield(entry)}
+                              title={entry.selfShielded ? t('knowledge.selfUnshield') : t('knowledge.selfShield')}>
+                              <EyeOff className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(entry)}
+                              title={t('common.edit')}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setDeleteEntry(entry)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TableCell>
@@ -349,10 +353,6 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-sm font-medium">{t('knowledge.category')}</label>
-                <Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} />
-              </div>
-              <div className="space-y-1">
                 <label className="text-sm font-medium">{t('knowledge.visibility')}</label>
                 <select
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -363,10 +363,10 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
                   <option value="public">{t('common.public')}</option>
                 </select>
               </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium">{t('knowledge.tags')}</label>
-              <Input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder={t('knowledge.tagsPlaceholder')} />
+              <div className="space-y-1">
+                <label className="text-sm font-medium">{t('knowledge.tags')}</label>
+                <Input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder={t('knowledge.tagsPlaceholder')} />
+              </div>
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">{t('knowledge.summary')}</label>
@@ -407,10 +407,6 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium">{t('knowledge.category')}</label>
-                <Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} />
-              </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium">{t('knowledge.tags')}</label>
                 <Input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder={t('knowledge.tagsPlaceholder')} />

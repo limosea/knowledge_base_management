@@ -37,6 +37,7 @@ export interface LoginResponse {
   user: {
     id: string
     username: string
+    nickname?: string
     role: AdminRole
     email: string
     isSuperAdmin: boolean
@@ -57,9 +58,11 @@ export interface MfaLoginRequest {
 export interface AdminProfile {
   id: string
   username: string
+  nickname?: string
   email: string
   role: AdminRole
   isSuperAdmin: boolean
+  isActive: boolean
   permissions: Permission[]
   mfaEnabled: boolean
   createdAt: string
@@ -67,6 +70,7 @@ export interface AdminProfile {
 
 export interface UpdateProfileRequest {
   email?: string
+  nickname?: string
 }
 
 export interface ChangePasswordRequest {
@@ -88,9 +92,13 @@ export interface ApiKey {
   permissions: ApiKeyPermission[]
   rateLimit: number
   isActive: boolean
+  isUserDisabled?: boolean
   lastUsedAt?: string
   expiresAt?: string
   createdAt: string
+  userId?: string
+  ownerUsername?: string
+  ownerNickname?: string
 }
 
 export type ApiKeyListResponse = PaginatedResponse<ApiKey>
@@ -122,6 +130,7 @@ export interface KnowledgeEntry {
   qualityScore?: number
   structuredData?: Record<string, unknown>
   createdBy: string
+  creatorNickname?: string
   entryVersion: number
   isLatest: boolean
   createdAt: string
@@ -194,6 +203,7 @@ export interface AdminKnowledgeListItem {
   library?: { id: string; name: string; icon?: string } | null
   createdAt: string
   createdBy: string
+  creatorNickname?: string
 }
 
 export type AdminKnowledgeListResponse = PaginatedResponse<AdminKnowledgeListItem>
@@ -201,12 +211,16 @@ export type AdminKnowledgeListResponse = PaginatedResponse<AdminKnowledgeListIte
 export interface AdminUserSummary {
   id: string
   username: string
+  nickname?: string
   email: string
   role: AdminRole
   isActive: boolean
   mfaEnabled: boolean
   lastLoginAt?: string
   createdBy?: string
+  rateLimit?: number
+  deletionStatus?: string | null
+  deletionRequestedAt?: string | null
   createdAt: string
 }
 
@@ -216,13 +230,16 @@ export interface CreateAdminUserRequest {
   username: string
   password: string
   email?: string
+  nickname?: string
   role?: AdminRole
 }
 
 export interface UpdateAdminUserRequest {
   email?: string
+  nickname?: string
   role?: AdminRole
   isActive?: boolean
+  rateLimit?: number
 }
 
 export interface ResetPasswordResponse {
@@ -286,6 +303,18 @@ export interface SystemHealth {
       error?: string
     }
   }
+}
+
+// ==================== System Settings Types ====================
+
+export interface GlobalRateLimit {
+  limit: number
+  windowMs: number
+}
+
+export interface UpdateGlobalRateLimitRequest {
+  limit: number
+  windowMs?: number
 }
 
 // ==================== Stats API Types ====================
@@ -464,6 +493,7 @@ export interface MyApiKey {
   name: string
   permissions: ApiKeyPermission[]
   rateLimit: number
+  isActive: boolean
   lastUsedAt?: string
   expiresAt?: string
   createdAt: string
@@ -612,6 +642,16 @@ export interface SendMessageResponse {
 
 export interface UnreadCountResponse {
   count: number
+}
+
+// ==================== Deletion API Types ====================
+
+export interface RequestDeletionRequest {
+  mfaCode: string
+}
+
+export interface DeletionResponse {
+  message: string
 }
 
 export interface BatchOperationResponse {

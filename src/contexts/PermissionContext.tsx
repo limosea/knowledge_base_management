@@ -7,6 +7,7 @@ interface PermissionUser {
   username: string
   role: AdminRole
   isSuperAdmin: boolean
+  isActive: boolean
   email: string
 }
 
@@ -33,6 +34,7 @@ interface PermissionContextType extends PermissionState {
   hasMinRole: (minRole: AdminRole) => boolean
   isElevated: () => boolean
   canAccessElevated: () => boolean
+  isUserActive: () => boolean
   stepUp: (code: string) => Promise<{ success: boolean; error?: string }>
   revokeElevation: () => Promise<void>
   refreshElevationStatus: () => Promise<void>
@@ -70,6 +72,7 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
         username: user.username,
         role: user.role,
         isSuperAdmin: user.isSuperAdmin ?? user.role === 'super_admin',
+        isActive: user.isActive ?? true,
         email: user.email,
       }
     } catch {
@@ -161,6 +164,10 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
     return state.elevation.elevatedOnly.length > 0
   }, [state.user?.isSuperAdmin, state.elevation])
 
+  const isUserActive = useCallback((): boolean => {
+    return state.user?.isActive ?? true
+  }, [state.user?.isActive])
+
   const stepUp = useCallback(
     async (code: string): Promise<{ success: boolean; error?: string }> => {
       try {
@@ -211,6 +218,7 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
         hasMinRole,
         isElevated,
         canAccessElevated,
+        isUserActive,
         stepUp,
         revokeElevation,
         refreshElevationStatus,

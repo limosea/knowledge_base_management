@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { adminUsersApi } from '@/api'
+import { adminUsersApi, adminRolesApi } from '@/api'
 import type { AdminUserSummary, UpdateAdminUserRequest, ResetPasswordResponse, AdminRole } from '@/types'
+import type { Role } from '@/types/roles'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
 import { usePermission } from '@/contexts/PermissionContext'
 import { Button } from '@/components/ui/button'
@@ -36,7 +37,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Pencil, KeyRound, Ban, CheckCircle } from 'lucide-react'
+import { Plus, Pencil, KeyRound, Ban, CheckCircle, UserX } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export function UsersPage() {
@@ -55,12 +56,14 @@ export function UsersPage() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<AdminUserSummary | null>(null)
   const [resetResult, setResetResult] = useState<ResetPasswordResponse | null>(null)
+  const [roles, setRoles] = useState<Role[]>([])
   
   const [formData, setFormData] = useState({
     username: '',
     password: '',
     email: '',
     role: 'user' as AdminRole,
+    rateLimit: 1000,
   })
 
   const limit = 20
@@ -69,6 +72,19 @@ export function UsersPage() {
   useEffect(() => {
     fetchUsers()
   }, [page])
+
+  useEffect(() => {
+    fetchRoles()
+  }, [])
+
+  const fetchRoles = async () => {
+    try {
+      const data = await adminRolesApi.getRoles()
+      setRoles(data)
+    } catch {
+      // fallback: leave empty, form will still work with current role
+    }
+  }
 
   const fetchUsers = async () => {
     setLoading(true)
@@ -100,7 +116,7 @@ export function UsersPage() {
         description: 'User created successfully',
       })
       setCreateDialogOpen(false)
-      setFormData({ username: '', password: '', email: '', role: 'user' })
+      setFormData({ username: '', password: '', email: '', role: 'user', rateLimit: 1000 })
       fetchUsers()
     } catch (error) {
       toast({
@@ -118,6 +134,7 @@ export function UsersPage() {
       password: '',
       email: user.email || '',
       role: user.role,
+      rateLimit: user.rateLimit ?? 1000,
     })
     setEditDialogOpen(true)
   }
@@ -129,6 +146,7 @@ export function UsersPage() {
       const data: UpdateAdminUserRequest = {
         email: formData.email || undefined,
         role: formData.role,
+        rateLimit: formData.rateLimit,
       }
       
       await adminUsersApi.update(currentUser.id, data)
@@ -164,6 +182,26 @@ export function UsersPage() {
         description: isActive ? 'Failed to enable user' : 'Failed to disable user',
         variant: 'destructive',
       })
+    }
+  }
+
+  const handleApproveDeletion = async (userId: string) => {
+    try {
+      await adminUsersApi.approveDeletion(userId)
+      toast({ title: t('common.success'), description: '销户申请已批准，用户已被禁用' })
+      fetchUsers()
+    } catch (error) {
+      toast({ title: t('common.error'), description: '批准销户失败', variant: 'destructive' })
+    }
+  }
+
+  const handleRejectDeletion = async (userId: string) => {
+    try {
+      await adminUsersApi.rejectDeletion(userId)
+      toast({ title: t('common.success'), description: '销户申请已拒绝' })
+      fetchUsers()
+    } catch (error) {
+      toast({ title: t('common.error'), description: '拒绝销户失败', variant: 'destructive' })
     }
   }
 
@@ -216,6 +254,7 @@ export function UsersPage() {
                   <TableHead>{t('users.username')}</TableHead>
                   <TableHead>{t('users.email')}</TableHead>
                   <TableHead>{t('users.role')}</TableHead>
+                  <TableHead>{t('apiKeys.rateLimit')}</TableHead>
                   <TableHead>{t('common.status')}</TableHead>
                   <TableHead>{t('users.mfaEnabled')}</TableHead>
                   <TableHead>{t('users.lastLoginAt')}</TableHead>
@@ -225,7 +264,7 @@ export function UsersPage() {
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.username}</TableCell>
+                    <TableCell className="font-medium">{user.nickname || user.username}</TableCell>
                     <TableCell>{user.email || '-'}</TableCell>
                     <TableCell>
                       <Badge variant={user.role === 'super_admin' ? 'default' : user.role === 'admin' ? 'secondary' : 'outline'}>
@@ -233,6 +272,7 @@ export function UsersPage() {
                          user.role === 'admin' ? t('users.admin') : t('users.user')}
                       </Badge>
                     </TableCell>
+                    <TableCell>{user.rateLimit ?? '-'}/min</TableCell>
                     <TableCell>
                       <Badge variant={user.isActive ? 'default' : 'destructive'}>
                         {user.isActive ? t('users.active') : t('users.inactive')}
@@ -290,6 +330,19 @@ export function UsersPage() {
                           </div>
                         )}
                       </PermissionGuard>
+                      {user.deletionStatus === 'pending' && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Badge variant="destructive" className="text-xs">{t('users.deletionPending', '待销户')}</Badge>
+                          <PermissionGuard permissions={['users:manage']}>
+                            <Button variant="ghost" size="sm" onClick={() => handleApproveDeletion(user.id)} title={t('users.approveDeletion', '批准销户')}>
+                              <UserX className="h-3 w-3 text-destructive" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleRejectDeletion(user.id)} title={t('users.rejectDeletion', '拒绝销户')}>
+                              <CheckCircle className="h-3 w-3 text-green-500" />
+                            </Button>
+                          </PermissionGuard>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -374,9 +427,14 @@ export function UsersPage() {
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminRole })}
               >
-                <option value="user">{t('users.user')}</option>
-                <option value="admin">{t('users.admin')}</option>
-                <option value="super_admin">{t('users.superAdmin')}</option>
+                {roles.length > 0
+                  ? roles.map(r => <option key={r.id} value={r.name}>{r.name}</option>)
+                  : <>
+                    <option value="user">{t('users.user')}</option>
+                    <option value="admin">{t('users.admin')}</option>
+                    <option value="super_admin">{t('users.superAdmin')}</option>
+                  </>
+                }
               </select>
             </div>
           </div>
@@ -413,10 +471,29 @@ export function UsersPage() {
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminRole })}
               >
-                <option value="user">{t('users.user')}</option>
-                <option value="admin">{t('users.admin')}</option>
-                <option value="super_admin">{t('users.superAdmin')}</option>
+                {roles.length > 0
+                  ? roles.map(r => <option key={r.id} value={r.name}>{r.name}</option>)
+                  : <>
+                    <option value="user">{t('users.user')}</option>
+                    <option value="admin">{t('users.admin')}</option>
+                    <option value="super_admin">{t('users.superAdmin')}</option>
+                  </>
+                }
               </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-rateLimit">{t('apiKeys.rateLimit')}</Label>
+              <Input
+                id="edit-rateLimit"
+                type="number"
+                min={1}
+                max={100000}
+                value={formData.rateLimit}
+                onChange={(e) => setFormData({ ...formData, rateLimit: parseInt(e.target.value) || 1000 })}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('users.rateLimitHint', '每分钟最大请求数，由管理员设定')}
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -469,6 +546,9 @@ export function UsersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t('users.confirmDisable')}</AlertDialogTitle>
           </AlertDialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {t('users.disableConsequences', 'Disabling this user will invalidate all their API keys, revoke elevated console access, and block public endpoint access. The user will only be able to view their personal console.')}
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={() => toggleUserId && handleToggleActive(toggleUserId, false)} className="bg-orange-500 text-white hover:bg-orange-600">

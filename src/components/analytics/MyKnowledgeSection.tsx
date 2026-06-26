@@ -9,8 +9,13 @@ import { TopTagsChart } from '@/components/charts/TopTagsChart'
 import { DifficultyDistributionChart } from '@/components/charts/DifficultyDistributionChart'
 import { LanguageDistributionChart } from '@/components/charts/LanguageDistributionChart'
 import { EmbeddingCoverageChart } from '@/components/charts/EmbeddingCoverageChart'
+import type { StatsFilterState } from '@/components/charts/StatsFilterBar'
 
-export function MyKnowledgeSection() {
+interface MyKnowledgeSectionProps {
+  filter?: StatsFilterState
+}
+
+export function MyKnowledgeSection({ filter }: MyKnowledgeSectionProps) {
   const [trends, setTrends] = useState<MyKnowledgeTrends | null>(null)
   const [contentDist, setContentDist] = useState<MyContentDistribution | null>(null)
   const [embedding, setEmbedding] = useState<MyEmbeddingCoverage | null>(null)
@@ -20,7 +25,7 @@ export function MyKnowledgeSection() {
     let cancelled = false
     setLoading(true)
     Promise.all([
-      meApi.getKnowledgeTrends({ period: 'week' }),
+      meApi.getKnowledgeTrends({ period: filter?.period, from: filter?.from, to: filter?.to }),
       meApi.getContentDistribution(),
       meApi.getEmbeddingCoverage(),
     ])
@@ -35,7 +40,7 @@ export function MyKnowledgeSection() {
         if (!cancelled) setLoading(false)
       })
     return () => { cancelled = true }
-  }, [])
+  }, [filter?.period, filter?.from, filter?.to])
 
   if (loading && !trends) {
     return (

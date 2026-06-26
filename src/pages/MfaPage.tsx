@@ -37,7 +37,17 @@ export function MfaPage() {
 
     setLoading(true)
     try {
-      await authApi.loginWithMfa({ tempToken, mfaCode })
+      const response = await authApi.loginWithMfa({ tempToken, mfaCode })
+      if (response.user && response.user.isActive === false) {
+        authApi.logout()
+        toast({
+          title: t('common.error'),
+          description: t('auth.accountDisabled'),
+          variant: 'destructive',
+        })
+        setLoading(false)
+        return
+      }
       await refreshPermissions()
       navigate('/dashboard')
     } catch (error: unknown) {

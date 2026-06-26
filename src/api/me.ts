@@ -12,6 +12,8 @@ import type {
   MyApiKeyUsageDetail,
   CreateApiKeyRequest,
   UpdateApiKeyRequest,
+  RequestDeletionRequest,
+  DeletionResponse,
 } from '@/types'
 
 export const meApi = {
@@ -123,5 +125,13 @@ export const meApi = {
     return apiClient.get<MyApiKeyUsageDetail>(
       `/admin/me/stats/api-key-usage/${keyId}${query ? `?${query}` : ''}`
     )
+  },
+
+  requestDeletion: (data: RequestDeletionRequest): Promise<DeletionResponse> => {
+    return apiClient.post<DeletionResponse>('/admin/me/request-deletion', data)
+  },
+
+  cancelDeletion: (): Promise<DeletionResponse> => {
+    return apiClient.delete<DeletionResponse>('/admin/me/request-deletion')
   },
 }

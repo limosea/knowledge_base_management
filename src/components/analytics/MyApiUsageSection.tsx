@@ -8,8 +8,13 @@ import { StatCard } from '@/components/charts/StatCard'
 import { TopApiKeysTable } from '@/components/charts/TopApiKeysTable'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Key } from 'lucide-react'
+import type { StatsFilterState } from '@/components/charts/StatsFilterBar'
 
-export function MyApiUsageSection() {
+interface MyApiUsageSectionProps {
+  filter?: StatsFilterState
+}
+
+export function MyApiUsageSection({ filter }: MyApiUsageSectionProps) {
   const { t } = useTranslation()
   const [usage, setUsage] = useState<MyApiKeyUsage | null>(null)
   const [detail, setDetail] = useState<MyApiKeyUsageDetail | null>(null)
@@ -19,7 +24,7 @@ export function MyApiUsageSection() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    meApi.getApiKeyUsage()
+    meApi.getApiKeyUsage({ from: filter?.from, to: filter?.to })
       .then((d) => {
         if (cancelled) return
         setUsage(d)
@@ -30,16 +35,16 @@ export function MyApiUsageSection() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [filter?.from, filter?.to])
 
   useEffect(() => {
     if (!selectedKeyId) return
     let cancelled = false
-    meApi.getApiKeyUsageDetail(selectedKeyId, { period: 'day' })
+    meApi.getApiKeyUsageDetail(selectedKeyId, { period: filter?.period, from: filter?.from, to: filter?.to })
       .then((d) => { if (!cancelled) setDetail(d) })
       .catch(() => {})
     return () => { cancelled = true }
-  }, [selectedKeyId])
+  }, [selectedKeyId, filter?.period, filter?.from, filter?.to])
 
   if (loading && !usage) {
     return (

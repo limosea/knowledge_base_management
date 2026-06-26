@@ -25,6 +25,7 @@ import {
   LibrariesPage,
   LibraryEntriesPage,
   PlazaPage,
+  PlazaLibraryPage,
 } from '@/pages'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -35,6 +36,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const requirePasswordChange = localStorage.getItem('requirePasswordChange')
   if (requirePasswordChange === 'true') {
     return <Navigate to="/change-password" replace />
+  }
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    if (user.isActive === false) {
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
+      return <Navigate to="/login" replace />
+    }
+  } catch {
+    // ignore malformed user data
   }
   return <>{children}</>
 }
@@ -79,6 +91,10 @@ export const router = createBrowserRouter([
       {
         path: '/plaza',
         element: <PlazaPage />,
+      },
+      {
+        path: '/plaza/:libraryId',
+        element: <PlazaLibraryPage />,
       },
       {
         path: '/entry/:id',
@@ -149,11 +165,15 @@ export const router = createBrowserRouter([
       },
       {
         path: '/elevated/plaza',
-        element: <PlazaPage />,
+        element: <PlazaPage elevated />,
+      },
+      {
+        path: '/elevated/plaza/:libraryId',
+        element: <PlazaLibraryPage elevated />,
       },
       {
         path: '/elevated/entry/:id',
-        element: <KnowledgeDetailPage />,
+        element: <KnowledgeDetailPage elevated />,
       },
       {
         path: '/elevated/categories',

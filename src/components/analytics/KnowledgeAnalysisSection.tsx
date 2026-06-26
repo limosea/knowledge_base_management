@@ -8,8 +8,13 @@ import { TopTagsChart } from '@/components/charts/TopTagsChart'
 import { DifficultyDistributionChart } from '@/components/charts/DifficultyDistributionChart'
 import { LanguageDistributionChart } from '@/components/charts/LanguageDistributionChart'
 import { EmbeddingCoverageChart } from '@/components/charts/EmbeddingCoverageChart'
+import type { StatsFilterState } from '@/components/charts/StatsFilterBar'
 
-export function KnowledgeAnalysisSection() {
+interface KnowledgeAnalysisSectionProps {
+  filter?: StatsFilterState
+}
+
+export function KnowledgeAnalysisSection({ filter }: KnowledgeAnalysisSectionProps) {
   const [contentDistribution, setContentDistribution] = useState<ContentDistribution | null>(null)
   const [embeddingCoverage, setEmbeddingCoverage] = useState<EmbeddingCoverage | null>(null)
   const [loading, setLoading] = useState(true)
@@ -35,7 +40,7 @@ export function KnowledgeAnalysisSection() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [filter?.period, filter?.from, filter?.to])
 
   if (loading && !contentDistribution) {
     return (

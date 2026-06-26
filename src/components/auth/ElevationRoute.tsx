@@ -11,6 +11,9 @@ export function ElevationRoute({ children }: ElevationRouteProps) {
   const { isElevated, canAccessElevated, loading } = usePermission()
   const navigate = useNavigate()
 
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const userActive = user.isActive !== false
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -19,7 +22,7 @@ export function ElevationRoute({ children }: ElevationRouteProps) {
     )
   }
 
-  if (!canAccessElevated()) {
+  if (!userActive || !canAccessElevated()) {
     return <Navigate to="/dashboard" replace />
   }
 

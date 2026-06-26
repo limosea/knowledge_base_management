@@ -30,6 +30,7 @@ import {
   BarChart3,
   Library,
   Globe,
+  AlertTriangle,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -121,6 +122,8 @@ export function MainLayout() {
   const [showElevationDialog, setShowElevationDialog] = useState(false)
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const displayName = user.nickname || user.username
+  const userActive = user.isActive !== false
 
   const handleLogout = async () => {
     try {
@@ -172,12 +175,12 @@ export function MainLayout() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
               <Avatar className="h-8 w-8">
-                <AvatarFallback>{user.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+                <AvatarFallback>{(user.nickname || user.username)?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{user.username}</DropdownMenuLabel>
+            <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={toggleLanguage}>
               <Languages className="mr-2 h-4 w-4" />
@@ -238,7 +241,7 @@ export function MainLayout() {
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            {canAccessElevated() && (
+            {userActive && canAccessElevated() && (
               <Button
                 variant="outline"
                 size="sm"
@@ -277,9 +280,9 @@ export function MainLayout() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="gap-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>{user.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+                    <AvatarFallback>{(user.nickname || user.username)?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
-                  <span>{user.username}</span>
+                  <span>{displayName}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -291,6 +294,15 @@ export function MainLayout() {
             </DropdownMenu>
           </div>
         </header>
+        {!userActive && (
+          <div className="mx-6 mt-4 rounded-md border border-destructive/50 bg-destructive/10 p-4 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+            <div>
+              <p className="font-medium text-destructive">{t('myApiKeys.accountDisabled')}</p>
+              <p className="text-sm text-destructive/80">{t('myApiKeys.accountDisabledDesc')}</p>
+            </div>
+          </div>
+        )}
         <div className="p-6">
           <Outlet />
         </div>

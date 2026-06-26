@@ -145,6 +145,13 @@ class ApiClient {
         }
       }
 
+      if (response.status === 403 && errorData.error.code === 'ACCOUNT_DISABLED') {
+        this.clearTokens()
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
+      }
+
       throw errorData
     }
 

@@ -1,9 +1,9 @@
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { librariesApi, knowledgeApi } from '@/api'
+import { librariesApi, categoriesApi } from '@/api'
 import type { Library, CreateLibraryRequest, UpdateLibraryRequest } from '@/api/libraries'
-import type { AdminKnowledgeListItem } from '@/types'
+import type { Category } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -18,8 +18,10 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
-import { Shield, ShieldOff, EyeOff, Library as LibraryIcon, ChevronDown, ChevronRight, BookOpen, Plus, Pencil, Trash2 } from 'lucide-react'
+import { Shield, ShieldOff, EyeOff, Library as LibraryIcon, Plus, Pencil, Trash2 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { IconPicker } from '@/components/IconPicker'
+import { getRandomIcon } from '@/components/icon-presets'
 import {
   Dialog,
   DialogContent,
@@ -47,28 +49,34 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
   const { toast } = useToast()
   const navigate = useNavigate()
   const [libraries, setLibraries] = useState<Library[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const [expandedLibId, setExpandedLibId] = useState<string | null>(null)
-  const [expandedEntries, setExpandedEntries] = useState<AdminKnowledgeListItem[]>([])
-  const [entriesLoading, setEntriesLoading] = useState(false)
 
   // CRUD dialog states
   const [createOpen, setCreateOpen] = useState(false)
   const [editLib, setEditLib] = useState<Library | null>(null)
   const [deleteLib, setDeleteLib] = useState<Library | null>(null)
   const [formSaving, setFormSaving] = useState(false)
-  const [form, setForm] = useState<{ name: string; description: string; icon: string; tags: string; visibility: 'private' | 'public' }>({
-    name: '', description: '', icon: '', tags: '', visibility: 'private',
+  const [form, setForm] = useState<{ name: string; description: string; icon: string; tags: string; visibility: 'private' | 'public'; categoryId: string }>({
+    name: '', description: '', icon: '', tags: '', visibility: 'private', categoryId: '',
   })
 
   const limit = 20
 
   useEffect(() => {
     fetchLibraries()
+    fetchCategories()
   }, [page])
+
+  const fetchCategories = async () => {
+    try {
+      const res = await categoriesApi.adminList({ limit: 100 })
+      setCategories(res.data)
+    } catch {}
+  }
 
   const fetchLibraries = async () => {
     setLoading(true)
@@ -88,7 +96,7 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
   const handleSearch = () => { setPage(1); fetchLibraries() }
 
   const openCreate = () => {
-    setForm({ name: '', description: '', icon: '', tags: '', visibility: 'private' })
+    setForm({ name: '', description: '', icon: '', tags: '', visibility: 'private', categoryId: '' })
     setCreateOpen(true)
   }
 
@@ -99,6 +107,7 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
       icon: lib.icon || '',
       tags: lib.tags?.join(', ') || '',
       visibility: lib.visibility,
+      categoryId: lib.categoryId || '',
     })
     setEditLib(lib)
   }
@@ -110,9 +119,10 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
       const data: CreateLibraryRequest = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
-        icon: form.icon.trim() || undefined,
+        icon: form.icon.trim() || getRandomIcon(),
         tags: form.tags.trim() ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
         visibility: form.visibility,
+        categoryId: form.categoryId || undefined,
       }
       await librariesApi.create(data)
       toast({ title: t('libraries.created') })
@@ -135,6 +145,7 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
         icon: form.icon.trim() || undefined,
         tags: form.tags.trim() ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
         visibility: form.visibility,
+        categoryId: form.categoryId || undefined,
       }
       await librariesApi.update(editLib.id, data)
       toast({ title: t('libraries.updated') })
@@ -172,27 +183,6 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
     }
   }
 
-  const handleSelfShield = async (id: string, selfShielded: boolean) => {
-    try {
-      if (selfShielded) { await librariesApi.selfUnshield(id) } else { await librariesApi.selfShield(id) }
-      toast({ title: selfShielded ? t('libraries.selfUnshielded') : t('libraries.selfShielded') })
-      fetchLibraries()
-    } catch {
-      toast({ title: t('common.error'), description: 'Failed to update self-shield status', variant: 'destructive' })
-    }
-  }
-
-  const toggleExpand = async (libId: string) => {
-    if (expandedLibId === libId) { setExpandedLibId(null); setExpandedEntries([]); return }
-    setExpandedLibId(libId)
-    setEntriesLoading(true)
-    try {
-      const res = await knowledgeApi.list({ libraryId: libId, limit: 50 })
-      setExpandedEntries(res.data)
-    } catch { setExpandedEntries([]) }
-    finally { setEntriesLoading(false) }
-  }
-
   const totalPages = Math.ceil(total / limit)
   const basePath = elevated ? '/elevated/knowledge' : '/knowledge'
 
@@ -209,7 +199,7 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
           <label className="text-sm font-medium">{t('libraries.iconLabel')}</label>
-          <Input value={form.icon} onChange={e => setForm(f => ({ ...f, icon: e.target.value }))} placeholder="e.g. 📚" />
+          <IconPicker value={form.icon} onChange={(icon) => setForm(f => ({ ...f, icon }))} />
         </div>
         <div className="space-y-1">
           <label className="text-sm font-medium">{t('libraries.visibility')}</label>
@@ -227,6 +217,19 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
         <label className="text-sm font-medium">{t('libraries.tagsLabel')}</label>
         <Input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder={t('libraries.tagsPlaceholder')} />
       </div>
+      <div className="space-y-1">
+        <label className="text-sm font-medium">{t('libraries.category')}</label>
+        <select
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          value={form.categoryId}
+          onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
+        >
+          <option value="">{t('common.none')}</option>
+          {categories.map(c => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </div>
     </div>
   )
 
@@ -235,7 +238,7 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <LibraryIcon className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">{t('libraries.title')}</h1>
+          <h1 className="text-2xl font-bold">{elevated ? t('libraries.adminTitle', '全站知识库管理') : t('libraries.title')}</h1>
           <Badge variant="secondary">{total}</Badge>
         </div>
         {!elevated && (
@@ -270,8 +273,8 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-8" />
                   <TableHead>{t('libraries.name')}</TableHead>
+                  <TableHead>{t('libraries.category')}</TableHead>
                   <TableHead>{t('libraries.description')}</TableHead>
                   <TableHead>{t('libraries.visibility')}</TableHead>
                   <TableHead>{t('libraries.status')}</TableHead>
@@ -283,114 +286,74 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
               </TableHeader>
               <TableBody>
                 {libraries.map((lib) => (
-                  <Fragment key={lib.id}>
-                    <TableRow>
-                      <TableCell>
-                        <button onClick={() => toggleExpand(lib.id)} className="p-1 hover:bg-muted rounded">
-                          {expandedLibId === lib.id
-                            ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                        </button>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <button
-                          onClick={() => navigate(`${basePath}/${lib.id}`)}
-                          className="text-primary hover:underline text-left"
-                        >
-                          <div className="flex items-center gap-2">
-                            {lib.icon && <span>{lib.icon}</span>}
-                            {lib.name}
-                          </div>
-                        </button>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate text-muted-foreground">{lib.description || '-'}</TableCell>
-                      <TableCell>
-                        <Badge variant={lib.visibility === 'public' ? 'default' : 'secondary'}>
-                          {lib.visibility === 'public' ? t('common.public') : t('common.private')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {lib.shielded && (
-                            <Badge variant="destructive" className="text-xs">
-                              <Shield className="h-3 w-3 mr-1" />{t('common.shielded')}
-                            </Badge>
+                  <TableRow key={lib.id}>
+                    <TableCell className="font-medium">
+                      <button
+                        onClick={() => navigate(`${basePath}/${lib.id}`)}
+                        className="text-primary hover:underline text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          {lib.icon && (
+                            lib.icon.startsWith('data:') || lib.icon.startsWith('http') || lib.icon.startsWith('/')
+                              ? <img src={lib.icon} alt="" className="h-5 w-5 rounded object-cover" />
+                              : <span>{lib.icon}</span>
                           )}
-                          {lib.selfShielded && (
-                            <Badge variant="outline" className="text-xs">
-                              <EyeOff className="h-3 w-3 mr-1" />{t('common.selfShielded')}
-                            </Badge>
-                          )}
-                          {!lib.shielded && !lib.selfShielded && (
-                            <Badge variant="secondary" className="text-xs">{t('common.visible')}</Badge>
-                          )}
+                          {lib.name}
                         </div>
-                      </TableCell>
-                      <TableCell><span className="text-sm font-medium">{lib.entryCount ?? 0}</span></TableCell>
-                      {!elevated && <TableCell>{formatDate(lib.createdAt)}</TableCell>}
-                      {elevated && <TableCell className="text-xs text-muted-foreground">{t('libraries.me')}</TableCell>}
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {!elevated && (
-                            <>
-                              <Button variant="ghost" size="sm" onClick={() => openEdit(lib)} title={t('common.edit')}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => setDeleteLib(lib)} title={t('common.delete')}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </>
-                          )}
-                          {elevated && (
-                            <>
-                              <Button variant="ghost" size="sm" onClick={() => handleShield(lib.id, lib.shielded)}
-                                title={lib.shielded ? t('libraries.unshield') : t('libraries.shield')}>
-                                {lib.shielded ? <ShieldOff className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleSelfShield(lib.id, lib.selfShielded)}
-                                title={lib.selfShielded ? t('libraries.selfUnshield') : t('libraries.selfShield')}>
-                                {lib.selfShielded ? <BookOpen className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    {expandedLibId === lib.id && (
-                      <TableRow>
-                        <TableCell colSpan={elevated ? 9 : 8} className="bg-muted/30 p-4">
-                          {entriesLoading ? (
-                            <div className="space-y-2">
-                              <Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" />
-                            </div>
-                          ) : expandedEntries.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-4">{t('plaza.noEntries')}</p>
-                          ) : (
-                            <div className="space-y-1">
-                              <p className="text-xs font-medium text-muted-foreground mb-2">
-                                {t('plaza.entriesInLibrary', { count: expandedEntries.length })}
-                              </p>
-                              {expandedEntries.map((entry) => (
-                                <div key={entry.id}
-                                  className="flex items-center justify-between px-3 py-2 bg-background rounded border cursor-pointer hover:bg-muted/50"
-                                  onClick={() => navigate(`/entry/${entry.id}`)}>
-                                  <div className="flex items-center gap-2">
-                                    <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                                    <span className="text-sm font-medium">{entry.title}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    {entry.category && <Badge variant="outline" className="text-xs">{entry.category}</Badge>}
-                                    {entry.shielded && <Badge variant="destructive" className="text-xs">{t('common.shielded')}</Badge>}
-                                    <span className="text-xs text-muted-foreground">{formatDate(entry.createdAt)}</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </Fragment>
+                      </button>
+                    </TableCell>
+                    <TableCell>
+                      {lib.categoryId
+                        ? <Badge variant="outline">{categories.find(c => c.id === lib.categoryId)?.name || '-'}</Badge>
+                        : '-'}
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate text-muted-foreground">{lib.description || '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant={lib.visibility === 'public' ? 'default' : 'secondary'}>
+                        {lib.visibility === 'public' ? t('common.public') : t('common.private')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {lib.shielded && (
+                          <Badge variant="destructive" className="text-xs">
+                            <Shield className="h-3 w-3 mr-1" />{t('common.shielded')}
+                          </Badge>
+                        )}
+                        {!elevated && lib.selfShielded && (
+                          <Badge variant="outline" className="text-xs">
+                            <EyeOff className="h-3 w-3 mr-1" />{t('common.selfShielded')}
+                          </Badge>
+                        )}
+                        {lib.shielded || (!elevated && lib.selfShielded) ? null : !lib.shielded && (
+                          <Badge variant="secondary" className="text-xs">{t('common.visible')}</Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell><span className="text-sm font-medium">{lib.entryCount ?? 0}</span></TableCell>
+                    {!elevated && <TableCell>{formatDate(lib.createdAt)}</TableCell>}
+                    {elevated && <TableCell className="text-xs text-muted-foreground">{lib.creatorNickname || lib.createdBy}</TableCell>}
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        {!elevated && (
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => openEdit(lib)} title={t('common.edit')}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setDeleteLib(lib)} title={t('common.delete')}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </>
+                        )}
+                        {elevated && (
+                          <Button variant="ghost" size="sm" onClick={() => handleShield(lib.id, lib.shielded)}
+                            title={lib.shielded ? t('libraries.unshield') : t('libraries.shield')}>
+                            {lib.shielded ? <ShieldOff className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ))}
               </TableBody>
             </Table>
