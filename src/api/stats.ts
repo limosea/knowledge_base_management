@@ -29,12 +29,26 @@ export const statsApi = {
     return apiClient.get<KnowledgeTrends>(`/admin/stats/knowledge-trends${query ? `?${query}` : ''}`)
   },
   
-  getContentDistribution: (): Promise<ContentDistribution> => {
-    return apiClient.get<ContentDistribution>('/admin/stats/content-distribution')
+  getContentDistribution: (params?: {
+    from?: string
+    to?: string
+  }): Promise<ContentDistribution> => {
+    const searchParams = new URLSearchParams()
+    if (params?.from) searchParams.set('from', params.from)
+    if (params?.to) searchParams.set('to', params.to)
+    const query = searchParams.toString()
+    return apiClient.get<ContentDistribution>(`/admin/stats/content-distribution${query ? `?${query}` : ''}`)
   },
   
-  getEmbeddingCoverage: (): Promise<EmbeddingCoverage> => {
-    return apiClient.get<EmbeddingCoverage>('/admin/stats/embedding-coverage')
+  getEmbeddingCoverage: (params?: {
+    from?: string
+    to?: string
+  }): Promise<EmbeddingCoverage> => {
+    const searchParams = new URLSearchParams()
+    if (params?.from) searchParams.set('from', params.from)
+    if (params?.to) searchParams.set('to', params.to)
+    const query = searchParams.toString()
+    return apiClient.get<EmbeddingCoverage>(`/admin/stats/embedding-coverage${query ? `?${query}` : ''}`)
   },
   
   getSearchAnalytics: (params?: {

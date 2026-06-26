@@ -70,11 +70,9 @@ export function PlazaPage({ elevated = false }: PlazaPageProps) {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {lib.icon ? (
-                      lib.icon.startsWith('data:') || lib.icon.startsWith('http') || lib.icon.startsWith('/')
-                        ? <img src={lib.icon} alt="" className="h-6 w-6 rounded object-cover" />
-                        : <span className="text-xl">{lib.icon}</span>
-                    ) : null}
+                    {lib.icon && (lib.icon.startsWith('data:') || lib.icon.startsWith('http') || lib.icon.startsWith('/'))
+                      ? <img src={lib.icon} alt="" className="h-6 w-6 rounded object-cover" />
+                      : null}
                     <h3 className="font-semibold text-lg">{lib.name}</h3>
                   </div>
                   <Badge variant="secondary" className="text-xs">

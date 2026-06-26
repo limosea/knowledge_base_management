@@ -135,10 +135,6 @@ export function KnowledgeDetailPage({ elevated = false }: KnowledgeDetailPagePro
               <p className="font-medium">{entry.language || '-'}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">{t('knowledge.framework')}</p>
-              <p className="font-medium">{entry.framework || '-'}</p>
-            </div>
-            <div>
               <p className="text-sm text-muted-foreground">{t('knowledge.difficultyLevel')}</p>
               <p className="font-medium">{getDifficultyStars(entry.difficultyLevel)}</p>
             </div>

@@ -3,7 +3,6 @@ import { meApi } from '@/api'
 import type { MyKnowledgeTrends, MyContentDistribution, MyEmbeddingCoverage } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PersonalKnowledgeTrendsChart } from '@/components/charts/PersonalKnowledgeTrendsChart'
-import { CategoryPieChart } from '@/components/charts/CategoryPieChart'
 import { QualityDistributionChart } from '@/components/charts/QualityDistributionChart'
 import { TopTagsChart } from '@/components/charts/TopTagsChart'
 import { DifficultyDistributionChart } from '@/components/charts/DifficultyDistributionChart'
@@ -26,8 +25,8 @@ export function MyKnowledgeSection({ filter }: MyKnowledgeSectionProps) {
     setLoading(true)
     Promise.all([
       meApi.getKnowledgeTrends({ period: filter?.period, from: filter?.from, to: filter?.to }),
-      meApi.getContentDistribution(),
-      meApi.getEmbeddingCoverage(),
+      meApi.getContentDistribution({ from: filter?.from, to: filter?.to }),
+      meApi.getEmbeddingCoverage({ from: filter?.from, to: filter?.to }),
     ])
       .then(([t, c, e]) => {
         if (cancelled) return
@@ -63,16 +62,13 @@ export function MyKnowledgeSection({ filter }: MyKnowledgeSectionProps) {
     <div className="space-y-4">
       <PersonalKnowledgeTrendsChart data={trends} />
       <div className="grid gap-4 lg:grid-cols-2">
-        <CategoryPieChart data={contentDist?.byFramework ?? []} />
         <QualityDistributionChart data={contentDist?.qualityScoreDistribution ?? []} />
+        <EmbeddingCoverageChart data={embedding} />
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
         <TopTagsChart data={contentDist?.topTags ?? []} />
         <DifficultyDistributionChart data={contentDist?.byDifficulty ?? []} />
         <LanguageDistributionChart data={contentDist?.byLanguage ?? []} />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <EmbeddingCoverageChart data={embedding} />
       </div>
     </div>
   )

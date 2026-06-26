@@ -71,12 +71,30 @@ export const meApi = {
     )
   },
 
-  getContentDistribution: (): Promise<MyContentDistribution> => {
-    return apiClient.get<MyContentDistribution>('/admin/me/stats/content-distribution')
+  getContentDistribution: (params?: {
+    from?: string
+    to?: string
+  }): Promise<MyContentDistribution> => {
+    const searchParams = new URLSearchParams()
+    if (params?.from) searchParams.set('from', params.from)
+    if (params?.to) searchParams.set('to', params.to)
+    const query = searchParams.toString()
+    return apiClient.get<MyContentDistribution>(
+      `/admin/me/stats/content-distribution${query ? `?${query}` : ''}`
+    )
   },
 
-  getEmbeddingCoverage: (): Promise<MyEmbeddingCoverage> => {
-    return apiClient.get<MyEmbeddingCoverage>('/admin/me/stats/embedding-coverage')
+  getEmbeddingCoverage: (params?: {
+    from?: string
+    to?: string
+  }): Promise<MyEmbeddingCoverage> => {
+    const searchParams = new URLSearchParams()
+    if (params?.from) searchParams.set('from', params.from)
+    if (params?.to) searchParams.set('to', params.to)
+    const query = searchParams.toString()
+    return apiClient.get<MyEmbeddingCoverage>(
+      `/admin/me/stats/embedding-coverage${query ? `?${query}` : ''}`
+    )
   },
 
   getSearchAnalytics: (params?: {

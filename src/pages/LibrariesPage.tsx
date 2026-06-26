@@ -296,7 +296,7 @@ export function LibrariesPage({ elevated = false }: LibrariesPageProps) {
                           {lib.icon && (
                             lib.icon.startsWith('data:') || lib.icon.startsWith('http') || lib.icon.startsWith('/')
                               ? <img src={lib.icon} alt="" className="h-5 w-5 rounded object-cover" />
-                              : <span>{lib.icon}</span>
+                              : null
                           )}
                           {lib.name}
                         </div>

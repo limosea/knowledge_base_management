@@ -125,7 +125,6 @@ export interface KnowledgeEntry {
   category?: string
   tags: string[]
   language?: string
-  framework?: string
   difficultyLevel?: number
   qualityScore?: number
   structuredData?: Record<string, unknown>
@@ -143,10 +142,8 @@ export interface CreateEntryRequest {
   title: string
   content: string
   summary?: string
-  category?: string
   tags?: string[]
   language?: string
-  framework?: string
   difficulty_level?: number
   structured_data?: Record<string, unknown>
   visibility?: 'private' | 'public'
@@ -157,13 +154,12 @@ export interface UpdateEntryRequest {
   title?: string
   content?: string
   summary?: string
-  category?: string
   tags?: string[]
   language?: string
-  framework?: string
   difficulty_level?: number
   structured_data?: Record<string, unknown>
   change_summary?: string
+  library_id?: string
 }
 
 export interface CreateEntryResponse {
@@ -353,7 +349,6 @@ export interface KnowledgeTrends {
 
 export interface ContentDistribution {
   topTags: Array<{ tag: string; count: number }>
-  byFramework: Array<{ framework: string; count: number }>
   byDifficulty: Array<{ level: number; count: number }>
   byLanguage: Array<{ language: string; count: number }>
   qualityScoreDistribution: Array<{ bucket: string; count: number }>
@@ -454,7 +449,6 @@ export interface AdminCategoryStats {
   total_entries: number
   by_language: Record<string, number>
   by_difficulty: Record<string, number>
-  by_framework: Record<string, number>
   avg_quality_score: number
   recent_entries: number
 }
@@ -545,7 +539,6 @@ export interface MyKnowledgeTrends {
 
 export interface MyContentDistribution {
   topTags: Array<{ tag: string; count: number }>
-  byFramework: Array<{ framework: string; count: number }>
   byDifficulty: Array<{ level: number; count: number }>
   byLanguage: Array<{ language: string; count: number }>
   qualityScoreDistribution: Array<{ bucket: string; count: number }>

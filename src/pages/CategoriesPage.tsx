@@ -350,17 +350,6 @@ export function CategoriesPage() {
                   </div>
                 </div>
               )}
-
-              {Object.keys(statsData.by_framework || {}).length > 0 && (
-                <div>
-                  <p className="text-sm font-medium mb-2">{t('categories.byFramework')}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(statsData.by_framework).map(([fw, count]) => (
-                      <Badge key={fw} variant="outline">{fw}: {count}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">{t('common.noData')}</div>
