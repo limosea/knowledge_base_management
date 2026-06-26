@@ -4,6 +4,8 @@ import type {
   KnowledgeVersion,
   KnowledgeStats,
   AdminKnowledgeListResponse,
+  AdminKnowledgeSearchResponse,
+  HybridSearchRequest,
   CreateEntryRequest,
   UpdateEntryRequest,
   CreateEntryResponse,
@@ -33,6 +35,10 @@ export const knowledgeApi = {
 
   get: (id: string): Promise<KnowledgeEntry> => {
     return apiClient.get<KnowledgeEntry>(`/admin/me/knowledge/${id}`)
+  },
+
+  adminGet: (id: string): Promise<KnowledgeEntry> => {
+    return apiClient.get<KnowledgeEntry>(`/admin/knowledge/${id}`)
   },
 
   create: (data: CreateEntryRequest): Promise<CreateEntryResponse> => {
@@ -85,5 +91,19 @@ export const knowledgeApi = {
 
   selfUnshield: (id: string): Promise<KnowledgeEntry> => {
     return apiClient.post<KnowledgeEntry>(`/admin/knowledge/${id}/self-unshield`)
+  },
+
+  /**
+   * Hybrid search (elevated / admin-scoped): field fuzzy + semantic vector.
+   */
+  search: (data: HybridSearchRequest): Promise<AdminKnowledgeSearchResponse> => {
+    return apiClient.post<AdminKnowledgeSearchResponse>('/admin/knowledge/search', data)
+  },
+
+  /**
+   * Hybrid search (personal / creator-scoped): only own entries.
+   */
+  searchOwn: (data: HybridSearchRequest): Promise<AdminKnowledgeSearchResponse> => {
+    return apiClient.post<AdminKnowledgeSearchResponse>('/admin/me/knowledge/search', data)
   },
 }

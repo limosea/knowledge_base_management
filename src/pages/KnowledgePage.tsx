@@ -31,6 +31,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { Trash2, Search, Shield, ShieldOff } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { PermissionGuard } from '@/components/auth/PermissionGuard'
 
 interface KnowledgePageProps {
   elevated?: boolean
@@ -260,14 +261,18 @@ export function KnowledgePage({ elevated = false }: KnowledgePageProps) {
               <div className="flex items-center gap-2">
                 {elevated && (
                   <>
-                    <Button variant="outline" onClick={handleBatchShield}>
-                      <Shield className="h-4 w-4 mr-2" />
-                      {t('knowledge.batchShield')} ({selectedIds.length})
-                    </Button>
-                    <Button variant="outline" onClick={handleBatchUnshield}>
-                      <ShieldOff className="h-4 w-4 mr-2" />
-                      {t('knowledge.batchUnshield')} ({selectedIds.length})
-                    </Button>
+                    <PermissionGuard permissions={['content:shield']}>
+                      <Button variant="outline" onClick={handleBatchShield}>
+                        <Shield className="h-4 w-4 mr-2" />
+                        {t('knowledge.batchShield')} ({selectedIds.length})
+                      </Button>
+                    </PermissionGuard>
+                    <PermissionGuard permissions={['content:unshield']}>
+                      <Button variant="outline" onClick={handleBatchUnshield}>
+                        <ShieldOff className="h-4 w-4 mr-2" />
+                        {t('knowledge.batchUnshield')} ({selectedIds.length})
+                      </Button>
+                    </PermissionGuard>
                   </>
                 )}
                 <Button variant="destructive" onClick={handleBatchDelete}>
@@ -319,7 +324,7 @@ export function KnowledgePage({ elevated = false }: KnowledgePageProps) {
                     </TableCell>
                     <TableCell className="font-medium">
                       <button
-                        onClick={() => navigate(`/entry/${entry.id}`)}
+                        onClick={() => navigate(`/entry/${entry.id}`, { state: { from: '/knowledge' } })}
                         className="text-primary hover:underline text-left"
                       >
                         {entry.title}
@@ -356,23 +361,27 @@ export function KnowledgePage({ elevated = false }: KnowledgePageProps) {
                       <div className="flex items-center gap-1">
                         {elevated && (
                           entry.shielded ? (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleUnshield(entry.id)}
-                              title={t('knowledge.unshield')}
-                            >
-                              <ShieldOff className="h-4 w-4" />
-                            </Button>
+                            <PermissionGuard permissions={['content:unshield']}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleUnshield(entry.id)}
+                                title={t('knowledge.unshield')}
+                              >
+                                <ShieldOff className="h-4 w-4" />
+                              </Button>
+                            </PermissionGuard>
                           ) : (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleShield(entry.id)}
-                              title={t('knowledge.shield')}
-                            >
-                              <Shield className="h-4 w-4" />
-                            </Button>
+                            <PermissionGuard permissions={['content:shield']}>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleShield(entry.id)}
+                                title={t('knowledge.shield')}
+                              >
+                                <Shield className="h-4 w-4" />
+                              </Button>
+                            </PermissionGuard>
                           )
                         )}
                         <Button

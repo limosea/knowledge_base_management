@@ -42,6 +42,8 @@ export interface LoginResponse {
     email: string
     isSuperAdmin: boolean
     permissions: Permission[]
+    isActive?: boolean
+    banned?: boolean
   }
 }
 
@@ -134,6 +136,12 @@ export interface KnowledgeEntry {
   isLatest: boolean
   createdAt: string
   updatedAt: string
+  visibility?: 'private' | 'public'
+  shielded?: boolean
+  shieldedAt?: string
+  selfShielded?: boolean
+  selfShieldedAt?: string
+  library?: { id: string; name: string; icon?: string } | null
 }
 
 export type KnowledgeListResponse = PaginatedResponse<KnowledgeEntry>
@@ -204,6 +212,31 @@ export interface AdminKnowledgeListItem {
 
 export type AdminKnowledgeListResponse = PaginatedResponse<AdminKnowledgeListItem>
 
+export interface AdminKnowledgeSearchItem extends AdminKnowledgeListItem {
+  searchScore: number
+  semanticScore: number
+  fieldScore: number
+}
+
+export interface AdminKnowledgeSearchResponse {
+  data: AdminKnowledgeSearchItem[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  queryTimeMs?: number
+}
+
+export interface HybridSearchRequest {
+  query: string
+  mode?: 'field' | 'semantic' | 'hybrid'
+  page?: number
+  limit?: number
+  category?: string
+  language?: string
+  libraryId?: string
+}
+
 export interface AdminUserSummary {
   id: string
   username: string
@@ -232,8 +265,6 @@ export interface CreateAdminUserRequest {
 }
 
 export interface UpdateAdminUserRequest {
-  email?: string
-  nickname?: string
   role?: AdminRole
   isActive?: boolean
   rateLimit?: number

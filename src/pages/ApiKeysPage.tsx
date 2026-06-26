@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { apiKeysApi } from '@/api'
-import type { ApiKey, UpdateApiKeyRequest, ApiKeyPermission } from '@/types'
+import type { ApiKey, ApiKeyPermission } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,7 +20,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
@@ -31,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Pencil, BarChart3, ChevronDown, ChevronRight, Search } from 'lucide-react'
+import { BarChart3, ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 interface KeyUsageData {
@@ -55,17 +54,11 @@ export function ApiKeysPage() {
   const [permissionFilter, setPermissionFilter] = useState<'all' | ApiKeyPermission>('all')
   const [groupByOwner, setGroupByOwner] = useState(false)
 
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [auditDialogOpen, setAuditDialogOpen] = useState(false)
   const [currentKey, setCurrentKey] = useState<ApiKey | null>(null)
   const [auditData, setAuditData] = useState<KeyUsageData | null>(null)
   const [auditLoading, setAuditLoading] = useState(false)
   const [expandedOwners, setExpandedOwners] = useState<Set<string>>(new Set())
-
-  const [formData, setFormData] = useState({
-    name: '',
-    permissions: ['read'] as ApiKeyPermission[],
-  })
 
   const limit = 20
 
@@ -104,47 +97,6 @@ export function ApiKeysPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleEdit = (key: ApiKey) => {
-    setCurrentKey(key)
-    setFormData({
-      name: key.name,
-      permissions: key.permissions,
-    })
-    setEditDialogOpen(true)
-  }
-
-  const handleSave = async () => {
-    if (!currentKey) return
-    try {
-      const data: UpdateApiKeyRequest = {
-        name: formData.name,
-        permissions: formData.permissions,
-      }
-      await apiKeysApi.update(currentKey.id, data)
-      toast({
-        title: t('common.success'),
-        description: t('apiKeys.updateSuccess', 'API key updated successfully'),
-      })
-      setEditDialogOpen(false)
-      fetchApiKeys()
-    } catch (error) {
-      toast({
-        title: t('common.error'),
-        description: t('apiKeys.updateError', 'Failed to update API key'),
-        variant: 'destructive',
-      })
-    }
-  }
-
-  const togglePermission = (perm: ApiKeyPermission) => {
-    setFormData((prev) => ({
-      ...prev,
-      permissions: prev.permissions.includes(perm)
-        ? prev.permissions.filter((p) => p !== perm)
-        : [...prev.permissions, perm],
-    }))
   }
 
   const toggleActive = async (key: ApiKey) => {
@@ -258,9 +210,6 @@ export function ApiKeysPage() {
             <TableCell>{formatDate(key.createdAt)}</TableCell>
             <TableCell>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(key)}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
                 <Button variant="ghost" size="icon" onClick={() => handleAudit(key)}>
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 </Button>
@@ -403,46 +352,6 @@ export function ApiKeysPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('apiKeys.edit', 'Edit API Key')}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">{t('apiKeys.name')}</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>{t('apiKeys.permissions')}</Label>
-              <div className="flex gap-2">
-                {(['read', 'write', 'admin'] as const).map((perm) => (
-                  <Button
-                    key={perm}
-                    variant={formData.permissions.includes(perm) ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => togglePermission(perm)}
-                  >
-                    {perm}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button onClick={handleSave}>{t('common.save')}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Audit Dialog */}
       <Dialog open={auditDialogOpen} onOpenChange={setAuditDialogOpen}>

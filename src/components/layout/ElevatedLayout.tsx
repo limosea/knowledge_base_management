@@ -36,7 +36,6 @@ import {
   Shield,
   ShieldOff,
   Clock,
-  Library,
   Globe,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'

@@ -44,7 +44,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Pencil, KeyRound, Ban, CheckCircle, UserX, Search, BarChart3, Ban as BanIcon } from 'lucide-react'
+import { Plus, Pencil, KeyRound, Ban, CheckCircle, UserX, Search, BarChart3, PowerOff, ShieldCheck } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export function UsersPage() {
@@ -188,7 +188,6 @@ export function UsersPage() {
     
     try {
       const data: UpdateAdminUserRequest = {
-        email: formData.email || undefined,
         role: formData.role,
         rateLimit: formData.rateLimit,
       }
@@ -318,84 +317,80 @@ export function UsersPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            {/* Search box */}
-            <div className="relative w-full md:w-80">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t('users.searchPlaceholder', '搜索用户名或邮箱...')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-8"
-              />
+            {/* Row 1: Search box + dropdown filters */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('users.searchPlaceholder')}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder={t('users.role')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('users.allRoles')}</SelectItem>
+                  <SelectItem value="super_admin">{t('users.superAdmin')}</SelectItem>
+                  <SelectItem value="admin">{t('users.admin')}</SelectItem>
+                  <SelectItem value="user">{t('users.user')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder={t('common.status')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('users.allStatus')}</SelectItem>
+                  <SelectItem value="active">{t('users.active')}</SelectItem>
+                  <SelectItem value="inactive">{t('users.inactive')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={mfaFilter} onValueChange={setMfaFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="MFA" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('users.allMfa')}</SelectItem>
+                  <SelectItem value="enabled">MFA</SelectItem>
+                  <SelectItem value="disabled">{t('users.noMfa')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Two-column filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Column 1: Role / Rate limit / Status / MFA */}
-              <div className="flex flex-wrap gap-2">
-                <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder={t('users.role')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('users.allRoles', '全部角色')}</SelectItem>
-                    <SelectItem value="super_admin">{t('users.superAdmin')}</SelectItem>
-                    <SelectItem value="admin">{t('users.admin')}</SelectItem>
-                    <SelectItem value="user">{t('users.user')}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder={t('common.status')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('users.allStatus', '全部状态')}</SelectItem>
-                    <SelectItem value="active">{t('users.active')}</SelectItem>
-                    <SelectItem value="inactive">{t('users.inactive')}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={mfaFilter} onValueChange={setMfaFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="MFA" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('users.allMfa', '全部')}</SelectItem>
-                    <SelectItem value="enabled">MFA</SelectItem>
-                    <SelectItem value="disabled">{t('users.noMfa', '未启用')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {/* Column 2: Creation time / Last login time */}
-              <div className="flex flex-wrap gap-2">
-                <Input
-                  type="date"
-                  value={createdAfter}
-                  onChange={(e) => setCreatedAfter(e.target.value)}
-                  className="w-36"
-                  title={t('users.createdAfter', '创建时间起')}
-                />
-                <Input
-                  type="date"
-                  value={createdBefore}
-                  onChange={(e) => setCreatedBefore(e.target.value)}
-                  className="w-36"
-                  title={t('users.createdBefore', '创建时间止')}
-                />
-                <Input
-                  type="date"
-                  value={lastLoginAfter}
-                  onChange={(e) => setLastLoginAfter(e.target.value)}
-                  className="w-36"
-                  title={t('users.lastLoginAfter', '最后登录起')}
-                />
-                <Input
-                  type="date"
-                  value={lastLoginBefore}
-                  onChange={(e) => setLastLoginBefore(e.target.value)}
-                  className="w-36"
-                  title={t('users.lastLoginBefore', '最后登录止')}
-                />
-              </div>
+            {/* Row 2: Time selectors */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                type="date"
+                value={createdAfter}
+                onChange={(e) => setCreatedAfter(e.target.value)}
+                className="w-44"
+                title={t('users.createdAfter')}
+              />
+              <Input
+                type="date"
+                value={createdBefore}
+                onChange={(e) => setCreatedBefore(e.target.value)}
+                className="w-44"
+                title={t('users.createdBefore')}
+              />
+              <Input
+                type="date"
+                value={lastLoginAfter}
+                onChange={(e) => setLastLoginAfter(e.target.value)}
+                className="w-44"
+                title={t('users.lastLoginAfter')}
+              />
+              <Input
+                type="date"
+                value={lastLoginBefore}
+                onChange={(e) => setLastLoginBefore(e.target.value)}
+                className="w-44"
+                title={t('users.lastLoginBefore')}
+              />
             </div>
           </div>
         </CardContent>
@@ -500,7 +495,7 @@ export function UsersPage() {
                                 title={user.isActive ? t('users.disable') : t('users.enable')}
                               >
                                 {user.isActive ? (
-                                  <Ban className="h-4 w-4 text-orange-500" />
+                                  <PowerOff className="h-4 w-4 text-orange-500" />
                                 ) : (
                                   <CheckCircle className="h-4 w-4 text-green-500" />
                                 )}
@@ -513,18 +508,18 @@ export function UsersPage() {
                                     setToggleUserId(user.id)
                                     setBanDialogOpen(true)
                                   }}
-                                  title={t('users.ban', '封号')}
+                                  title={t('users.ban')}
                                 >
-                                  <BanIcon className="h-4 w-4 text-destructive" />
+                                  <Ban className="h-4 w-4 text-destructive" />
                                 </Button>
                               ) : (
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => handleUnban(user.id)}
-                                  title={t('users.unban', '解封')}
+                                  title={t('users.unban')}
                                 >
-                                  <CheckCircle className="h-4 w-4 text-blue-500" />
+                                  <ShieldCheck className="h-4 w-4 text-blue-500" />
                                 </Button>
                               )}
                             </>
@@ -664,15 +659,6 @@ export function UsersPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-email">{t('users.email')}</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="edit-role">{t('users.role')}</Label>
               <select
                 id="edit-role"
@@ -701,9 +687,12 @@ export function UsersPage() {
                 onChange={(e) => setFormData({ ...formData, rateLimit: parseInt(e.target.value) || 1000 })}
               />
               <p className="text-xs text-muted-foreground">
-                {t('users.rateLimitHint', '每分钟最大请求数，由管理员设定')}
+                {t('users.rateLimitHint')}
               </p>
             </div>
+            <p className="text-xs text-muted-foreground border-l-2 border-muted pl-3">
+              {t('users.editNote', 'Email and nickname are the user\'s own data and can only be changed by the user themselves.')}
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>

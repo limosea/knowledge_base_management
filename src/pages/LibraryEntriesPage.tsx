@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { knowledgeApi, librariesApi } from '@/api'
 import type { Library } from '@/api/libraries'
-import type { AdminKnowledgeListItem, CreateEntryRequest, UpdateEntryRequest } from '@/types'
+import type { AdminKnowledgeListItem, AdminKnowledgeSearchItem, CreateEntryRequest, UpdateEntryRequest } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -40,6 +40,9 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [searchMode, setSearchMode] = useState<'field' | 'semantic' | 'hybrid'>('hybrid')
+  const [searchResults, setSearchResults] = useState<AdminKnowledgeSearchItem[] | null>(null)
+  const [queryTimeMs, setQueryTimeMs] = useState<number | undefined>(undefined)
 
   // CRUD states
   const [createOpen, setCreateOpen] = useState(false)
@@ -72,9 +75,21 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
     if (!libraryId) return
     setLoading(true)
     try {
-      const res = await knowledgeApi.list({ libraryId, page, limit, search: search || undefined })
-      setEntries(res.data)
-      setTotal(res.total)
+      if (search.trim() && searchMode !== 'field') {
+        // Use hybrid search API
+        const searchFn = elevated ? knowledgeApi.search : knowledgeApi.searchOwn
+        const res = await searchFn({ query: search.trim(), mode: searchMode, libraryId, page, limit })
+        setSearchResults(res.data)
+        setEntries(res.data as unknown as AdminKnowledgeListItem[])
+        setTotal(res.total)
+        setQueryTimeMs(res.queryTimeMs)
+      } else {
+        setSearchResults(null)
+        setQueryTimeMs(undefined)
+        const res = await knowledgeApi.list({ libraryId, page, limit, search: search || undefined })
+        setEntries(res.data)
+        setTotal(res.total)
+      }
     } catch {
       toast({ title: t('common.error'), description: 'Failed to fetch entries', variant: 'destructive' })
     } finally {
@@ -222,7 +237,7 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Input
                 placeholder={t('common.search')}
                 value={search}
@@ -230,9 +245,21 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="w-64"
               />
+              <select
+                className="flex h-9 rounded-md border border-input bg-background px-2 text-sm"
+                value={searchMode}
+                onChange={(e) => setSearchMode(e.target.value as 'field' | 'semantic' | 'hybrid')}
+              >
+                <option value="hybrid">🔍 混合搜索</option>
+                <option value="field">📝 字段模糊</option>
+                <option value="semantic">🧠 语义匹配</option>
+              </select>
               <Button variant="outline" size="icon" onClick={handleSearch}>
                 <Search className="h-4 w-4" />
               </Button>
+              {queryTimeMs !== undefined && (
+                <span className="text-xs text-muted-foreground">{queryTimeMs}ms</span>
+              )}
             </div>
             {!elevated && (
               <Button onClick={() => setCreateOpen(true)} size="sm">
@@ -254,6 +281,7 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('knowledge.titleField')}</TableHead>
+                  {searchResults && <TableHead className="w-20">相关度</TableHead>}
                   <TableHead>{t('knowledge.category')}</TableHead>
                   <TableHead>{t('knowledge.tags')}</TableHead>
                   <TableHead>{t('knowledge.qualityScore')}</TableHead>
@@ -263,13 +291,25 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {entries.map((entry) => (
+                {entries.map((entry) => {
+                  const searchItem = searchResults?.find(s => s.id === entry.id)
+                  return (
                   <TableRow key={entry.id}>
                     <TableCell className="font-medium">
-                      <button onClick={() => navigate(elevated ? `/elevated/entry/${entry.id}` : `/entry/${entry.id}`, { state: { from: basePath } })} className="text-primary hover:underline text-left">
+                      <button onClick={() => navigate(elevated ? `/elevated/entry/${entry.id}` : `/entry/${entry.id}`, { state: { from: `${basePath}/${libraryId}` } })} className="text-primary hover:underline text-left">
                         {entry.title}
                       </button>
                     </TableCell>
+                    {searchItem && (
+                      <TableCell>
+                        <div className="flex flex-col text-xs">
+                          <span className="font-medium text-primary">{(searchItem.searchScore * 100).toFixed(0)}%</span>
+                          <span className="text-muted-foreground" title={`语义: ${(searchItem.semanticScore * 100).toFixed(0)}% 字段: ${(searchItem.fieldScore * 100).toFixed(0)}%`}>
+                            S:{(searchItem.semanticScore * 100).toFixed(0)} F:{(searchItem.fieldScore * 100).toFixed(0)}
+                          </span>
+                        </div>
+                      </TableCell>
+                    )}
                     <TableCell>{entry.category ? <Badge variant="outline">{entry.category}</Badge> : '-'}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
@@ -311,7 +351,8 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  )
+                })}
               </TableBody>
             </Table>
           )}

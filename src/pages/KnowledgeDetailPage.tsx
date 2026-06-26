@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
-import { ArrowLeft, RotateCcw } from 'lucide-react'
+import { ArrowLeft, RotateCcw, Shield, ShieldOff } from 'lucide-react'
+import { PermissionGuard } from '@/components/auth/PermissionGuard'
 
 interface KnowledgeDetailPageProps {
   elevated?: boolean
@@ -36,7 +37,7 @@ export function KnowledgeDetailPage({ elevated = false }: KnowledgeDetailPagePro
     setLoading(true)
     setError(null)
     try {
-      const data = await knowledgeApi.get(id)
+      const data = elevated ? await knowledgeApi.adminGet(id) : await knowledgeApi.get(id)
       setEntry(data)
     } catch (err) {
       setError(t('knowledge.detailPage.loadError'))
@@ -53,6 +54,28 @@ export function KnowledgeDetailPage({ elevated = false }: KnowledgeDetailPagePro
   useEffect(() => {
     fetchEntry()
   }, [id])
+
+  const handleShield = async () => {
+    if (!id) return
+    try {
+      await knowledgeApi.shield(id)
+      toast({ title: t('common.success'), description: t('knowledge.shieldSuccess') })
+      fetchEntry()
+    } catch {
+      toast({ title: t('common.error'), description: t('knowledge.shieldError'), variant: 'destructive' })
+    }
+  }
+
+  const handleUnshield = async () => {
+    if (!id) return
+    try {
+      await knowledgeApi.unshield(id)
+      toast({ title: t('common.success'), description: t('knowledge.unshieldSuccess') })
+      fetchEntry()
+    } catch {
+      toast({ title: t('common.error'), description: t('knowledge.unshieldError'), variant: 'destructive' })
+    }
+  }
 
   if (loading) {
     return (
@@ -114,11 +137,28 @@ export function KnowledgeDetailPage({ elevated = false }: KnowledgeDetailPagePro
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Button variant="ghost" size="icon" onClick={() => navigate(backPath)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-3xl font-bold">{entry.title}</h1>
+        {entry.shielded && <Badge variant="destructive">{t('knowledge.shielded')}</Badge>}
+        {elevated && entry.shielded && (
+          <PermissionGuard permissions={['content:unshield']}>
+            <Button variant="outline" size="sm" onClick={handleUnshield}>
+              <ShieldOff className="h-4 w-4 mr-2" />
+              {t('knowledge.unshield')}
+            </Button>
+          </PermissionGuard>
+        )}
+        {elevated && !entry.shielded && (
+          <PermissionGuard permissions={['content:shield']}>
+            <Button variant="outline" size="sm" onClick={handleShield}>
+              <Shield className="h-4 w-4 mr-2" />
+              {t('knowledge.shield')}
+            </Button>
+          </PermissionGuard>
+        )}
       </div>
 
       <Card>

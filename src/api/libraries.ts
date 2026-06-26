@@ -104,6 +104,10 @@ export const librariesApi = {
     return apiClient.get<LibraryListResponse>(`/admin/library${query ? `?${query}` : ''}`)
   },
 
+  adminGet: (id: string): Promise<Library> => {
+    return apiClient.get<Library>(`/admin/library/${id}`)
+  },
+
   shield: (id: string): Promise<Library> => {
     return apiClient.post<Library>(`/admin/library/${id}/shield`)
   },
