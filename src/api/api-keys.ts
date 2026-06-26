@@ -51,16 +51,19 @@ export const apiKeysApi = {
       to?: string
     }
   ): Promise<{
+    keyId: string
     totalRequests: number
     byAction: Array<{ action: string; count: number }>
-    trend: Array<{ date: string; count: number }>
+    byStatus: Array<{ status: string; count: number }>
     topIps: Array<{ ip: string; count: number }>
-    errors: Array<{ message: string; count: number }>
+    errors: Array<{ message: string; action: string; count: number }>
+    trend: Array<{ date: string; count: number }>
+    recentLogs: Array<Record<string, unknown>>
   }> => {
     const searchParams = new URLSearchParams()
     if (params?.from) searchParams.set('from', params.from)
     if (params?.to) searchParams.set('to', params.to)
     const query = searchParams.toString()
-    return apiClient.get(`/admin/api-keys/${id}/usage${query ? `?${query}` : ''}`)
+    return apiClient.get(`/admin/stats/key-audit/${id}${query ? `?${query}` : ''}`)
   },
 }

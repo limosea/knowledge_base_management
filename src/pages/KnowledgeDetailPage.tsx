@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { knowledgeApi } from '@/api'
 import type { KnowledgeEntry } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,12 @@ export function KnowledgeDetailPage({ elevated = false }: KnowledgeDetailPagePro
   const { toast } = useToast()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const backPath = elevated ? '/elevated/knowledge' : '/knowledge'
+  const location = useLocation()
+  // Determine back path from location state (origin) or default.
+  // This fixes the issue where plaza entry details always went back to
+  // the knowledge base instead of the plaza.
+  const origin = (location.state as { from?: string } | null)?.from
+  const backPath = origin || (elevated ? '/elevated/plaza' : '/knowledge')
   const [entry, setEntry] = useState<KnowledgeEntry | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

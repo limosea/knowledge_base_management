@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/contexts/ThemeContext'
 import { usePermission } from '@/contexts/PermissionContext'
@@ -118,12 +119,25 @@ export function MainLayout() {
   const { i18n } = useTranslation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { canAccessElevated, loading } = usePermission()
+  const { canAccessElevated, loading, isElevated, revokeElevation } = usePermission()
   const [showElevationDialog, setShowElevationDialog] = useState(false)
+  const wasElevatedRef = useRef(false)
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const displayName = user.nickname || user.username
   const userActive = user.isActive !== false
+
+  // Auto-revoke elevation when entering personal console. This enforces
+  // hard isolation: the user must explicitly re-elevate (TOTP) each time
+  // they want to access the advanced console. Prevents cross-contamination
+  // between personal and elevated modes.
+  useEffect(() => {
+    if (isElevated()) {
+      wasElevatedRef.current = true
+      revokeElevation()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleLogout = async () => {
     try {

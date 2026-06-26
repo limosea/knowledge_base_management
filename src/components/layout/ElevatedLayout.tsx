@@ -85,7 +85,6 @@ const navSections: NavSection[] = [
   {
     titleKey: 'nav.knowledgeBase',
     items: [
-      { path: '/elevated/knowledge', icon: Library, labelKey: 'nav.libraries' },
       { path: '/elevated/plaza', icon: Globe, labelKey: 'nav.plaza' },
       { path: '/elevated/categories', icon: Tag, labelKey: 'nav.categories' },
     ],

@@ -29,6 +29,7 @@ export function RoleForm({ open, onOpenChange, role, onSubmit }: RoleFormProps) 
   const [permissions, setPermissions] = useState<Permission[]>(
     (role?.permissions as Permission[]) || []
   )
+  const [rateLimit, setRateLimit] = useState(role?.rateLimit ?? 0)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export function RoleForm({ open, onOpenChange, role, onSubmit }: RoleFormProps) 
       setName(role?.name || '')
       setDescription(role?.description || '')
       setPermissions((role?.permissions as Permission[]) || [])
+      setRateLimit(role?.rateLimit ?? 0)
     }
   }, [open, role])
 
@@ -44,7 +46,7 @@ export function RoleForm({ open, onOpenChange, role, onSubmit }: RoleFormProps) 
     setLoading(true)
 
     try {
-      await onSubmit({ name, description, permissions })
+      await onSubmit({ name, description, permissions, rateLimit })
       onOpenChange(false)
     } finally {
       setLoading(false)
@@ -99,6 +101,20 @@ export function RoleForm({ open, onOpenChange, role, onSubmit }: RoleFormProps) 
               onChange={setPermissions}
               disabled={isSystemRole}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="rateLimit">{t('roles.rateLimit', '速率限制（每分钟）')}</Label>
+            <Input
+              id="rateLimit"
+              type="number"
+              min={0}
+              value={rateLimit}
+              onChange={(e) => setRateLimit(parseInt(e.target.value) || 0)}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t('roles.rateLimitHint', '设为0表示不使用角色级速率限制，将回退到用户级速率限制。设置后对该角色所有用户生效，优先级高于用户级。')}
+            </p>
           </div>
 
           <DialogFooter>

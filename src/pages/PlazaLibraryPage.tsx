@@ -35,6 +35,7 @@ export function PlazaLibraryPage({ elevated = false }: PlazaLibraryPageProps) {
   const limit = 20
   const basePath = elevated ? '/elevated/plaza' : '/plaza'
   const entryPath = (id: string) => elevated ? `/elevated/entry/${id}` : `/entry/${id}`
+  const navigateToEntry = (id: string) => navigate(entryPath(id), { state: { from: basePath } })
 
   useEffect(() => {
     if (libraryId) fetchLibrary()
@@ -85,7 +86,7 @@ export function PlazaLibraryPage({ elevated = false }: PlazaLibraryPageProps) {
           {library?.icon ? (
             library.icon.startsWith('data:') || library.icon.startsWith('http') || library.icon.startsWith('/')
               ? <img src={library.icon} alt="" className="h-7 w-7 rounded object-cover" />
-              : <span className="text-2xl">{library.icon}</span>
+              : null
           ) : null}
           <h1 className="text-2xl font-bold">{library?.name || '...'}</h1>
           <Badge variant="secondary">{total}</Badge>
@@ -139,7 +140,7 @@ export function PlazaLibraryPage({ elevated = false }: PlazaLibraryPageProps) {
                 {entries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className="font-medium">
-                      <button onClick={() => navigate(entryPath(entry.id))} className="text-primary hover:underline text-left">
+                      <button onClick={() => navigateToEntry(entry.id)} className="text-primary hover:underline text-left">
                         {entry.title}
                       </button>
                     </TableCell>

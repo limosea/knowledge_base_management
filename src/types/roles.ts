@@ -52,6 +52,7 @@ export interface Role {
   description?: string
   isSystem: boolean
   isSuperAdmin: boolean
+  rateLimit: number
   permissions: Permission[]
   createdAt: string
   updatedAt: string
@@ -61,10 +62,12 @@ export interface CreateRoleRequest {
   name: string
   description?: string
   permissions?: Permission[]
+  rateLimit?: number
 }
 
 export interface UpdateRoleRequest {
   name?: string
   description?: string
   permissions?: Permission[]
+  rateLimit?: number
 }

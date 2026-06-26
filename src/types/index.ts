@@ -96,7 +96,7 @@ export interface ApiKey {
   lastUsedAt?: string
   expiresAt?: string
   createdAt: string
-  userId?: string
+  ownerId?: string
   ownerUsername?: string
   ownerNickname?: string
 }
@@ -211,6 +211,7 @@ export interface AdminUserSummary {
   email: string
   role: AdminRole
   isActive: boolean
+  banned: boolean
   mfaEnabled: boolean
   lastLoginAt?: string
   createdBy?: string
@@ -351,6 +352,9 @@ export interface ContentDistribution {
   topTags: Array<{ tag: string; count: number }>
   byDifficulty: Array<{ level: number; count: number }>
   byLanguage: Array<{ language: string; count: number }>
+  byCategory?: Array<{ category: string; count: number }>
+  byVisibility?: Array<{ visibility: string; count: number }>
+  avgContentLength?: { avg: number; max: number; min: number }
   qualityScoreDistribution: Array<{ bucket: string; count: number }>
 }
 
@@ -541,6 +545,9 @@ export interface MyContentDistribution {
   topTags: Array<{ tag: string; count: number }>
   byDifficulty: Array<{ level: number; count: number }>
   byLanguage: Array<{ language: string; count: number }>
+  byCategory?: Array<{ category: string; count: number }>
+  byVisibility?: Array<{ visibility: string; count: number }>
+  avgContentLength?: { avg: number; max: number; min: number }
   qualityScoreDistribution: Array<{ bucket: string; count: number }>
 }
 
@@ -638,6 +645,20 @@ export interface UnreadCountResponse {
 }
 
 // ==================== Deletion API Types ====================
+
+export interface AuditData {
+  userId?: string
+  keyId?: string
+  from: string
+  to: string
+  totalRequests: number
+  byAction: Array<{ action: string; count: number }>
+  byStatus: Array<{ status: string; count: number }>
+  topIps?: Array<{ ip: string; count: number }>
+  errors?: Array<{ message: string; action: string; count: number }>
+  trend: Array<{ date: string; count: number }>
+  recentLogs: Array<Record<string, unknown>>
+}
 
 export interface RequestDeletionRequest {
   mfaCode: string

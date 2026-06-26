@@ -201,7 +201,7 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
           {library?.icon && (
             library.icon.startsWith('data:') || library.icon.startsWith('http') || library.icon.startsWith('/')
               ? <img src={library.icon} alt="" className="h-8 w-8 rounded object-cover" />
-              : <span className="text-2xl">{library.icon}</span>
+              : null
           )}
           <h1 className="text-2xl font-bold">{library?.name || '...'}</h1>
           <Badge variant="secondary">{total}</Badge>
@@ -266,7 +266,7 @@ export function LibraryEntriesPage({ elevated = false }: LibraryEntriesPageProps
                 {entries.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className="font-medium">
-                      <button onClick={() => navigate(elevated ? `/elevated/entry/${entry.id}` : `/entry/${entry.id}`)} className="text-primary hover:underline text-left">
+                      <button onClick={() => navigate(elevated ? `/elevated/entry/${entry.id}` : `/entry/${entry.id}`, { state: { from: basePath } })} className="text-primary hover:underline text-left">
                         {entry.title}
                       </button>
                     </TableCell>

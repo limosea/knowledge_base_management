@@ -65,7 +65,6 @@ export function ApiKeysPage() {
   const [formData, setFormData] = useState({
     name: '',
     permissions: ['read'] as ApiKeyPermission[],
-    rateLimit: 100,
   })
 
   const limit = 20
@@ -112,7 +111,6 @@ export function ApiKeysPage() {
     setFormData({
       name: key.name,
       permissions: key.permissions,
-      rateLimit: key.rateLimit,
     })
     setEditDialogOpen(true)
   }
@@ -123,7 +121,6 @@ export function ApiKeysPage() {
       const data: UpdateApiKeyRequest = {
         name: formData.name,
         permissions: formData.permissions,
-        rateLimit: formData.rateLimit,
       }
       await apiKeysApi.update(currentKey.id, data)
       toast({
@@ -185,7 +182,7 @@ export function ApiKeysPage() {
   const groupedKeys = useMemo(() => {
     const map = new Map<string, { owner: string; keys: ApiKey[] }>()
     for (const key of apiKeys) {
-      const ownerId = key.userId || 'unknown'
+      const ownerId = key.ownerId || 'unknown'
       const ownerName = key.ownerNickname || key.ownerUsername || t('apiKeys.unknownOwner', 'Unknown')
       if (!map.has(ownerId)) {
         map.set(ownerId, { owner: ownerName, keys: [] })
@@ -436,15 +433,6 @@ export function ApiKeysPage() {
                   </Button>
                 ))}
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-rateLimit">{t('apiKeys.rateLimit')}</Label>
-              <Input
-                id="edit-rateLimit"
-                type="number"
-                value={formData.rateLimit}
-                onChange={(e) => setFormData({ ...formData, rateLimit: Number(e.target.value) })}
-              />
             </div>
           </div>
           <DialogFooter>

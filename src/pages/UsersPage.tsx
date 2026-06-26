@@ -36,8 +36,15 @@ import {
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Pencil, KeyRound, Ban, CheckCircle, UserX } from 'lucide-react'
+import { Plus, Pencil, KeyRound, Ban, CheckCircle, UserX, Search, BarChart3, Ban as BanIcon } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export function UsersPage() {
@@ -47,17 +54,33 @@ export function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
-  
+
+  // Filters
+  const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [mfaFilter, setMfaFilter] = useState<string>('all')
+  const [createdAfter, setCreatedAfter] = useState('')
+  const [createdBefore, setCreatedBefore] = useState('')
+  const [lastLoginAfter, setLastLoginAfter] = useState('')
+  const [lastLoginBefore, setLastLoginBefore] = useState('')
+
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [disableDialogOpen, setDisableDialogOpen] = useState(false)
   const [enableDialogOpen, setEnableDialogOpen] = useState(false)
+  const [banDialogOpen, setBanDialogOpen] = useState(false)
   const [toggleUserId, setToggleUserId] = useState<string | null>(null)
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<AdminUserSummary | null>(null)
   const [resetResult, setResetResult] = useState<ResetPasswordResponse | null>(null)
   const [roles, setRoles] = useState<Role[]>([])
-  
+
+  // Audit state
+  const [auditDialogOpen, setAuditDialogOpen] = useState(false)
+  const [auditData, setAuditData] = useState<any>(null)
+  const [auditLoading, setAuditLoading] = useState(false)
+
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -71,7 +94,17 @@ export function UsersPage() {
 
   useEffect(() => {
     fetchUsers()
-  }, [page])
+  }, [page, roleFilter, statusFilter, mfaFilter, createdAfter, createdBefore, lastLoginAfter, lastLoginBefore])
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1)
+      fetchUsers()
+    }, 300)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search])
 
   useEffect(() => {
     fetchRoles()
@@ -89,7 +122,18 @@ export function UsersPage() {
   const fetchUsers = async () => {
     setLoading(true)
     try {
-      const response = await adminUsersApi.list({ page, limit })
+      const response = await adminUsersApi.list({
+        page,
+        limit,
+        search: search || undefined,
+        role: roleFilter !== 'all' ? roleFilter : undefined,
+        isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
+        mfaEnabled: mfaFilter === 'all' ? undefined : mfaFilter === 'enabled',
+        createdAfter: createdAfter || undefined,
+        createdBefore: createdBefore || undefined,
+        lastLoginAfter: lastLoginAfter || undefined,
+        lastLoginBefore: lastLoginBefore || undefined,
+      })
       setUsers(response.data)
       setTotal(response.total)
     } catch (error) {
@@ -205,6 +249,43 @@ export function UsersPage() {
     }
   }
 
+  const handleBan = async (userId: string) => {
+    try {
+      await adminUsersApi.ban(userId)
+      toast({ title: t('common.success'), description: t('users.banSuccess', '用户已被封号，所有访问已撤销') })
+      setBanDialogOpen(false)
+      setToggleUserId(null)
+      fetchUsers()
+    } catch (error) {
+      toast({ title: t('common.error'), description: t('users.banError', '封号失败'), variant: 'destructive' })
+    }
+  }
+
+  const handleUnban = async (userId: string) => {
+    try {
+      await adminUsersApi.unban(userId)
+      toast({ title: t('common.success'), description: t('users.unbanSuccess', '用户已解封') })
+      fetchUsers()
+    } catch (error) {
+      toast({ title: t('common.error'), description: t('users.unbanError', '解封失败'), variant: 'destructive' })
+    }
+  }
+
+  const handleAudit = async (user: AdminUserSummary) => {
+    setCurrentUser(user)
+    setAuditDialogOpen(true)
+    setAuditLoading(true)
+    setAuditData(null)
+    try {
+      const data = await adminUsersApi.getAudit(user.id)
+      setAuditData(data)
+    } catch (error) {
+      toast({ title: t('common.error'), description: t('users.auditError', '加载审计数据失败'), variant: 'destructive' })
+    } finally {
+      setAuditLoading(false)
+    }
+  }
+
   const handleResetPassword = async () => {
     if (!currentUser) return
     
@@ -235,6 +316,92 @@ export function UsersPage() {
       </div>
 
       <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            {/* Search box */}
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t('users.searchPlaceholder', '搜索用户名或邮箱...')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+
+            {/* Two-column filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Column 1: Role / Rate limit / Status / MFA */}
+              <div className="flex flex-wrap gap-2">
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder={t('users.role')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('users.allRoles', '全部角色')}</SelectItem>
+                    <SelectItem value="super_admin">{t('users.superAdmin')}</SelectItem>
+                    <SelectItem value="admin">{t('users.admin')}</SelectItem>
+                    <SelectItem value="user">{t('users.user')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder={t('common.status')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('users.allStatus', '全部状态')}</SelectItem>
+                    <SelectItem value="active">{t('users.active')}</SelectItem>
+                    <SelectItem value="inactive">{t('users.inactive')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={mfaFilter} onValueChange={setMfaFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="MFA" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('users.allMfa', '全部')}</SelectItem>
+                    <SelectItem value="enabled">MFA</SelectItem>
+                    <SelectItem value="disabled">{t('users.noMfa', '未启用')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Column 2: Creation time / Last login time */}
+              <div className="flex flex-wrap gap-2">
+                <Input
+                  type="date"
+                  value={createdAfter}
+                  onChange={(e) => setCreatedAfter(e.target.value)}
+                  className="w-36"
+                  title={t('users.createdAfter', '创建时间起')}
+                />
+                <Input
+                  type="date"
+                  value={createdBefore}
+                  onChange={(e) => setCreatedBefore(e.target.value)}
+                  className="w-36"
+                  title={t('users.createdBefore', '创建时间止')}
+                />
+                <Input
+                  type="date"
+                  value={lastLoginAfter}
+                  onChange={(e) => setLastLoginAfter(e.target.value)}
+                  className="w-36"
+                  title={t('users.lastLoginAfter', '最后登录起')}
+                />
+                <Input
+                  type="date"
+                  value={lastLoginBefore}
+                  onChange={(e) => setLastLoginBefore(e.target.value)}
+                  className="w-36"
+                  title={t('users.lastLoginBefore', '最后登录止')}
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader />
         <CardContent>
           {loading ? (
@@ -258,7 +425,8 @@ export function UsersPage() {
                   <TableHead>{t('common.status')}</TableHead>
                   <TableHead>{t('users.mfaEnabled')}</TableHead>
                   <TableHead>{t('users.lastLoginAt')}</TableHead>
-                  <TableHead className="w-32">{t('common.actions')}</TableHead>
+                  <TableHead>{t('common.createdAt')}</TableHead>
+                  <TableHead className="w-40">{t('common.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -274,9 +442,14 @@ export function UsersPage() {
                     </TableCell>
                     <TableCell>{user.rateLimit ?? '-'}/min</TableCell>
                     <TableCell>
-                      <Badge variant={user.isActive ? 'default' : 'destructive'}>
-                        {user.isActive ? t('users.active') : t('users.inactive')}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        {user.banned && (
+                          <Badge variant="destructive">{t('users.banned', '已封号')}</Badge>
+                        )}
+                        <Badge variant={user.isActive ? 'default' : 'destructive'}>
+                          {user.isActive ? t('users.active') : t('users.inactive')}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {user.mfaEnabled ? (
@@ -288,48 +461,84 @@ export function UsersPage() {
                     <TableCell>
                       {user.lastLoginAt ? formatDate(user.lastLoginAt) : '-'}
                     </TableCell>
+                    <TableCell>{formatDate(user.createdAt)}</TableCell>
                     <TableCell>
-                      <PermissionGuard permissions={['users:manage']}>
-                        {permUser?.id !== user.id && (
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(user)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setCurrentUser(user)
-                                setResetDialogOpen(true)
-                              }}
-                            >
-                              <KeyRound className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setToggleUserId(user.id)
-                                if (user.isActive) {
-                                  setDisableDialogOpen(true)
-                                } else {
-                                  setEnableDialogOpen(true)
-                                }
-                              }}
-                            >
-                              {user.isActive ? (
-                                <Ban className="h-4 w-4 text-orange-500" />
+                      <div className="flex items-center gap-1">
+                        <PermissionGuard permissions={['users:manage']}>
+                          {permUser?.id !== user.id && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEdit(user)}
+                                title={t('common.edit')}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setCurrentUser(user)
+                                  setResetDialogOpen(true)
+                                }}
+                                title={t('users.resetPassword')}
+                              >
+                                <KeyRound className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setToggleUserId(user.id)
+                                  if (user.isActive) {
+                                    setDisableDialogOpen(true)
+                                  } else {
+                                    setEnableDialogOpen(true)
+                                  }
+                                }}
+                                title={user.isActive ? t('users.disable') : t('users.enable')}
+                              >
+                                {user.isActive ? (
+                                  <Ban className="h-4 w-4 text-orange-500" />
+                                ) : (
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                )}
+                              </Button>
+                              {!user.banned ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    setToggleUserId(user.id)
+                                    setBanDialogOpen(true)
+                                  }}
+                                  title={t('users.ban', '封号')}
+                                >
+                                  <BanIcon className="h-4 w-4 text-destructive" />
+                                </Button>
                               ) : (
-                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleUnban(user.id)}
+                                  title={t('users.unban', '解封')}
+                                >
+                                  <CheckCircle className="h-4 w-4 text-blue-500" />
+                                </Button>
                               )}
-                            </Button>
-                          </div>
-                        )}
-                      </PermissionGuard>
+                            </>
+                          )}
+                        </PermissionGuard>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleAudit(user)}
+                          title={t('users.audit', '审计')}
+                        >
+                          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </div>
                       {user.deletionStatus === 'pending' && (
                         <div className="flex items-center gap-1 mt-1">
                           <Badge variant="destructive" className="text-xs">{t('users.deletionPending', '待销户')}</Badge>
@@ -572,6 +781,98 @@ export function UsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Ban Dialog */}
+      <AlertDialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('users.confirmBan', '确认封号')}</AlertDialogTitle>
+          </AlertDialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {t('users.banConsequences', '封号将完全禁止该用户访问系统任何功能，包括登录、API调用和个人控制台。此操作比禁用更严重。API Key 将全部停用，高级权限同步撤销。')}
+          </p>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => toggleUserId && handleBan(toggleUserId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t('users.ban', '封号')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* User Audit Dialog */}
+      <Dialog open={auditDialogOpen} onOpenChange={setAuditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {t('users.auditTitle', '用户审计')}: {currentUser?.nickname || currentUser?.username}
+            </DialogTitle>
+          </DialogHeader>
+          {auditLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : auditData ? (
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">{auditData.totalRequests}</div>
+                    <div className="text-sm text-muted-foreground">{t('apiKeys.totalRequests', '总请求数')}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">{auditData.byStatus?.length || 0}</div>
+                    <div className="text-sm text-muted-foreground">{t('users.statusTypes', '状态类型数')}</div>
+                  </CardContent>
+                </Card>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">{t('apiKeys.byAction', '按操作')}</h4>
+                {auditData.byAction?.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t('common.noData')}</p>
+                ) : (
+                  <div className="space-y-1">
+                    {auditData.byAction?.map((item: any) => (
+                      <div key={item.action} className="flex justify-between text-sm">
+                        <span>{item.action}</span>
+                        <span className="font-medium">{item.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">{t('users.recentLogs', '最近调用日志（脱敏）')}</h4>
+                {auditData.recentLogs?.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t('common.noData')}</p>
+                ) : (
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {auditData.recentLogs?.map((log: any, idx: number) => (
+                      <div key={idx} className="flex justify-between text-xs text-muted-foreground border-b py-1">
+                        <span>{log.action}</span>
+                        <span>{log.ipAddress || '-'}</span>
+                        <span>{log.status || '-'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">{t('common.noData')}</div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setAuditDialogOpen(false)}>{t('common.close')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

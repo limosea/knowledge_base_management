@@ -156,14 +156,6 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: '/elevated/knowledge',
-        element: <LibrariesPage elevated />,
-      },
-      {
-        path: '/elevated/knowledge/:libraryId',
-        element: <LibraryEntriesPage elevated />,
-      },
-      {
         path: '/elevated/plaza',
         element: <PlazaPage elevated />,
       },
