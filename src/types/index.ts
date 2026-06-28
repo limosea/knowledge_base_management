@@ -353,6 +353,9 @@ export interface DashboardStats {
     avgQualityScore: number
     createdThisWeek: number
   }
+  libraries: {
+    total: number
+  }
   apiKeys: {
     total: number
     active: number
@@ -398,7 +401,10 @@ export interface EmbeddingCoverage {
   latestBatch: Record<string, unknown> | null
 }
 
-export interface SearchAnalytics {
+export interface SearchAnalyticsSearchActivity {
+  perspective: 'searchActivity'
+  title: string
+  description: string
   period: string
   from: string
   to: string
@@ -412,6 +418,22 @@ export interface SearchAnalytics {
     no_results: number
   }
 }
+
+export interface SearchAnalyticsContentInsights {
+  perspective: 'contentInsights'
+  title: string
+  description: string
+  period: string
+  from: string
+  to: string
+  note?: string
+  totalHitsOnMyContent: number
+  hitsOverTime: Array<{ date: string; count: number }>
+  topFoundEntries: Array<{ id: string; title: string; hitCount: number }>
+  topReferralQueries: Array<{ query: string; count: number }>
+}
+
+export type SearchAnalytics = SearchAnalyticsSearchActivity | SearchAnalyticsContentInsights
 
 export interface ApiKeyUsage {
   from: string
@@ -547,6 +569,9 @@ export interface MyDashboardStats {
     avgQualityScore: number
     createdThisWeek: number
   }
+  libraries: {
+    total: number
+  }
   apiKeys: {
     total: number
     active: number
@@ -591,7 +616,10 @@ export interface MyEmbeddingCoverage {
   latestBatch: null
 }
 
-export interface MySearchAnalytics {
+export interface MySearchAnalyticsSearchActivity {
+  perspective: 'searchActivity'
+  title: string
+  description: string
   period: string
   from: string
   to: string
@@ -605,6 +633,22 @@ export interface MySearchAnalytics {
     no_results: number
   }
 }
+
+export interface MySearchAnalyticsContentInsights {
+  perspective: 'contentInsights'
+  title: string
+  description: string
+  period: string
+  from: string
+  to: string
+  note?: string
+  totalHitsOnMyContent: number
+  hitsOverTime: Array<{ date: string; count: number }>
+  topFoundEntries: Array<{ id: string; title: string; hitCount: number }>
+  topReferralQueries: Array<{ query: string; count: number }>
+}
+
+export type MySearchAnalytics = MySearchAnalyticsSearchActivity | MySearchAnalyticsContentInsights
 
 export interface MyApiKeyUsage {
   from: string
@@ -702,6 +746,18 @@ export interface DeletionResponse {
 export interface BatchOperationResponse {
   success: boolean
   count: number
+}
+
+// ==================== Leaderboard Types ====================
+
+export interface LeaderboardData {
+  period: string
+  days: number
+  channel?: string
+  scope?: 'global' | 'personal'
+  topLibraries: Array<{ id: string; name: string; viewCount: number }>
+  topEntries: Array<{ id: string; title: string; viewCount: number }>
+  topTags: Array<{ tag: string; count: number }>
 }
 
 export * from './roles'

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { meApi } from '@/api'
-import type { MySearchAnalytics } from '@/types'
+import type { MySearchAnalyticsSearchActivity } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatCard } from '@/components/charts/StatCard'
 import { SearchVolumeTrendChart } from '@/components/charts/SearchVolumeTrendChart'
 import { TopSearchIpsChart } from '@/components/charts/TopSearchIpsChart'
+import { PinnableChartCard } from '@/components/charts/PinnableChartCard'
 import { Search } from 'lucide-react'
 import type { StatsFilterState } from '@/components/charts/StatsFilterBar'
 
@@ -16,14 +17,19 @@ interface MySearchSectionProps {
 
 export function MySearchSection({ filter }: MySearchSectionProps) {
   const { t } = useTranslation()
-  const [data, setData] = useState<MySearchAnalytics | null>(null)
+  const [data, setData] = useState<MySearchAnalyticsSearchActivity | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    meApi.getSearchAnalytics({ period: filter?.period, from: filter?.from, to: filter?.to })
-      .then((d) => { if (!cancelled) setData(d) })
+    meApi.getSearchAnalytics({
+      period: filter?.period,
+      from: filter?.from,
+      to: filter?.to,
+      perspective: 'searchActivity',
+    })
+      .then((d) => { if (!cancelled && d.perspective === 'searchActivity') setData(d) })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
@@ -75,24 +81,40 @@ export function MySearchSection({ filter }: MySearchSectionProps) {
           icon={Search}
         />
       </div>
-      <SearchVolumeTrendChart data={data?.searchesOverTime ?? []} />
+      <PinnableChartCard chartId="search-volume-trend" descriptionKey="charts.descriptions.searchVolumeTrend">
+        <SearchVolumeTrendChart data={data?.searchesOverTime ?? []} />
+      </PinnableChartCard>
       <div className="grid gap-4 lg:grid-cols-2">
-        <TopSearchIpsChart data={data?.topIps ?? []} />
+        <PinnableChartCard chartId="top-search-ips" descriptionKey="charts.descriptions.topSearchIps">
+          <TopSearchIpsChart data={data?.topIps ?? []} />
+        </PinnableChartCard>
         <Card>
           <CardHeader>
             <CardTitle>{t('charts.searchQueries')}</CardTitle>
           </CardHeader>
           <CardContent>
-            {data?.topQueries && data.topQueries.length > 0 ? (
-              <div className="space-y-2">
-                {data.topQueries.slice(0, 10).map((q, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="truncate mr-2">{q.query}</span>
-                    <span className="font-mono text-muted-foreground">{q.count}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
+            {data?.topQueries && data.topQueries.length > 0 ? (() => {
+              const MAX = 10
+              const top = data.topQueries.slice(0, MAX)
+              const rest = data.topQueries.slice(MAX)
+              const othersCount = rest.reduce((s, q) => s + q.count, 0)
+              return (
+                <div className="space-y-2">
+                  {top.map((q, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="truncate mr-2">{q.query}</span>
+                      <span className="font-mono text-muted-foreground">{q.count}</span>
+                    </div>
+                  ))}
+                  {rest.length > 0 && (
+                    <div className="flex items-center justify-between text-sm text-muted-foreground italic">
+                      <span>{t('charts.others', { count: rest.length })}</span>
+                      <span className="font-mono">{othersCount}</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })() : (
               <div className="h-[200px] flex items-center justify-center text-muted-foreground">
                 {t('charts.noData')}
               </div>

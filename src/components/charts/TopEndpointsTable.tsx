@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -11,6 +12,8 @@ interface TopEndpointsTableProps {
   }>
 }
 
+const MAX_ROWS = 15
+
 const METHOD_COLORS: Record<string, string> = {
   GET: 'text-green-600',
   POST: 'text-blue-600',
@@ -21,6 +24,20 @@ const METHOD_COLORS: Record<string, string> = {
 
 export function TopEndpointsTable({ data }: TopEndpointsTableProps) {
   const { t } = useTranslation()
+
+  const { topRows, othersRow } = useMemo(() => {
+    if (!data || data.length === 0) return { topRows: [], othersRow: null }
+    const sorted = [...data].sort((a, b) => b.count - a.count)
+    const top = sorted.slice(0, MAX_ROWS)
+    const rest = sorted.slice(MAX_ROWS)
+    let others: { count: number; avgMs: number; restLen: number } | null = null
+    if (rest.length > 0) {
+      const totalCount = rest.reduce((s, r) => s + r.count, 0)
+      const totalMs = rest.reduce((s, r) => s + r.avgResponseTime * r.count, 0)
+      others = { count: totalCount, avgMs: totalCount > 0 ? Math.round(totalMs / totalCount) : 0, restLen: rest.length }
+    }
+    return { topRows: top, othersRow: others }
+  }, [data])
 
   if (!data || data.length === 0) {
     return (
@@ -54,7 +71,7 @@ export function TopEndpointsTable({ data }: TopEndpointsTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((item, index) => (
+              {topRows.map((item, index) => (
                 <TableRow key={index}>
                   <TableCell>
                     <span className={`font-mono font-bold ${METHOD_COLORS[item.method] ?? ''}`}>
@@ -68,6 +85,16 @@ export function TopEndpointsTable({ data }: TopEndpointsTableProps) {
                   <TableCell className="text-right">{item.avgResponseTime}ms</TableCell>
                 </TableRow>
               ))}
+              {othersRow && (
+                <TableRow className="italic text-muted-foreground">
+                  <TableCell />
+                  <TableCell className="text-sm">
+                    {t('charts.others', { count: othersRow.restLen })}
+                  </TableCell>
+                  <TableCell className="text-right">{othersRow.count}</TableCell>
+                  <TableCell className="text-right">{othersRow.avgMs}ms</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>

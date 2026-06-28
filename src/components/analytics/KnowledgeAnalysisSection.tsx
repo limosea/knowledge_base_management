@@ -4,9 +4,10 @@ import type { ContentDistribution, EmbeddingCoverage } from '@/types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { QualityDistributionChart } from '@/components/charts/QualityDistributionChart'
 import { TopTagsChart } from '@/components/charts/TopTagsChart'
-import { DifficultyDistributionChart } from '@/components/charts/DifficultyDistributionChart'
+import { CategoryDistributionChart } from '@/components/charts/CategoryDistributionChart'
 import { LanguageDistributionChart } from '@/components/charts/LanguageDistributionChart'
 import { EmbeddingCoverageChart } from '@/components/charts/EmbeddingCoverageChart'
+import { PinnableChartCard } from '@/components/charts/PinnableChartCard'
 import type { StatsFilterState } from '@/components/charts/StatsFilterBar'
 
 interface KnowledgeAnalysisSectionProps {
@@ -60,19 +61,23 @@ export function KnowledgeAnalysisSection({ filter }: KnowledgeAnalysisSectionPro
   return (
     <div className="space-y-4">
       <div className="grid gap-4 lg:grid-cols-2">
-        <QualityDistributionChart
-          data={contentDistribution?.qualityScoreDistribution ?? []}
-        />
-        <EmbeddingCoverageChart data={embeddingCoverage} />
+        <PinnableChartCard chartId="quality-distribution" descriptionKey="charts.descriptions.qualityDistribution">
+          <QualityDistributionChart data={contentDistribution?.qualityScoreDistribution ?? []} />
+        </PinnableChartCard>
+        <PinnableChartCard chartId="embedding-coverage" descriptionKey="charts.descriptions.embeddingCoverage">
+          <EmbeddingCoverageChart data={embeddingCoverage} />
+        </PinnableChartCard>
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
-        <TopTagsChart data={contentDistribution?.topTags ?? []} />
-        <DifficultyDistributionChart
-          data={contentDistribution?.byDifficulty ?? []}
-        />
-        <LanguageDistributionChart
-          data={contentDistribution?.byLanguage ?? []}
-        />
+        <PinnableChartCard chartId="top-tags" descriptionKey="charts.descriptions.topTags">
+          <TopTagsChart data={contentDistribution?.topTags ?? []} />
+        </PinnableChartCard>
+        <PinnableChartCard chartId="category-distribution" descriptionKey="charts.descriptions.categoryDistribution">
+          <CategoryDistributionChart data={contentDistribution?.byCategory ?? []} />
+        </PinnableChartCard>
+        <PinnableChartCard chartId="language-distribution" descriptionKey="charts.descriptions.languageDistribution">
+          <LanguageDistributionChart data={contentDistribution?.byLanguage ?? []} />
+        </PinnableChartCard>
       </div>
     </div>
   )

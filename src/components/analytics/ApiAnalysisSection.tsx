@@ -8,6 +8,7 @@ import { ApiKeyDetailDialog } from '@/components/charts/ApiKeyDetailDialog'
 import { RequestTrendChart } from '@/components/charts/RequestTrendChart'
 import { StatusCodeDistributionChart } from '@/components/charts/StatusCodeDistributionChart'
 import { TopEndpointsTable } from '@/components/charts/TopEndpointsTable'
+import { PinnableChartCard } from '@/components/charts/PinnableChartCard'
 
 interface Props {
   filter: StatsFilterState
@@ -70,19 +71,27 @@ export function ApiAnalysisSection({ filter }: Props) {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 lg:grid-cols-3">
-        <StatusCodeDistributionChart
-          statusCodes={requestAnalytics?.statusCodeDistribution ?? []}
-          successRate={requestAnalytics?.successRate}
-        />
-        <ApiKeyStatusChart
-          data={apiKeyUsage?.keys ?? []}
-          onKeyClick={handleKeyClick}
-        />
-        <RequestTrendChart
-          data={requestAnalytics?.requestVolumeTrend ?? []}
-        />
+        <PinnableChartCard chartId="status-code-distribution" descriptionKey="charts.descriptions.statusCodeDistribution">
+          <StatusCodeDistributionChart
+            statusCodes={requestAnalytics?.statusCodeDistribution ?? []}
+            successRate={requestAnalytics?.successRate}
+          />
+        </PinnableChartCard>
+        <PinnableChartCard chartId="api-key-status" descriptionKey="charts.descriptions.apiKeyStatus">
+          <ApiKeyStatusChart
+            data={apiKeyUsage?.keys ?? []}
+            onKeyClick={handleKeyClick}
+          />
+        </PinnableChartCard>
+        <PinnableChartCard chartId="request-trend" descriptionKey="charts.descriptions.requestTrend">
+          <RequestTrendChart
+            data={requestAnalytics?.requestVolumeTrend ?? []}
+          />
+        </PinnableChartCard>
       </div>
-      <TopEndpointsTable data={requestAnalytics?.topEndpoints ?? []} />
+      <PinnableChartCard chartId="top-endpoints" descriptionKey="charts.descriptions.topEndpoints">
+        <TopEndpointsTable data={requestAnalytics?.topEndpoints ?? []} />
+      </PinnableChartCard>
 
       <ApiKeyDetailDialog
         keyId={selectedKey?.id ?? null}

@@ -14,6 +14,7 @@ import type {
   UpdateApiKeyRequest,
   RequestDeletionRequest,
   DeletionResponse,
+  LeaderboardData,
 } from '@/types'
 
 export const meApi = {
@@ -102,12 +103,14 @@ export const meApi = {
     from?: string
     to?: string
     topN?: number
+    perspective?: 'searchActivity' | 'contentInsights'
   }): Promise<MySearchAnalytics> => {
     const searchParams = new URLSearchParams()
     if (params?.period) searchParams.set('period', params.period)
     if (params?.from) searchParams.set('from', params.from)
     if (params?.to) searchParams.set('to', params.to)
     if (params?.topN) searchParams.set('topN', String(params.topN))
+    if (params?.perspective) searchParams.set('perspective', params.perspective)
     const query = searchParams.toString()
     return apiClient.get<MySearchAnalytics>(
       `/admin/me/stats/search-analytics${query ? `?${query}` : ''}`
@@ -151,5 +154,30 @@ export const meApi = {
 
   cancelDeletion: (): Promise<DeletionResponse> => {
     return apiClient.delete<DeletionResponse>('/admin/me/request-deletion')
+  },
+
+  getLeaderboard: (params?: {
+    period?: string
+    topN?: number
+    scope?: 'global' | 'personal'
+    channel?: 'total' | 'api' | 'mcp'
+  }): Promise<LeaderboardData> => {
+    const searchParams = new URLSearchParams()
+    if (params?.period) searchParams.set('period', params.period)
+    if (params?.topN) searchParams.set('topN', String(params.topN))
+    if (params?.scope) searchParams.set('scope', params.scope)
+    if (params?.channel) searchParams.set('channel', params.channel)
+    const query = searchParams.toString()
+    return apiClient.get<LeaderboardData>(
+      `/admin/me/stats/leaderboard${query ? `?${query}` : ''}`
+    )
+  },
+
+  getDashboardPreferences: (): Promise<{ pinnedCharts: string[] }> => {
+    return apiClient.get<{ pinnedCharts: string[] }>('/admin/me/dashboard-preferences')
+  },
+
+  updateDashboardPreferences: (pinnedCharts: string[]): Promise<{ pinnedCharts: string[] }> => {
+    return apiClient.put<{ pinnedCharts: string[] }>('/admin/me/dashboard-preferences', { pinnedCharts })
   },
 }

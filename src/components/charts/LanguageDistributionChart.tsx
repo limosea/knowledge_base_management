@@ -6,12 +6,18 @@ interface LanguageDistributionChartProps {
   data: Array<{ language: string; count: number }>
 }
 
+const MAX_SLICES = 8
+
 const COLORS = [
   'hsl(var(--chart-1))',
   'hsl(var(--chart-2))',
   'hsl(var(--chart-3))',
   'hsl(var(--chart-4))',
   'hsl(var(--chart-5))',
+  'hsl(var(--chart-3) / 0.6)',
+  'hsl(var(--chart-4) / 0.6)',
+  'hsl(var(--chart-5) / 0.6)',
+  'hsl(var(--chart-1) / 0.4)',
 ]
 
 export function LanguageDistributionChart({ data }: LanguageDistributionChartProps) {
@@ -32,6 +38,15 @@ export function LanguageDistributionChart({ data }: LanguageDistributionChartPro
     )
   }
 
+  const top = data.slice(0, MAX_SLICES)
+  const rest = data.slice(MAX_SLICES)
+  const othersCount = rest.reduce((sum, item) => sum + item.count, 0)
+
+  const chartData = [...top]
+  if (rest.length > 0) {
+    chartData.push({ language: t('charts.others', { count: rest.length }), count: othersCount })
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -42,7 +57,7 @@ export function LanguageDistributionChart({ data }: LanguageDistributionChartPro
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={chartData}
                 cx="50%"
                 cy="50%"
                 innerRadius={65}
@@ -52,7 +67,7 @@ export function LanguageDistributionChart({ data }: LanguageDistributionChartPro
                 dataKey="count"
                 nameKey="language"
               >
-                {data.map((_, index) => (
+                {chartData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>

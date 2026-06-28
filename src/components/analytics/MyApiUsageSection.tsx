@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StatCard } from '@/components/charts/StatCard'
 import { TopApiKeysTable } from '@/components/charts/TopApiKeysTable'
+import { PinnableChartCard } from '@/components/charts/PinnableChartCard'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Key } from 'lucide-react'
 import type { StatsFilterState } from '@/components/charts/StatsFilterBar'
@@ -76,9 +77,11 @@ export function MyApiUsageSection({ filter }: MyApiUsageSectionProps) {
           icon={Key}
         />
       </div>
-      <TopApiKeysTable
-        data={usage?.keys.map(k => ({ name: k.apiKeyName, count: k.totalRequests }))}
-      />
+      <PinnableChartCard chartId="top-api-keys" descriptionKey="charts.descriptions.topApiKeys">
+        <TopApiKeysTable
+          data={usage?.keys.map(k => ({ name: k.apiKeyName, count: k.totalRequests }))}
+        />
+      </PinnableChartCard>
       {usage && usage.keys.length > 0 && (
         <Card>
           <CardHeader>

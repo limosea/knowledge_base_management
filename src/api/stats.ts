@@ -56,12 +56,14 @@ export const statsApi = {
     from?: string
     to?: string
     topN?: number
+    perspective?: 'searchActivity' | 'contentInsights'
   }): Promise<SearchAnalytics> => {
     const searchParams = new URLSearchParams()
     if (params?.period) searchParams.set('period', params.period)
     if (params?.from) searchParams.set('from', params.from)
     if (params?.to) searchParams.set('to', params.to)
     if (params?.topN) searchParams.set('topN', String(params.topN))
+    if (params?.perspective) searchParams.set('perspective', params.perspective)
     const query = searchParams.toString()
     return apiClient.get<SearchAnalytics>(`/admin/stats/search-analytics${query ? `?${query}` : ''}`)
   },

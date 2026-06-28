@@ -21,7 +21,9 @@ import {
   MyApiKeysPage,
   RolesPage,
   MessagesPage,
-  MyAnalyticsPage,
+  MyKnowledgeAnalyticsPage,
+  MySearchAnalyticsPage,
+  MyApiAnalyticsPage,
   LibrariesPage,
   LibraryEntriesPage,
   PlazaPage,
@@ -118,7 +120,19 @@ export const router = createBrowserRouter([
       },
       {
         path: '/me/analytics',
-        element: <MyAnalyticsPage />,
+        element: <Navigate to="/me/analytics/knowledge" replace />,
+      },
+      {
+        path: '/me/analytics/knowledge',
+        element: <MyKnowledgeAnalyticsPage />,
+      },
+      {
+        path: '/me/analytics/search',
+        element: <MySearchAnalyticsPage />,
+      },
+      {
+        path: '/me/analytics/api',
+        element: <MyApiAnalyticsPage />,
       },
       {
         path: '/libraries',

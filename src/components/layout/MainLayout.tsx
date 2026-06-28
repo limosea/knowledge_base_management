@@ -32,6 +32,10 @@ import {
   Library,
   Globe,
   AlertTriangle,
+  ChevronDown,
+  BookOpen,
+  Search,
+  KeyRound,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
@@ -42,6 +46,8 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>
   labelKey: string
   permissions?: Permission[]
+  collapsible?: boolean
+  children?: NavItem[]
 }
 
 interface NavSection {
@@ -69,9 +75,14 @@ const navSections: NavSection[] = [
         labelKey: 'nav.messages',
       },
       {
-        path: '/me/analytics',
         icon: BarChart3,
         labelKey: 'nav.myAnalytics',
+        collapsible: true,
+        children: [
+          { path: '/me/analytics/knowledge', icon: BookOpen, labelKey: 'myAnalytics.knowledgeSection' },
+          { path: '/me/analytics/search', icon: Search, labelKey: 'myAnalytics.searchSection' },
+          { path: '/me/analytics/api', icon: KeyRound, labelKey: 'myAnalytics.apiUsageSection' },
+        ],
       },
     ],
   },
@@ -94,7 +105,8 @@ function NavItem({ item, setSidebarOpen }: { item: NavItem; setSidebarOpen: (ope
   const { t } = useTranslation()
   const location = useLocation()
   const Icon = item.icon
-  const isActive = location.pathname === item.path
+  const isActive = location.pathname === item.path ||
+    (item.path !== '/dashboard' && item.path !== undefined && location.pathname.startsWith(item.path))
 
   return (
     <Link
@@ -113,6 +125,74 @@ function NavItem({ item, setSidebarOpen }: { item: NavItem; setSidebarOpen: (ope
   )
 }
 
+function CollapsibleNavItem({
+  item,
+  isCollapsed,
+  onToggle,
+  setSidebarOpen,
+}: {
+  item: NavItem
+  isCollapsed: boolean
+  onToggle: () => void
+  setSidebarOpen: (open: boolean) => void
+}) {
+  const { t } = useTranslation()
+  const location = useLocation()
+  const Icon = item.icon
+
+  const hasActiveChild = item.children?.some(
+    child => location.pathname === child.path || location.pathname.startsWith(child.path! + '/')
+  )
+
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className={cn(
+          'w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+          hasActiveChild ? 'bg-muted text-foreground' : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <Icon className="h-4 w-4" />
+          {t(item.labelKey)}
+        </div>
+        <ChevronDown
+          className={cn(
+            'h-4 w-4 transition-transform duration-200',
+            isCollapsed && '-rotate-90'
+          )}
+        />
+      </button>
+
+      <div className={cn('collapsible-nav-content', isCollapsed && 'collapsed')}>
+        <div className="collapsible-nav-inner ml-4 mt-1 space-y-1">
+          {item.children?.map((child) => {
+            const ChildIcon = child.icon
+            const isActive = location.pathname === child.path
+            return (
+              <Link
+                key={child.path}
+                to={child.path!}
+                onClick={() => setSidebarOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm',
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <ChildIcon className="h-4 w-4" />
+                {t(child.labelKey)}
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function MainLayout() {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
@@ -122,6 +202,19 @@ export function MainLayout() {
   const { canAccessElevated, loading, isElevated, revokeElevation } = usePermission()
   const [showElevationDialog, setShowElevationDialog] = useState(false)
   const wasElevatedRef = useRef(false)
+
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => {
+    const stored = localStorage.getItem('nav-collapsed-state')
+    return stored ? JSON.parse(stored) : {}
+  })
+
+  const toggleCollapse = (key: string) => {
+    setCollapsedSections(prev => {
+      const newState = { ...prev, [key]: !prev[key] }
+      localStorage.setItem('nav-collapsed-state', JSON.stringify(newState))
+      return newState
+    })
+  }
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const displayName = user.nickname || user.username
@@ -225,9 +318,20 @@ export function MainLayout() {
                 {t(section.titleKey)}
               </h3>
               <div className="space-y-1">
-                {section.items.map((item) => (
-                  <NavItem key={item.path} item={item} setSidebarOpen={setSidebarOpen} />
-                ))}
+                {section.items.map((item) => {
+                  if (item.collapsible && item.children) {
+                    return (
+                      <CollapsibleNavItem
+                        key={item.labelKey}
+                        item={item}
+                        isCollapsed={collapsedSections[item.labelKey] === true}
+                        onToggle={() => toggleCollapse(item.labelKey)}
+                        setSidebarOpen={setSidebarOpen}
+                      />
+                    )
+                  }
+                  return <NavItem key={item.path} item={item} setSidebarOpen={setSidebarOpen} />
+                })}
               </div>
             </div>
           ))}
