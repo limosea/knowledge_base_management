@@ -280,14 +280,34 @@ export interface ResetPasswordResponse {
 
 export interface AuditLog {
   id: string
-  action: string
-  resourceType: string
-  resourceId?: string
-  details?: Record<string, unknown>
-  ipAddress?: string
-  userAgent?: string
-  apiKeyId?: string
+  // Who
+  actorType: 'admin_user' | 'api_key' | 'system'
+  actorId?: string | null
+  actorName?: string | null
+  actorRole?: 'user' | 'admin' | 'super_admin' | null
+  // When
   createdAt: string
+  // Where
+  ipAddress?: string | null
+  // What
+  action: string
+  resourceType?: string | null
+  resourceId?: string | null
+  details?: Record<string, unknown> | null
+  // How
+  source: 'admin_panel' | 'public_api' | 'mcp' | 'system'
+  userAgent?: string | null
+  clientInfo?: {
+    mcpClient?: string
+    clientVersion?: string
+    apiKeyId?: string
+    apiKeyName?: string
+    requestId?: string
+  } | null
+  // Result
+  httpStatusCode?: number | null
+  status?: 'success' | 'failure' | 'error' | null
+  errorMessage?: string | null
 }
 
 export type AuditLogListResponse = PaginatedResponse<AuditLog>
