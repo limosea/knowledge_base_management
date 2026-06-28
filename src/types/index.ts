@@ -34,6 +34,8 @@ export interface LoginResponse {
   tokenType: string
   expiresIn: number
   requirePasswordChange?: boolean
+  requireUsernameChange?: boolean
+  usernameResetAvailable?: boolean
   user: {
     id: string
     username: string
@@ -68,6 +70,9 @@ export interface AdminProfile {
   permissions: Permission[]
   mfaEnabled: boolean
   createdAt: string
+  usernameChangedAt?: string | null
+  requireUsernameChange?: boolean
+  usernameResetAvailable?: boolean
 }
 
 export interface UpdateProfileRequest {
@@ -78,6 +83,26 @@ export interface UpdateProfileRequest {
 export interface ChangePasswordRequest {
   currentPassword: string
   newPassword: string
+}
+
+/**
+ * One-time self-service username reset.
+ *
+ * A user may reset their username at most once. After a successful
+ * reset, all of the user's sessions are invalidated and they must log
+ * in again with the new username. The response echoes the new username
+ * and a flag indicating no further resets are available.
+ */
+export interface UpdateUsernameRequest {
+  newUsername: string
+}
+
+export interface UpdateUsernameResponse {
+  id: string
+  username: string
+  usernameChangedAt: string
+  usernameResetAvailable: boolean
+  message: string
 }
 
 export interface MfaSetupResponse {
@@ -252,16 +277,41 @@ export interface AdminUserSummary {
   deletionStatus?: string | null
   deletionRequestedAt?: string | null
   createdAt: string
+  usernameChangedAt?: string | null
+  requireUsernameChange?: boolean
 }
 
 export type AdminUserListResponse = PaginatedResponse<AdminUserSummary>
 
+/**
+ * Admin user creation request.
+ *
+ * Per the user-management refactor, the caller no longer supplies
+ * `username`, `nickname`, or `password` — those are randomly generated
+ * by the backend and returned exactly once in `CreateAdminUserResponse`.
+ * The caller only picks `role` (super_admin only) and optional `email`.
+ */
 export interface CreateAdminUserRequest {
-  username: string
-  password: string
   email?: string
-  nickname?: string
   role?: AdminRole
+}
+
+/**
+ * Response from admin user creation. Carries the one-time plaintext
+ * credentials (`username`, `nickname`, `initialPassword`) that the
+ * creating admin must save and hand to the new user out-of-band.
+ */
+export interface CreateAdminUserResponse {
+  id: string
+  username: string
+  nickname: string
+  email?: string
+  role: AdminRole
+  createdAt: string
+  initialPassword: string
+  requirePasswordChange: boolean
+  usernameResetAvailable: boolean
+  message: string
 }
 
 export interface UpdateAdminUserRequest {
@@ -284,6 +334,14 @@ export interface AuditLog {
   actorType: 'admin_user' | 'api_key' | 'system'
   actorId?: string | null
   actorName?: string | null
+  // Stable snapshot of the actor's nickname at audit time — survives
+  // subsequent nickname changes so historical logs stay readable.
+  actorNickname?: string | null
+  // 'standard' for real admin_users, 'test' for time-limited test
+  // accounts. Surfaced in the audit UI so admins can tell at a glance
+  // whether an action was performed by a real user or a throwaway
+  // test account.
+  actorAccountType?: 'standard' | 'test' | null
   actorRole?: 'user' | 'admin' | 'super_admin' | null
   // When
   createdAt: string
@@ -782,3 +840,52 @@ export interface LeaderboardData {
 
 export * from './roles'
 export * from './elevation'
+
+// ==================== Test Accounts API Types ====================
+//
+// Test accounts are time-limited, manually-deactivatable accounts kept
+// in a physically separate `test_accounts` table so they never leak
+// into public-data queries (plaza / leaderboards / public library
+// listings). Only super_admin can create / list / deactivate / delete
+// them. The plaintext password is returned EXACTLY ONCE on creation.
+
+export interface TestAccount {
+  id: string
+  username: string
+  nickname: string
+  permissions: string[]
+  isActive: boolean
+  expiresAt: string
+  lastLoginAt?: string | null
+  createdAt: string
+  createdBy?: string | null
+}
+
+export type TestAccountListResponse = PaginatedResponse<TestAccount>
+
+/**
+ * Create-test-account request. The backend randomly generates
+ * `username`, `nickname`, and the initial `password`; the plaintext
+ * password is returned exactly once in `CreateTestAccountResponse`.
+ *
+ * `expiresInSeconds` controls the hard expiry — after this many
+ * seconds the account is auto-deactivated by the scheduled sweep
+ * (and lazily on the next login / JWT-validation attempt).
+ */
+export interface CreateTestAccountRequest {
+  expiresInSeconds: number
+  permissions?: string[]
+  note?: string
+}
+
+export interface CreateTestAccountResponse {
+  id: string
+  username: string
+  nickname: string
+  permissions: string[]
+  isActive: boolean
+  expiresAt: string
+  createdAt: string
+  initialPassword: string
+  message: string
+}

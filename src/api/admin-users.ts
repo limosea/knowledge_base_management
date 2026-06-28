@@ -3,6 +3,7 @@ import type {
   AdminUserSummary,
   AdminUserListResponse,
   CreateAdminUserRequest,
+  CreateAdminUserResponse,
   UpdateAdminUserRequest,
   ResetPasswordResponse,
   DeletionResponse,
@@ -41,8 +42,8 @@ export const adminUsersApi = {
     return apiClient.get<AdminUserSummary>(`/admin/users/${id}`)
   },
 
-  create: (data: CreateAdminUserRequest): Promise<AdminUserSummary> => {
-    return apiClient.post<AdminUserSummary>('/admin/users', data)
+  create: (data: CreateAdminUserRequest): Promise<CreateAdminUserResponse> => {
+    return apiClient.post<CreateAdminUserResponse>('/admin/users', data)
   },
 
   update: (id: string, data: UpdateAdminUserRequest): Promise<AdminUserSummary> => {

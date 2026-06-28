@@ -15,6 +15,8 @@ import type {
   RequestDeletionRequest,
   DeletionResponse,
   LeaderboardData,
+  UpdateUsernameRequest,
+  UpdateUsernameResponse,
 } from '@/types'
 
 export const meApi = {
@@ -179,5 +181,17 @@ export const meApi = {
 
   updateDashboardPreferences: (pinnedCharts: string[]): Promise<{ pinnedCharts: string[] }> => {
     return apiClient.put<{ pinnedCharts: string[] }>('/admin/me/dashboard-preferences', { pinnedCharts })
+  },
+
+  /**
+   * One-time self-service username reset.
+   *
+   * The backend tracks `username_changed_at`: NULL means the user may
+   * still reset their username once. After a successful reset all
+   * sessions are invalidated and the user must log in again with the
+   * new username.
+   */
+  updateUsername: (data: UpdateUsernameRequest): Promise<UpdateUsernameResponse> => {
+    return apiClient.put<UpdateUsernameResponse>('/admin/auth/username', data)
   },
 }

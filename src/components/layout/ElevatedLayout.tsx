@@ -37,6 +37,7 @@ import {
   ShieldOff,
   Clock,
   Globe,
+  FlaskConical,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
@@ -66,6 +67,15 @@ const navSections: NavSection[] = [
         icon: Users,
         labelKey: 'nav.userManagement',
         permissions: ['users:list'],
+      },
+      {
+        // Super-admin-only sandbox for time-limited test accounts.
+        // Kept out of the regular user list so test credentials never
+        // leak into day-to-day user management views.
+        path: '/elevated/test-accounts',
+        icon: FlaskConical,
+        labelKey: 'nav.testAccounts',
+        superAdminOnly: true,
       },
       {
         path: '/elevated/roles',

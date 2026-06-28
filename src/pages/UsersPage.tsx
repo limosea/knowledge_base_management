@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { adminUsersApi, adminRolesApi } from '@/api'
-import type { AdminUserSummary, UpdateAdminUserRequest, ResetPasswordResponse, AdminRole } from '@/types'
+import type { AdminUserSummary, UpdateAdminUserRequest, ResetPasswordResponse, AdminRole, CreateAdminUserResponse } from '@/types'
 import type { Role } from '@/types/roles'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
 import { usePermission } from '@/contexts/PermissionContext'
@@ -44,7 +44,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { Plus, Pencil, KeyRound, Ban, CheckCircle, UserX, Search, BarChart3, PowerOff, ShieldCheck } from 'lucide-react'
+import { Plus, Pencil, KeyRound, Ban, CheckCircle, UserX, Search, BarChart3, PowerOff, ShieldCheck, Copy, Check, AlertTriangle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export function UsersPage() {
@@ -76,14 +76,19 @@ export function UsersPage() {
   const [resetResult, setResetResult] = useState<ResetPasswordResponse | null>(null)
   const [roles, setRoles] = useState<Role[]>([])
 
+  // One-time credentials returned by the create endpoint. When non-null,
+  // the create dialog switches from the input form to a "save these now"
+  // reveal view. Cleared when the dialog closes.
+  const [createResult, setCreateResult] = useState<CreateAdminUserResponse | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+
   // Audit state
   const [auditDialogOpen, setAuditDialogOpen] = useState(false)
   const [auditData, setAuditData] = useState<any>(null)
   const [auditLoading, setAuditLoading] = useState(false)
 
   const [formData, setFormData] = useState({
-    username: '',
-    password: '',
     email: '',
     role: 'user' as AdminRole,
     rateLimit: 1000,
@@ -148,19 +153,16 @@ export function UsersPage() {
   }
 
   const handleCreate = async () => {
+    setCreating(true)
     try {
-      await adminUsersApi.create({
-        username: formData.username,
-        password: formData.password,
+      const result = await adminUsersApi.create({
         email: formData.email || undefined,
         role: formData.role,
       })
-      toast({
-        title: t('common.success'),
-        description: 'User created successfully',
-      })
-      setCreateDialogOpen(false)
-      setFormData({ username: '', password: '', email: '', role: 'user', rateLimit: 1000 })
+      // One-time credentials — surface them in the dialog's "reveal"
+      // step. The admin must save / copy them now; they are not
+      // retrievable afterwards.
+      setCreateResult(result)
       fetchUsers()
     } catch (error) {
       toast({
@@ -168,14 +170,31 @@ export function UsersPage() {
         description: 'Failed to create user',
         variant: 'destructive',
       })
+    } finally {
+      setCreating(false)
     }
+  }
+
+  const copyToClipboard = async (field: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedField(field)
+      toast({ title: t('common.success'), description: t('users.copied', '已复制') })
+      setTimeout(() => setCopiedField(null), 1500)
+    } catch {
+      toast({ title: t('common.error'), description: t('users.copyFailed', '复制失败'), variant: 'destructive' })
+    }
+  }
+
+  const closeCreateDialog = () => {
+    setCreateDialogOpen(false)
+    setCreateResult(null)
+    setFormData({ email: '', role: 'user', rateLimit: 1000 })
   }
 
   const handleEdit = (user: AdminUserSummary) => {
     setCurrentUser(user)
     setFormData({
-      username: user.username,
-      password: '',
       email: user.email || '',
       role: user.role,
       rateLimit: user.rateLimit ?? 1000,
@@ -413,7 +432,7 @@ export function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('users.username')}</TableHead>
+                  <TableHead>{t('users.nickname', '昵称')}</TableHead>
                   <TableHead>{t('users.email')}</TableHead>
                   <TableHead>{t('users.role')}</TableHead>
                   <TableHead>{t('apiKeys.rateLimit')}</TableHead>
@@ -427,7 +446,18 @@ export function UsersPage() {
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.nickname || user.username}</TableCell>
+                    <TableCell>
+                      {/* Public-facing nickname (large) + login username (small). */}
+                      <div className="flex flex-col">
+                        <span className="font-medium leading-tight">{user.nickname || user.username}</span>
+                        <span className="text-xs text-muted-foreground leading-tight">@{user.username}</span>
+                        {user.requireUsernameChange && (
+                          <Badge variant="outline" className="mt-1 w-fit text-xs border-orange-400 text-orange-600">
+                            {t('users.usernameResetRequired', '需重设用户名')}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{user.email || '-'}</TableCell>
                     <TableCell>
                       <Badge variant={user.role === 'super_admin' ? 'default' : user.role === 'admin' ? 'secondary' : 'outline'}>
@@ -589,65 +619,109 @@ export function UsersPage() {
         </CardContent>
       </Card>
 
-      {/* Create Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+      {/* Create Dialog — two-step: form → one-time credentials reveal */}
+      <Dialog open={createDialogOpen} onOpenChange={(open) => { if (!open) closeCreateDialog(); else setCreateDialogOpen(true) }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('users.create')}</DialogTitle>
+            <DialogTitle>
+              {createResult ? t('users.credentialsCreated', '账号已创建 — 请立即保存') : t('users.create')}
+            </DialogTitle>
+            {createResult && (
+              <DialogDescription>
+                {t('users.credentialsOnceWarning', '以下凭据仅显示一次，关闭后将无法再次查看。请立即复制或保存。')}
+              </DialogDescription>
+            )}
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">{t('users.username')}</Label>
-              <Input
-                id="username"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              />
+          {!createResult ? (
+            <>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">{t('users.email')}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t('users.createAutoGenHint', '用户名、昵称和初始密码将由系统随机生成，创建后展示一次。')}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">{t('users.role')}</Label>
+                  <select
+                    id="role"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminRole })}
+                  >
+                    {roles.length > 0
+                      ? roles.map(r => <option key={r.id} value={r.name}>{r.name}</option>)
+                      : <>
+                        <option value="user">{t('users.user')}</option>
+                        <option value="admin">{t('users.admin')}</option>
+                        <option value="super_admin">{t('users.superAdmin')}</option>
+                      </>
+                    }
+                  </select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={closeCreateDialog}>
+                  {t('common.cancel')}
+                </Button>
+                <Button onClick={handleCreate} disabled={creating}>
+                  {creating ? t('common.creating', '创建中...') : t('common.create')}
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <div className="py-4 space-y-4">
+              <div className="rounded-md border border-orange-300 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-800 p-3 flex gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-orange-800 dark:text-orange-200">
+                  {t('users.credentialsOnceWarning', '以下凭据仅显示一次，关闭后将无法再次查看。请立即复制或保存。')}
+                </p>
+              </div>
+              <div className="space-y-3">
+                {([
+                  { field: 'username', label: t('users.username', '用户名'), value: createResult.username },
+                  { field: 'nickname', label: t('users.nickname', '昵称'), value: createResult.nickname },
+                  { field: 'password', label: t('auth.password', '密码'), value: createResult.initialPassword },
+                ] as const).map(({ field, label, value }) => (
+                  <div key={field} className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">{label}</Label>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 block p-2 bg-muted rounded text-sm font-mono break-all">
+                        {value}
+                      </code>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => copyToClipboard(field, value)}
+                        title={t('common.copy', '复制')}
+                      >
+                        {copiedField === field ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
+                <p>{t('users.requirePasswordChangeHint', '该用户首次登录时必须修改密码。')}</p>
+                <p>{t('users.usernameResetOnceHint', '该用户有一次重新设置用户名的机会，之后不可再改；昵称可随时自由修改。')}</p>
+              </div>
+              <DialogFooter>
+                <Button onClick={closeCreateDialog} className="w-full">
+                  {t('users.iHaveSaved', '我已保存，关闭')}
+                </Button>
+              </DialogFooter>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">{t('auth.password')}</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">{t('users.passwordRequirements')}</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">{t('users.email')}</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">{t('users.role')}</Label>
-              <select
-                id="role"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value as AdminRole })}
-              >
-                {roles.length > 0
-                  ? roles.map(r => <option key={r.id} value={r.name}>{r.name}</option>)
-                  : <>
-                    <option value="user">{t('users.user')}</option>
-                    <option value="admin">{t('users.admin')}</option>
-                    <option value="super_admin">{t('users.superAdmin')}</option>
-                  </>
-                }
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button onClick={handleCreate}>{t('common.create')}</Button>
-          </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
 

@@ -190,9 +190,15 @@ function AuditLogOverview({ log }: { log: AuditLog }) {
   const roleLabel = log.actorRole
     ? (ROLE_LABELS[log.actorRole] ? t(ROLE_LABELS[log.actorRole]) : log.actorRole)
     : undefined
-  const whoValue = [log.actorName, roleLabel]
-    .filter(Boolean)
-    .join(' · ') || t(`auditLogs.actorType_${log.actorType}`)
+  // Who = username (primary). Nickname is shown as the sub-line so the
+  // historical display name snapshot is preserved even if the actor
+  // later renames. A "Test" tag is appended for test-account actors.
+  const whoValue = log.actorName || t(`auditLogs.actorType_${log.actorType}`)
+  const whoSub = [
+    log.actorNickname,
+    log.actorAccountType === 'test' ? t('auditLogs.testAccount', '测试号') : null,
+    log.actorId,
+  ].filter(Boolean).join(' · ') || undefined
 
   const resourceValue = [log.resourceType, log.resourceId]
     .filter(Boolean)
@@ -212,6 +218,11 @@ function AuditLogOverview({ log }: { log: AuditLog }) {
           <HttpStatusBadge code={log.httpStatusCode} />
         )}
         <SourceBadge source={log.source} />
+        {roleLabel && (
+          <Badge variant={log.actorRole === 'super_admin' ? 'default' : log.actorRole === 'admin' ? 'secondary' : 'outline'} className="text-xs">
+            {roleLabel}
+          </Badge>
+        )}
       </div>
 
       {log.errorMessage && (
@@ -226,7 +237,7 @@ function AuditLogOverview({ log }: { log: AuditLog }) {
           color="blue"
           label={t('auditLogs.who')}
           value={whoValue}
-          sub={log.actorId || undefined}
+          sub={whoSub}
         />
         <SectionCard
           icon={<Clock className="h-4 w-4" />}

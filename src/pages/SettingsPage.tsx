@@ -8,8 +8,12 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Shield, ShieldOff, Copy, Check, Trash2 } from 'lucide-react'
+import { Loader2, Shield, ShieldOff, Copy, Check, Trash2, UserCog, AlertTriangle } from 'lucide-react'
 import type { AdminProfile, MfaSetupResponse } from '@/types'
+
+// Mirrors the backend USERNAME_REGEX / policy so the client can give
+// immediate feedback before round-tripping to the server.
+const USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_.@-]{2,31}$/
 
 export function SettingsPage() {
   const { t } = useTranslation()
@@ -24,6 +28,15 @@ export function SettingsPage() {
   const [deletionMfaCode, setDeletionMfaCode] = useState('')
   const [deletionLoading, setDeletionLoading] = useState(false)
   const [deletionPending, setDeletionPending] = useState(false)
+
+  // One-time username reset state. `usernameResetAvailable` is sourced
+  // from the profile (`usernameChangedAt` is NULL ⇒ available). Once
+  // the user submits a new username, the backend invalidates all
+  // sessions — we surface a "please log in again" notice instead of
+  // silently refreshing.
+  const [newUsername, setNewUsername] = useState('')
+  const [usernameResetLoading, setUsernameResetLoading] = useState(false)
+  const [usernameResetDone, setUsernameResetDone] = useState(false)
 
   useEffect(() => {
     loadProfile()
@@ -149,6 +162,45 @@ export function SettingsPage() {
     }
   }
 
+  const handleResetUsername = async () => {
+    const trimmed = newUsername.trim()
+    if (!trimmed) return
+    if (!USERNAME_REGEX.test(trimmed)) {
+      toast({
+        title: t('common.error'),
+        description: t('settings.usernameResetInvalid', '用户名格式无效：3-32 字符，以字母开头，仅允许字母、数字、_ . @ -'),
+        variant: 'destructive',
+      })
+      return
+    }
+    if (trimmed === profile?.username) {
+      toast({
+        title: t('common.error'),
+        description: t('settings.usernameResetSame', '新用户名不能与当前用户名相同'),
+        variant: 'destructive',
+      })
+      return
+    }
+    setUsernameResetLoading(true)
+    try {
+      await meApi.updateUsername({ newUsername: trimmed })
+      setUsernameResetDone(true)
+      toast({
+        title: t('common.success'),
+        description: t('settings.usernameResetSuccess', '用户名已更新，请使用新用户名重新登录'),
+      })
+    } catch (error: unknown) {
+      const err = error as { error?: { message?: string } }
+      toast({
+        title: t('common.error'),
+        description: err?.error?.message || t('settings.usernameResetError', '用户名重设失败'),
+        variant: 'destructive',
+      })
+    } finally {
+      setUsernameResetLoading(false)
+    }
+  }
+
   const handleRequestDeletion = async () => {
     if (!deletionMfaCode || deletionMfaCode.length < 6) return
     setDeletionLoading(true)
@@ -226,6 +278,96 @@ export function SettingsPage() {
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Username Reset Card */}
+      {/*
+        One-time username reset. Available iff `usernameChangedAt` is
+        null (i.e. the account was admin-created with a random
+        username and never renamed). After a successful reset the
+        backend revokes all sessions, so we show a "log in again"
+        notice and hide the form. Admins who created their own
+        username at signup (usernameResetAvailable === false) see a
+        locked, read-only state explaining that the username is
+        immutable.
+      */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserCog className="h-5 w-5" />
+            {t('settings.usernameResetTitle', '重设用户名')}
+          </CardTitle>
+          <CardDescription>
+            {t('settings.usernameResetDescription', '用户名用于登录与管理审计，仅可重设一次。重设成功后所有会话将立即失效，请使用新用户名重新登录。')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-muted-foreground">{t('users.username')}</Label>
+              <p className="font-medium font-mono">{profile?.username}</p>
+            </div>
+            <div>
+              <Label className="text-muted-foreground">{t('settings.usernameResetStatus', '重设状态')}</Label>
+              <p className="font-medium">
+                {profile?.usernameChangedAt ? (
+                  <Badge variant="outline" className="border-muted-foreground/40 text-muted-foreground">
+                    {t('settings.usernameResetUsed', '已使用 · {{date}}', { date: new Date(profile.usernameChangedAt).toLocaleDateString() })}
+                  </Badge>
+                ) : profile?.requireUsernameChange ? (
+                  <Badge variant="outline" className="border-orange-400 text-orange-600">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    {t('settings.usernameResetRequired', '需重设')}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-green-500 text-green-600">
+                    {t('settings.usernameResetAvailable', '可用')}
+                  </Badge>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {usernameResetDone ? (
+            <div className="rounded-md border border-green-500/50 bg-green-500/5 p-3 text-sm text-green-700 dark:text-green-400">
+              {t('settings.usernameResetDoneNotice', '用户名已更新。当前会话已失效，请使用新用户名重新登录。')}
+            </div>
+          ) : profile?.usernameChangedAt || profile?.usernameResetAvailable === false ? (
+            <p className="text-sm text-muted-foreground">
+              {t('settings.usernameResetLocked', '您的用户名已不可修改。用户名是稳定的登录与审计标识，仅可在首次重设机会内修改一次。')}
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {profile?.requireUsernameChange && (
+                <div className="rounded-md border border-orange-500/50 bg-orange-500/5 p-3 text-sm text-orange-700 dark:text-orange-400">
+                  {t('settings.usernameResetRequiredNotice', '您的账号由管理员创建并分配了随机用户名，请尽快重设为便于记忆的用户名。')}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="newUsername">{t('settings.newUsername', '新用户名')}</Label>
+                <Input
+                  id="newUsername"
+                  type="text"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  placeholder="3-32 chars, start with a letter"
+                  maxLength={32}
+                  autoComplete="off"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t('settings.usernameRules', '3-32 字符，以字母开头，仅允许字母、数字、_ . @ -')}
+                </p>
+              </div>
+              <Button
+                onClick={handleResetUsername}
+                disabled={usernameResetLoading || !newUsername.trim() || !USERNAME_REGEX.test(newUsername.trim())}
+              >
+                {usernameResetLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('settings.usernameResetButton', '重设用户名')}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -11,6 +11,7 @@ import {
   CategoriesPage,
   ApiKeysPage,
   UsersPage,
+  TestAccountsPage,
   AuditLogsPage,
   SystemPage,
   KnowledgeAnalyticsPage,
@@ -156,6 +157,14 @@ export const router = createBrowserRouter([
             <UsersPage />
           </PermissionRoute>
         ),
+      },
+      {
+        // Test accounts are physically isolated from real admin users
+        // and only super_admin may create/manage them. Gated by
+        // `superAdminOnly` in the nav (see ElevatedLayout) plus the
+        // backend `@Roles('super_admin')` guard on the controller.
+        path: '/elevated/test-accounts',
+        element: <TestAccountsPage />,
       },
       {
         path: '/elevated/roles',

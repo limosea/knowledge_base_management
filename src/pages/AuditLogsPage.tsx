@@ -46,6 +46,7 @@ import {
   ChevronRight,
   Eye,
   Info,
+  Shield,
 } from 'lucide-react'
 
 const ACTOR_TYPE_OPTIONS = [
@@ -278,8 +279,11 @@ export function AuditLogsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[120px]">
+                    <TableHead className="w-[150px]">
                       <HeaderCell icon={<User className="h-3.5 w-3.5" />} label={t('auditLogs.who')} tooltip={t('auditLogs.whoTooltip')} />
+                    </TableHead>
+                    <TableHead className="w-[100px]">
+                      <HeaderCell icon={<Shield className="h-3.5 w-3.5" />} label={t('auditLogs.role', '角色')} tooltip={t('auditLogs.roleTooltip', '操作者的角色')} />
                     </TableHead>
                     <TableHead className="w-[110px]">
                       <HeaderCell icon={<Clock className="h-3.5 w-3.5" />} label={t('auditLogs.when')} tooltip={t('auditLogs.whenTooltip')} />
@@ -307,16 +311,39 @@ export function AuditLogsPage() {
                       onClick={() => setDetailLogId(log.id)}
                     >
                       <TableCell className="py-3 align-middle">
+                        {/*
+                          Audit context: username is the stable login
+                          identifier (large), nickname is the public
+                          display name snapshot (small). For api_key /
+                          system actors there is no nickname — fall back
+                          to the actor-type label. A "Test" pill marks
+                          rows produced by time-limited test accounts so
+                          admins can distinguish them from real users.
+                        */}
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-medium truncate max-w-[110px]">
+                          <span className="text-sm font-medium truncate max-w-[140px]">
                             {log.actorName || t(`auditLogs.actorType_${log.actorType}`)}
                           </span>
-                          {log.actorRole && (
-                            <span className="text-[11px] text-muted-foreground">
-                              {ROLE_LABELS[log.actorRole] ? t(ROLE_LABELS[log.actorRole]) : log.actorRole}
+                          {log.actorNickname && (
+                            <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">
+                              {log.actorNickname}
                             </span>
                           )}
+                          {log.actorAccountType === 'test' && (
+                            <Badge variant="outline" className="w-fit text-[10px] h-4 px-1 border-amber-400 text-amber-600">
+                              {t('auditLogs.testAccount', '测试号')}
+                            </Badge>
+                          )}
                         </div>
+                      </TableCell>
+                      <TableCell className="py-3 align-middle">
+                        {log.actorRole ? (
+                          <Badge variant={log.actorRole === 'super_admin' ? 'default' : log.actorRole === 'admin' ? 'secondary' : 'outline'} className="text-[11px] h-5">
+                            {ROLE_LABELS[log.actorRole] ? t(ROLE_LABELS[log.actorRole]) : log.actorRole}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell className="py-3 align-middle">
                         <TimeCell date={log.createdAt} />
