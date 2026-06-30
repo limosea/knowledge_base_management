@@ -159,13 +159,62 @@
   .code-scroll {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
-    overscroll-behavior: none;
   }
 
   .code-scroll pre,
   .code-scroll code {
     white-space: pre !important;
     min-width: min-content;
+  }
+
+  /* Sticky line numbers for syntax highlighter - using flex layout */
+  .code-scroll .syntax-highlighter-wrapper {
+    display: flex;
+    min-height: 100%;
+  }
+
+  .code-scroll .line-numbers {
+    flex-shrink: 0;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: hsl(var(--muted) / 0.95);
+    backdrop-filter: blur(4px);
+    border-right: 1px solid hsl(var(--border) / 0.5);
+    user-select: none;
+  }
+
+  .code-scroll .line-number {
+    padding: 0 1rem;
+    line-height: 1.5;
+    font-size: 0.875rem;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    color: hsl(var(--muted-foreground));
+    text-align: right;
+  }
+
+  .code-scroll .line-number:first-child {
+    padding-top: 1rem;
+  }
+
+  .code-scroll .line-number:last-child {
+    padding-bottom: 1rem;
+  }
+
+  .code-scroll .code-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .code-scroll .code-content pre {
+    margin: 0 !important;
+    padding: 1rem !important;
+    background: transparent !important;
+  }
+
+  .code-scroll .code-content code {
+    line-height: 1.5 !important;
+    font-size: 0.875rem !important;
   }
 
   /* Collapsible nav animation */
