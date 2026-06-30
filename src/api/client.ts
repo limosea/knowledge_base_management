@@ -116,7 +116,16 @@ class ApiClient {
         })
         return this.handleResponse<T>(retryResponse)
       }
-      window.location.href = '/login'
+      // Avoid an infinite reload loop: if we are already on /login
+      // (or the MFA / change-password auth routes), don't trigger
+      // another full-page navigation. The caller can handle the
+      // thrown error (or just stay on the page).
+      const path = window.location.pathname
+      const onAuthRoute =
+        path === '/login' || path === '/login/mfa' || path === '/change-password'
+      if (!onAuthRoute) {
+        window.location.href = '/login'
+      }
       throw new Error('Unauthorized')
     }
 

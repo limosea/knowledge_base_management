@@ -154,9 +154,6 @@ export function AuditLogsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">{t('auditLogs.title')}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t('auditLogs.subtitle')}
-            </p>
           </div>
           <Button onClick={() => setExportOpen(true)}>
             <Download className="h-4 w-4 mr-2" />
@@ -288,7 +285,7 @@ export function AuditLogsPage() {
                     <TableHead className="w-[110px]">
                       <HeaderCell icon={<Clock className="h-3.5 w-3.5" />} label={t('auditLogs.when')} tooltip={t('auditLogs.whenTooltip')} />
                     </TableHead>
-                    <TableHead>
+                    <TableHead className="w-[110px]">
                       <HeaderCell icon={<Zap className="h-3.5 w-3.5" />} label={t('auditLogs.what')} tooltip={t('auditLogs.whatTooltip')} />
                     </TableHead>
                     <TableHead className="w-[120px]">
@@ -324,11 +321,13 @@ export function AuditLogsPage() {
                           <span className="text-sm font-medium truncate max-w-[140px]">
                             {log.actorName || t(`auditLogs.actorType_${log.actorType}`)}
                           </span>
-                          {log.actorNickname && (
+                          {log.actorNickname ? (
                             <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">
-                              {log.actorNickname}
+                              @{log.actorNickname}
                             </span>
-                          )}
+                          ) : 
+                            <span className="text-xs text-muted-foreground">-</span>
+                        }
                           {log.actorAccountType === 'test' && (
                             <Badge variant="outline" className="w-fit text-[10px] h-4 px-1 border-amber-400 text-amber-600">
                               {t('auditLogs.testAccount', '测试号')}

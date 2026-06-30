@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { usePermission } from '@/contexts/PermissionContext'
 import { ElevationDialog } from './ElevationDialog'
@@ -10,6 +10,7 @@ interface ElevationRouteProps {
 export function ElevationRoute({ children }: ElevationRouteProps) {
   const { isElevated, canAccessElevated, loading, elevation, revokeElevation, refreshElevationStatus } = usePermission()
   const navigate = useNavigate()
+  const confirmExpiryRef = useRef(false)
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const userActive = user.isActive !== false
@@ -28,11 +29,24 @@ export function ElevationRoute({ children }: ElevationRouteProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isElevated()])
 
-  // Auto-redirect when elevation expires (remainingSeconds hits 0)
+  // Auto-redirect when elevation expires (remainingSeconds hits 0).
+  // First time we see 0: confirm with the server (sliding-window may
+  // have extended the elevation). If the server still says 0 after the
+  // refresh, the effect fires again and we revoke for real.
   useEffect(() => {
     if (elevation.elevated && (elevation.remainingSeconds ?? 0) <= 0) {
+      if (!confirmExpiryRef.current) {
+        // First hit: ask the server before revoking
+        confirmExpiryRef.current = true
+        refreshElevationStatus()
+        return
+      }
+      // Server confirmed: elevation is truly expired
       revokeElevation()
       navigate('/dashboard', { replace: true })
+    } else {
+      // Elevation is valid (remainingSeconds > 0), reset the flag
+      confirmExpiryRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elevation.remainingSeconds])

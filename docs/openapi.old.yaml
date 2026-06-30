@@ -74,7 +74,7 @@ info:
     2. 若 `mfaEnabled=false`，引导用户完成 `POST /admin/auth/mfa/setup` + `enable`。
     3. 用户点击"进入高级控制台"→前端弹出 TOTP 输入框→
        `POST /admin/elevation/step-up { code: '123456' }`。
-    4. 成功后 `session.elevated_until = NOW() + 15 分钟`，前端显示高级入口。
+    4. 成功后 `session.elevated_until = NOW() + 30 分钟`，前端显示高级入口。
     5. 用户可随时调用 `POST /admin/elevation/revoke` 退出。
 
     受保护的高级路由在未提权时返回 `403 ELEVATION_REQUIRED`：
@@ -147,7 +147,7 @@ tags:
   - name: Admin Elevation
     description: |
       高级控制台的 step-up 提权接口。用户在从"个人控制台"切换到"高级控制台"时
-      必须通过 TOTP 重新验证，服务端在会话上写入 `elevated_until`（默认 15 分钟）。
+      必须通过 TOTP 重新验证，服务端在会话上写入 `elevated_until`（默认 30 分钟）。
       高级控制台的受保护路由通过 `@RequireElevated()` 守卫拒绝未提权的请求（403
       `ELEVATION_REQUIRED`）。MFA 是提权的前置条件。
   - name: Admin API Keys
@@ -1251,7 +1251,7 @@ paths:
                     format: date-time
                   expiresIn:
                     type: integer
-                    description: 剩余秒数（默认 900）
+                    description: 剩余秒数（默认 1800）
         '403':
           description: TOTP 码无效
           content:
