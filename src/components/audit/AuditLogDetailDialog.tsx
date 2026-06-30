@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -37,6 +37,55 @@ const ROLE_LABELS: Record<string, string> = {
   user: "users.user",
 };
 
+function useBidirectionalScroll<T extends HTMLElement>() {
+  const elRef = useRef<T>(null);
+
+  useEffect(() => {
+    const el = elRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaX !== 0) return;
+
+      const hasH = el.scrollWidth > el.clientWidth;
+      const hasV = el.scrollHeight > el.clientHeight;
+
+      if (!hasH && !hasV) return;
+
+      const canScrollUp = el.scrollTop > 0;
+      const canScrollDown =
+        Math.ceil(el.scrollTop + el.clientHeight) < el.scrollHeight;
+
+      // 垂直方向还有空间时阻止事件冒泡到外层滚动容器
+      if (
+        (e.deltaY < 0 && canScrollUp) ||
+        (e.deltaY > 0 && canScrollDown)
+      ) {
+        e.stopPropagation();
+        return;
+      }
+
+      // 垂直方向已到边界，尝试转为水平滚动
+      if (hasH) {
+        const oldScrollLeft = el.scrollLeft;
+        el.scrollLeft += e.deltaY;
+
+        // 如果 scrollLeft 实际发生了变化，说明水平滚动成功
+        if (el.scrollLeft !== oldScrollLeft) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  return elRef;
+}
+
 interface AuditLogDetailDialogProps {
   logId: string | null;
   open: boolean;
@@ -53,6 +102,7 @@ export function AuditLogDetailDialog({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const rawScrollRef = useBidirectionalScroll<HTMLDivElement>();
 
   useEffect(() => {
     if (!open || !logId) {
@@ -172,7 +222,7 @@ export function AuditLogDetailDialog({
                     </>
                   )}
                 </Button>
-                <div className="h-[calc(100dvh-17rem)] overflow-auto rounded-md border bg-muted/50 code-scroll">
+                <div ref={rawScrollRef} className="h-[calc(100dvh-17rem)] overflow-auto rounded-md border bg-muted/50 code-scroll">
                   <div className="p-4 text-xs font-mono leading-relaxed">
                     <CodeBlock
                       code={log ? JSON.stringify(log, null, 2) : "{}"}
@@ -191,6 +241,7 @@ export function AuditLogDetailDialog({
 
 function AuditLogOverview({ log }: { log: AuditLog }) {
   const { t } = useTranslation();
+  const detailsPreRef = useBidirectionalScroll<HTMLPreElement>();
 
   const roleLabel = log.actorRole
     ? ROLE_LABELS[log.actorRole]
@@ -339,8 +390,8 @@ function AuditLogOverview({ log }: { log: AuditLog }) {
             <FileJson className="h-4 w-4" />
             {t("auditLogs.details")}
           </h4>
-          <div className="max-h-64 overflow-auto rounded-md bg-muted/50 code-scroll">
-            <pre className="p-3 text-xs font-mono leading-relaxed whitespace-pre">
+          <div className="rounded-md bg-muted/50 code-scroll">
+            <pre ref={detailsPreRef} className="p-3 text-xs font-mono leading-relaxed whitespace-pre overflow-auto max-h-64">
               {JSON.stringify(log.details, null, 2)}
             </pre>
           </div>

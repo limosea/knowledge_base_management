@@ -159,11 +159,11 @@
   .code-scroll {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+    overscroll-behavior: none;
   }
 
   .code-scroll pre,
   .code-scroll code {
-    overflow: visible !important;
     white-space: pre !important;
     min-width: min-content;
   }
