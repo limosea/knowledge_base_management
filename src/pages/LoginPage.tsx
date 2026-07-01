@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { authApi } from '@/api'
 import { usePermission } from '@/contexts/PermissionContext'
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Mail } from 'lucide-react'
 import type { LoginResponse } from '@/types'
 
 export function LoginPage() {
@@ -94,6 +94,17 @@ export function LoginPage() {
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t('auth.loginButton')}
           </Button>
+          <div className="flex flex-col gap-2 pt-2">
+            <Button type="button" variant="outline" className="w-full" asChild>
+              <Link to="/login/code">
+                <Mail className="mr-2 h-4 w-4" />
+                {t('auth.codeLoginButton', 'Sign in with code')}
+              </Link>
+            </Button>
+            <Button type="button" variant="link" className="w-full" asChild>
+              <Link to="/password-reset/request">{t('auth.forgotPassword')}</Link>
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>

@@ -43,6 +43,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs'
+import { RegistrationInvitationsPage } from './RegistrationInvitationsPage'
 import { useToast } from '@/hooks/use-toast'
 import { Plus, Pencil, KeyRound, Ban, CheckCircle, UserX, Search, BarChart3, PowerOff, ShieldCheck, Copy, Check, AlertTriangle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
@@ -93,6 +100,7 @@ export function UsersPage() {
     role: 'user' as AdminRole,
     rateLimit: 1000,
   })
+  const [activeTab, setActiveTab] = useState('users')
 
   const limit = 20
   const { user: permUser } = usePermission()
@@ -323,17 +331,26 @@ export function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{t('users.title')}</h1>
-        <PermissionGuard permissions={['users:manage']}>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            {t('users.create')}
-          </Button>
-        </PermissionGuard>
-      </div>
+      <h1 className="text-3xl font-bold">{t('users.title')}</h1>
 
-      <Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="users">{t('users.title')}</TabsTrigger>
+          <TabsTrigger value="invitations">{t('invitations.title', 'Registration Invitations')}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">{t('users.title')}</h2>
+            <PermissionGuard permissions={['users:manage']}>
+              <Button onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t('users.create')}
+              </Button>
+            </PermissionGuard>
+          </div>
+
+          <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
             {/* Row 1: Search box + dropdown filters */}
@@ -618,6 +635,12 @@ export function UsersPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="invitations">
+          <RegistrationInvitationsPage embedded />
+        </TabsContent>
+      </Tabs>
 
       {/* Create Dialog — two-step: form → one-time credentials reveal */}
       <Dialog open={createDialogOpen} onOpenChange={(open) => { if (!open) closeCreateDialog(); else setCreateDialogOpen(true) }}>

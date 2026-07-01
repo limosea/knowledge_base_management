@@ -8,37 +8,64 @@ import type {
   UpdateProfileRequest,
   ChangePasswordRequest,
   MfaSetupResponse,
+  CodeLoginRequest,
+  CodeLoginVerifyRequest,
+  RequestPasswordResetRequest,
+  ResetPasswordRequest,
+  ToggleCodeLoginRequest,
+  ToggleCodeLoginResponse,
 } from '@/types'
 
 export type LoginResult = LoginResponse | MfaRequiredResponse
+
+const persistLoginResponse = (response: LoginResponse): void => {
+  localStorage.setItem('accessToken', response.accessToken)
+  localStorage.setItem('refreshToken', response.refreshToken)
+  localStorage.setItem('user', JSON.stringify(response.user))
+  if (response.requirePasswordChange) {
+    localStorage.setItem('requirePasswordChange', 'true')
+  } else {
+    localStorage.removeItem('requirePasswordChange')
+  }
+}
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<LoginResult> => {
     const response = await apiClient.post<LoginResult>('/admin/auth/login', data, false)
     if ('accessToken' in response) {
-      localStorage.setItem('accessToken', response.accessToken)
-      localStorage.setItem('refreshToken', response.refreshToken)
-      localStorage.setItem('user', JSON.stringify(response.user))
-      if (response.requirePasswordChange) {
-        localStorage.setItem('requirePasswordChange', 'true')
-      } else {
-        localStorage.removeItem('requirePasswordChange')
-      }
+      persistLoginResponse(response as LoginResponse)
     }
     return response
   },
 
   loginWithMfa: async (data: MfaLoginRequest): Promise<LoginResponse> => {
     const response = await apiClient.post<LoginResponse>('/admin/auth/login/mfa', data, false)
-    localStorage.setItem('accessToken', response.accessToken)
-    localStorage.setItem('refreshToken', response.refreshToken)
-    localStorage.setItem('user', JSON.stringify(response.user))
-    if (response.requirePasswordChange) {
-      localStorage.setItem('requirePasswordChange', 'true')
-    } else {
-      localStorage.removeItem('requirePasswordChange')
+    persistLoginResponse(response)
+    return response
+  },
+
+  requestCodeLogin: async (data: CodeLoginRequest): Promise<{ sent: boolean }> => {
+    return apiClient.post<{ sent: boolean }>('/admin/auth/login/code/request', data, false)
+  },
+
+  loginWithCode: async (data: CodeLoginVerifyRequest): Promise<LoginResult> => {
+    const response = await apiClient.post<LoginResult>('/admin/auth/login/code', data, false)
+    if ('accessToken' in response) {
+      persistLoginResponse(response as LoginResponse)
     }
     return response
+  },
+
+  requestPasswordReset: async (data: RequestPasswordResetRequest): Promise<{ sent: boolean }> => {
+    return apiClient.post<{ sent: boolean }>('/admin/auth/password-reset/request', data, false)
+  },
+
+  resetPassword: async (data: ResetPasswordRequest): Promise<{ message: string }> => {
+    return apiClient.post<{ message: string }>('/admin/auth/password-reset', data, false)
+  },
+
+  toggleCodeLogin: async (data: ToggleCodeLoginRequest): Promise<ToggleCodeLoginResponse> => {
+    return apiClient.put<ToggleCodeLoginResponse>('/admin/auth/code-login', data)
   },
 
   logout: async (): Promise<void> => {

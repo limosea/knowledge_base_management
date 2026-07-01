@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Shield, ShieldOff, Copy, Check, Trash2, UserCog, AlertTriangle } from 'lucide-react'
+import { Loader2, Shield, ShieldOff, Copy, Check, Trash2, UserCog, AlertTriangle, Mail } from 'lucide-react'
 import type { AdminProfile, MfaSetupResponse } from '@/types'
 
 // Mirrors the backend USERNAME_REGEX / policy so the client can give
@@ -28,6 +28,7 @@ export function SettingsPage() {
   const [deletionMfaCode, setDeletionMfaCode] = useState('')
   const [deletionLoading, setDeletionLoading] = useState(false)
   const [deletionPending, setDeletionPending] = useState(false)
+  const [codeLoginLoading, setCodeLoginLoading] = useState(false)
 
   // One-time username reset state. `usernameResetAvailable` is sourced
   // from the profile (`usernameChangedAt` is NULL ⇒ available). Once
@@ -228,6 +229,39 @@ export function SettingsPage() {
       toast({ title: t('common.error'), description: err?.error?.message || '取消失败', variant: 'destructive' })
     } finally {
       setDeletionLoading(false)
+    }
+  }
+
+  const handleToggleCodeLogin = async () => {
+    if (!profile) return
+    const nextEnabled = !profile.codeLoginEnabled
+    if (nextEnabled && !profile.email) {
+      toast({
+        title: t('common.error'),
+        description: t('settings.codeLoginRequiresEmail', 'Please bind an email before enabling code login.'),
+        variant: 'destructive',
+      })
+      return
+    }
+    setCodeLoginLoading(true)
+    try {
+      const response = await authApi.toggleCodeLogin({ enabled: nextEnabled })
+      toast({
+        title: t('common.success'),
+        description: response.codeLoginEnabled
+          ? t('settings.codeLoginEnabled', 'Verification code login enabled')
+          : t('settings.codeLoginDisabled', 'Verification code login disabled'),
+      })
+      await loadProfile()
+    } catch (error: unknown) {
+      const err = error as { error?: { message?: string } }
+      toast({
+        title: t('common.error'),
+        description: err?.error?.message || t('settings.codeLoginToggleError', 'Failed to toggle code login'),
+        variant: 'destructive',
+      })
+    } finally {
+      setCodeLoginLoading(false)
     }
   }
 
@@ -477,6 +511,40 @@ export function SettingsPage() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Code Login Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            {t('settings.codeLoginTitle', 'Verification Code Login')}
+          </CardTitle>
+          <CardDescription>{t('settings.codeLoginDescription', 'Enable or disable signing in with a one-time code sent to your email.')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Label>{t('settings.codeLoginStatus', 'Status')}</Label>
+            <Badge variant={profile?.codeLoginEnabled ? 'default' : 'outline'}>
+              {profile?.codeLoginEnabled ? t('settings.codeLoginEnabled') : t('settings.codeLoginDisabled')}
+            </Badge>
+          </div>
+          {!profile?.email && (
+            <p className="text-sm text-muted-foreground">
+              {t('settings.codeLoginNoEmail', 'You need to bind an email address before enabling code login.')}
+            </p>
+          )}
+          <Button
+            onClick={handleToggleCodeLogin}
+            disabled={codeLoginLoading}
+            variant={profile?.codeLoginEnabled ? 'outline' : 'default'}
+          >
+            {codeLoginLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {profile?.codeLoginEnabled
+              ? t('settings.disableCodeLogin', 'Disable Code Login')
+              : t('settings.enableCodeLogin', 'Enable Code Login')}
+          </Button>
         </CardContent>
       </Card>
 

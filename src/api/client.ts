@@ -122,7 +122,13 @@ class ApiClient {
       // thrown error (or just stay on the page).
       const path = window.location.pathname
       const onAuthRoute =
-        path === '/login' || path === '/login/mfa' || path === '/change-password'
+        path === '/login' ||
+        path === '/login/code' ||
+        path === '/login/mfa' ||
+        path === '/change-password' ||
+        path === '/password-reset' ||
+        path === '/password-reset/request' ||
+        path === '/register'
       if (!onAuthRoute) {
         window.location.href = '/login'
       }

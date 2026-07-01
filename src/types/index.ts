@@ -69,6 +69,7 @@ export interface AdminProfile {
   isActive: boolean
   permissions: Permission[]
   mfaEnabled: boolean
+  codeLoginEnabled: boolean
   createdAt: string
   usernameChangedAt?: string | null
   requireUsernameChange?: boolean
@@ -109,6 +110,33 @@ export interface MfaSetupResponse {
   secret: string
   qrCodeUrl: string
   backupCodes: string[]
+}
+
+export interface CodeLoginRequest {
+  email: string
+}
+
+export interface CodeLoginVerifyRequest {
+  email: string
+  code: string
+}
+
+export interface RequestPasswordResetRequest {
+  email: string
+}
+
+export interface ResetPasswordRequest {
+  email: string
+  code: string
+  newPassword: string
+}
+
+export interface ToggleCodeLoginRequest {
+  enabled: boolean
+}
+
+export interface ToggleCodeLoginResponse {
+  codeLoginEnabled: boolean
 }
 
 export interface ApiKey {
@@ -889,3 +917,57 @@ export interface CreateTestAccountResponse {
   initialPassword: string
   message: string
 }
+
+// ==================== Email Auth & Registration Types ====================
+
+export interface VerifyRegistrationTokenRequest {
+  token: string
+}
+
+export interface VerifyRegistrationTokenResponse {
+  valid: boolean
+  status: 'pending' | 'consumed' | 'revoked' | 'expired'
+  email?: string
+}
+
+export interface CompleteRegistrationRequest {
+  token: string
+  username: string
+  nickname: string
+  password: string
+}
+
+export interface CompleteRegistrationResponse {
+  message: string
+  userId: string
+}
+
+export interface CreateRegistrationInvitationRequest {
+  email: string
+}
+
+export interface CreateRegistrationInvitationResponse {
+  id: string
+  email: string
+  expiresAt: string
+  ttlHours: number
+}
+
+export type RegistrationInvitationStatus = 'pending' | 'consumed' | 'revoked' | 'expired'
+
+export interface RegistrationInvitation {
+  id: string
+  email: string
+  status: RegistrationInvitationStatus
+  expiresAt: string
+  consumedAt?: string | null
+  consumedBy?: string | null
+  revokedAt?: string | null
+  revokedBy?: string | null
+  createdBy: string
+  createdByUsername?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type RegistrationInvitationListResponse = PaginatedResponse<RegistrationInvitation>

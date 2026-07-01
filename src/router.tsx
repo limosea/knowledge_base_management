@@ -4,8 +4,12 @@ import { PermissionRoute } from '@/components/auth/PermissionRoute'
 import { ElevationRoute } from '@/components/auth/ElevationRoute'
 import {
   LoginPage,
+  CodeLoginPage,
   ChangePasswordPage,
   MfaPage,
+  PasswordResetRequestPage,
+  PasswordResetPage,
+  RegistrationPage,
   DashboardPage,
   KnowledgeDetailPage,
   CategoriesPage,
@@ -63,12 +67,28 @@ export const router = createBrowserRouter([
         element: <LoginPage />,
       },
       {
+        path: '/login/code',
+        element: <CodeLoginPage />,
+      },
+      {
         path: '/login/mfa',
         element: <MfaPage />,
       },
       {
         path: '/change-password',
         element: <ChangePasswordPage />,
+      },
+      {
+        path: '/password-reset/request',
+        element: <PasswordResetRequestPage />,
+      },
+      {
+        path: '/password-reset',
+        element: <PasswordResetPage />,
+      },
+      {
+        path: '/register',
+        element: <RegistrationPage />,
       },
     ],
   },
