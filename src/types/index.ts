@@ -64,6 +64,7 @@ export interface AdminProfile {
   username: string
   nickname?: string
   email: string
+  emailVerifiedAt?: string | null
   role: AdminRole
   isSuperAdmin: boolean
   isActive: boolean
@@ -77,7 +78,6 @@ export interface AdminProfile {
 }
 
 export interface UpdateProfileRequest {
-  email?: string
   nickname?: string
 }
 
@@ -137,6 +137,18 @@ export interface ToggleCodeLoginRequest {
 
 export interface ToggleCodeLoginResponse {
   codeLoginEnabled: boolean
+}
+
+export interface EmailChangeRequestResponse {
+  message: string
+  expiresAt: string
+  ttlSec: number
+}
+
+export interface EmailChangeConfirmResponse {
+  message: string
+  email: string
+  emailVerifiedAt: string
 }
 
 export interface ApiKey {
@@ -295,10 +307,12 @@ export interface AdminUserSummary {
   username: string
   nickname?: string
   email: string
+  emailVerifiedAt?: string | null
   role: AdminRole
   isActive: boolean
   banned: boolean
   mfaEnabled: boolean
+  codeLoginEnabled?: boolean
   lastLoginAt?: string
   createdBy?: string
   rateLimit?: number
@@ -317,10 +331,11 @@ export type AdminUserListResponse = PaginatedResponse<AdminUserSummary>
  * Per the user-management refactor, the caller no longer supplies
  * `username`, `nickname`, or `password` — those are randomly generated
  * by the backend and returned exactly once in `CreateAdminUserResponse`.
- * The caller only picks `role` (super_admin only) and optional `email`.
+ * The caller only picks `role` (super_admin only).
+ * Email is not specified here — the user binds it after login via the
+ * self-service email-change flow.
  */
 export interface CreateAdminUserRequest {
-  email?: string
   role?: AdminRole
 }
 
@@ -333,7 +348,6 @@ export interface CreateAdminUserResponse {
   id: string
   username: string
   nickname: string
-  email?: string
   role: AdminRole
   createdAt: string
   initialPassword: string
@@ -933,7 +947,7 @@ export interface VerifyRegistrationTokenResponse {
 export interface CompleteRegistrationRequest {
   token: string
   username: string
-  nickname: string
+  nickname?: string
   password: string
 }
 
@@ -961,13 +975,10 @@ export interface RegistrationInvitation {
   status: RegistrationInvitationStatus
   expiresAt: string
   consumedAt?: string | null
-  consumedBy?: string | null
   revokedAt?: string | null
-  revokedBy?: string | null
-  createdBy: string
-  createdByUsername?: string | null
   createdAt: string
-  updatedAt: string
+  createdByUsername?: string | null
+  username?: string | null
 }
 
 export type RegistrationInvitationListResponse = PaginatedResponse<RegistrationInvitation>

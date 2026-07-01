@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Shield, ShieldOff, Copy, Check, Trash2, UserCog, AlertTriangle, Mail } from 'lucide-react'
+import { Loader2, Shield, ShieldOff, Copy, Check, Trash2, UserCog, AlertTriangle, Mail, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { AdminProfile, MfaSetupResponse } from '@/types'
 
 // Mirrors the backend USERNAME_REGEX / policy so the client can give
@@ -29,6 +29,14 @@ export function SettingsPage() {
   const [deletionLoading, setDeletionLoading] = useState(false)
   const [deletionPending, setDeletionPending] = useState(false)
   const [codeLoginLoading, setCodeLoginLoading] = useState(false)
+
+  // Email change state. Two-step flow:
+  // 1. Enter new email → request OTP
+  // 2. Enter OTP code → confirm change
+  const [emailChangeStep, setEmailChangeStep] = useState<'idle' | 'code_sent' | 'done'>('idle')
+  const [newEmail, setNewEmail] = useState('')
+  const [emailChangeCode, setEmailChangeCode] = useState('')
+  const [emailChangeLoading, setEmailChangeLoading] = useState(false)
 
   // One-time username reset state. `usernameResetAvailable` is sourced
   // from the profile (`usernameChangedAt` is NULL ⇒ available). Once
@@ -235,10 +243,10 @@ export function SettingsPage() {
   const handleToggleCodeLogin = async () => {
     if (!profile) return
     const nextEnabled = !profile.codeLoginEnabled
-    if (nextEnabled && !profile.email) {
+    if (nextEnabled && !profile.emailVerifiedAt) {
       toast({
         title: t('common.error'),
-        description: t('settings.codeLoginRequiresEmail', 'Please bind an email before enabling code login.'),
+        description: t('settings.codeLoginRequiresVerifiedEmail', 'Please verify your email before enabling code login.'),
         variant: 'destructive',
       })
       return
@@ -263,6 +271,59 @@ export function SettingsPage() {
     } finally {
       setCodeLoginLoading(false)
     }
+  }
+
+  const handleRequestEmailChange = async () => {
+    const trimmed = newEmail.trim()
+    if (!trimmed) return
+    setEmailChangeLoading(true)
+    try {
+      await authApi.requestEmailChange(trimmed)
+      setEmailChangeStep('code_sent')
+      toast({
+        title: t('common.success'),
+        description: t('settings.emailChangeCodeSent', 'Verification code sent to the new email address.'),
+      })
+    } catch (error: unknown) {
+      const err = error as { error?: { message?: string } }
+      toast({
+        title: t('common.error'),
+        description: err?.error?.message || t('settings.emailChangeRequestError', 'Failed to send verification code.'),
+        variant: 'destructive',
+      })
+    } finally {
+      setEmailChangeLoading(false)
+    }
+  }
+
+  const handleConfirmEmailChange = async () => {
+    if (!emailChangeCode || emailChangeCode.length < 4) return
+    setEmailChangeLoading(true)
+    try {
+      await authApi.confirmEmailChange(emailChangeCode)
+      setEmailChangeStep('done')
+      setEmailChangeCode('')
+      toast({
+        title: t('common.success'),
+        description: t('settings.emailChangeSuccess', 'Email updated and verified successfully.'),
+      })
+      await loadProfile()
+    } catch (error: unknown) {
+      const err = error as { error?: { message?: string } }
+      toast({
+        title: t('common.error'),
+        description: err?.error?.message || t('settings.emailChangeConfirmError', 'Failed to verify code. It may be invalid or expired.'),
+        variant: 'destructive',
+      })
+    } finally {
+      setEmailChangeLoading(false)
+    }
+  }
+
+  const cancelEmailChange = () => {
+    setEmailChangeStep('idle')
+    setNewEmail('')
+    setEmailChangeCode('')
   }
 
   if (loading) {
@@ -295,7 +356,22 @@ export function SettingsPage() {
             </div>
             <div>
               <Label className="text-muted-foreground">{t('users.email')}</Label>
-              <p className="font-medium">{profile?.email || '-'}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="font-medium">{profile?.email || '-'}</p>
+                {profile?.email && (
+                  profile.emailVerifiedAt ? (
+                    <Badge variant="outline" className="border-green-500 text-green-600 text-xs">
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      {t('settings.emailVerified', 'Verified')}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-orange-400 text-orange-600 text-xs">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {t('settings.emailNotVerified', 'Not verified')}
+                    </Badge>
+                  )
+                )}
+              </div>
             </div>
             <div>
               <Label className="text-muted-foreground">{t('users.role')}</Label>
@@ -312,6 +388,107 @@ export function SettingsPage() {
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Email Change Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            {t('settings.emailChangeTitle', 'Email Management')}
+          </CardTitle>
+          <CardDescription>
+            {t('settings.emailChangeDescription', 'Bind or change your email address. A verification code will be sent to the new address.')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-muted-foreground">{t('users.email')}</Label>
+              <p className="font-medium">{profile?.email || '-'}</p>
+            </div>
+            <div>
+              <Label className="text-muted-foreground">{t('settings.emailVerifiedAt', 'Verification Status')}</Label>
+              <p className="font-medium">
+                {profile?.emailVerifiedAt ? (
+                  <Badge variant="outline" className="border-green-500 text-green-600">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    {t('settings.emailVerified', 'Verified')} · {new Date(profile.emailVerifiedAt).toLocaleDateString()}
+                  </Badge>
+                ) : profile?.email ? (
+                  <Badge variant="outline" className="border-orange-400 text-orange-600">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    {t('settings.emailNotVerified', 'Not verified')}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-muted-foreground/40 text-muted-foreground">
+                    {t('settings.emailNotBound', 'Not bound')}
+                  </Badge>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {emailChangeStep === 'done' ? (
+            <div className="rounded-md border border-green-500/50 bg-green-500/5 p-3 text-sm text-green-700 dark:text-green-400">
+              {t('settings.emailChangeDone', 'Email updated successfully.')}
+              <Button variant="link" className="ml-2 p-0 h-auto text-sm" onClick={() => setEmailChangeStep('idle')}>
+                {t('settings.emailChangeAgain', 'Change again')}
+              </Button>
+            </div>
+          ) : emailChangeStep === 'code_sent' ? (
+            <div className="space-y-3">
+              <div className="rounded-md border border-blue-500/50 bg-blue-500/5 p-3 text-sm text-blue-700 dark:text-blue-400">
+                {t('settings.emailChangeCodeSentInfo', 'A verification code has been sent to {{email}}. Please check your inbox and spam folder.', { email: newEmail })}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="emailChangeCode">{t('settings.emailChangeCodeLabel', 'Verification Code')}</Label>
+                <Input
+                  id="emailChangeCode"
+                  type="text"
+                  placeholder="000000"
+                  value={emailChangeCode}
+                  onChange={(e) => setEmailChangeCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                  maxLength={8}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleConfirmEmailChange}
+                  disabled={emailChangeLoading || emailChangeCode.length < 4}
+                >
+                  {emailChangeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t('settings.emailChangeConfirmButton', 'Verify & Update')}
+                </Button>
+                <Button variant="outline" onClick={cancelEmailChange}>
+                  {t('common.cancel')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="newEmail">{t('settings.newEmail', 'New Email Address')}</Label>
+                <Input
+                  id="newEmail"
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="new-email@example.com"
+                />
+              </div>
+              <Button
+                onClick={handleRequestEmailChange}
+                disabled={emailChangeLoading || !newEmail.trim()}
+              >
+                {emailChangeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {profile?.email
+                  ? t('settings.emailChangeSendCode', 'Send Verification Code')
+                  : t('settings.emailBindSendCode', 'Bind Email')}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -530,9 +707,11 @@ export function SettingsPage() {
               {profile?.codeLoginEnabled ? t('settings.codeLoginEnabled') : t('settings.codeLoginDisabled')}
             </Badge>
           </div>
-          {!profile?.email && (
+          {!profile?.emailVerifiedAt && (
             <p className="text-sm text-muted-foreground">
-              {t('settings.codeLoginNoEmail', 'You need to bind an email address before enabling code login.')}
+              {profile?.email
+                ? t('settings.codeLoginUnverifiedEmail', 'Your email is not yet verified. Please verify it first in the Email Management section above.')
+                : t('settings.codeLoginNoEmail', 'You need to bind and verify an email address before enabling code login.')}
             </p>
           )}
           <Button

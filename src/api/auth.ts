@@ -14,6 +14,8 @@ import type {
   ResetPasswordRequest,
   ToggleCodeLoginRequest,
   ToggleCodeLoginResponse,
+  EmailChangeRequestResponse,
+  EmailChangeConfirmResponse,
 } from '@/types'
 
 export type LoginResult = LoginResponse | MfaRequiredResponse
@@ -66,6 +68,14 @@ export const authApi = {
 
   toggleCodeLogin: async (data: ToggleCodeLoginRequest): Promise<ToggleCodeLoginResponse> => {
     return apiClient.put<ToggleCodeLoginResponse>('/admin/auth/code-login', data)
+  },
+
+  requestEmailChange: (newEmail: string): Promise<EmailChangeRequestResponse> => {
+    return apiClient.post<EmailChangeRequestResponse>('/admin/auth/email-change/request', { newEmail })
+  },
+
+  confirmEmailChange: (code: string): Promise<EmailChangeConfirmResponse> => {
+    return apiClient.post<EmailChangeConfirmResponse>('/admin/auth/email-change/confirm', { code })
   },
 
   logout: async (): Promise<void> => {

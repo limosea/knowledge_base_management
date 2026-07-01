@@ -123,9 +123,7 @@ export function RegistrationInvitationsPage({ embedded }: RegistrationInvitation
         email: result.email,
         status: 'pending',
         expiresAt: result.expiresAt,
-        createdBy: '',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       })
       fetchInvitations()
     } catch (error: unknown) {
